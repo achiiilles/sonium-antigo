@@ -61,9 +61,6 @@ import com.music.bitchord.ui.components.PullToRefresh
 import com.music.bitchord.ui.components.SHELF_CARD_WIDTH
 import com.music.bitchord.ui.components.libraryGrid
 import com.music.bitchord.ui.components.librarySkeleton
-import com.music.bitchord.ui.components.SectionHeader
-import com.music.bitchord.ui.components.ShelfCard
-import com.music.bitchord.ui.components.NewShelfCard
 
 /**
  * The signed-in library: the saved collections, as shelves of cards.
@@ -199,7 +196,7 @@ fun LibraryScreen(
                                 shelf = emptyPlaylists,
                                 onItemClick = onShelfItemClick,
                                 onItemLongPress = onShelfItemLongPress,
-                                onNewPlaylist = onNewPlaylist,
+                                onItemNewPlaylist = onNewPlaylist,
                                 onImportSpotifyPlaylist = onImportSpotifyPlaylist,
                                 onShowAll = { onShowAll(emptyPlaylists) },
                             )
