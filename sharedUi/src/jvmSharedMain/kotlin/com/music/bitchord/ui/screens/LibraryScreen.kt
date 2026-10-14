@@ -38,6 +38,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -59,6 +61,9 @@ import com.music.bitchord.ui.components.PullToRefresh
 import com.music.bitchord.ui.components.SHELF_CARD_WIDTH
 import com.music.bitchord.ui.components.libraryGrid
 import com.music.bitchord.ui.components.librarySkeleton
+import com.music.bitchord.ui.components.SectionHeader
+import com.music.bitchord.ui.components.ShelfCard
+import com.music.bitchord.ui.components.NewShelfCard
 
 /**
  * The signed-in library: the saved collections, as shelves of cards.
@@ -343,15 +348,11 @@ private fun PlaylistShelf(
 /** A Library shelf's preview row never swipes past this many cards. */
 private const val LIBRARY_ROW_MAX_ITEMS = 5
 
+/** Stores the scroll state of library shelves across screen transitions. */
+private val shelfScrollPositions = mutableMapOf<String, Pair<Int, Int>>()
+
 /**
- * A Library shelf: a sideways-scrolling row of [SHELF_CARD_WIDTH] cards, the
- * same as every other shelf, but stopped at [LIBRARY_ROW_MAX_ITEMS] rather
- * than left to run the shelf's whole length — with a "Show all" beside the
- * title whenever there's more than that, opening the rest as a
- * vertically-scrolling grid instead. See [LibraryGridPage].
- *
- * [leadingCard], if given, occupies the first slot and counts against that
- * cap — see [PlaylistShelf].
+ * A Library shelf: a sideways-scrolling row of cards, preserved across navigation.
  */
 @Composable
 internal fun LibraryGridShelf(
@@ -363,7 +364,22 @@ internal fun LibraryGridShelf(
     pinnedPlaylists: List<String> = emptyList(),
 ) {
     val leadingCount = if (leadingCard != null) 1 else 0
-    val visibleItems = shelf.items.take((LIBRARY_ROW_MAX_ITEMS - leadingCount).coerceAtLeast(0))
+    val isArtistShelf = shelf.title.equals("Artists", ignoreCase = true) ||
+        shelf.title.equals("Artistas", ignoreCase = true)
+    val visibleItems = if (isArtistShelf) {
+        shelf.items
+    } else {
+        shelf.items.take((LIBRARY_ROW_MAX_ITEMS - leadingCount).coerceAtLeast(0))
+    }
+    val rowState = rememberSaveable(shelf.title, saver = LazyListState.Saver) {
+        val (index, offset) = shelfScrollPositions[shelf.title] ?: (0 to 0)
+        LazyListState(firstVisibleItemIndex = index, firstVisibleItemScrollOffset = offset)
+    }
+    DisposableEffect(shelf.title, rowState) {
+        onDispose {
+            shelfScrollPositions[shelf.title] = rowState.firstVisibleItemIndex to rowState.firstVisibleItemScrollOffset
+        }
+    }
     Column(Modifier.padding(bottom = 26.dp)) {
         SectionHeader(
             title = shelf.title,
@@ -371,6 +387,7 @@ internal fun LibraryGridShelf(
             onShowAll = onShowAll.takeIf { shelf.items.size + leadingCount > LIBRARY_ROW_MAX_ITEMS },
         )
         ShelfRow(
+            state = rowState,
             contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(LIBRARY_GRID_SPACING),
         ) {
@@ -401,15 +418,8 @@ fun LibraryGridPage(
     modifier: Modifier = Modifier,
     onNewPlaylist: (() -> Unit)? = null,
 ) {
-    // Re-read live rather than trusting [shelf] to already be sorted: this page
-    // is opened from a snapshot (see `libraryShowAll` in MainActivity), and a
-    // pin toggled from this page's own long-press menu must move the card
-    // immediately rather than waiting for the row underneath to be revisited.
     val pinnedPlaylists by AppUi.host.pinnedPlaylists.collectAsStateWithLifecycle()
     val librarySort by AppUi.host.librarySort.collectAsStateWithLifecycle()
-    // Pinning wins over the default order, but an explicit sort is a stronger,
-    // more deliberate signal than a pin and is left to reorder the whole grid,
-    // pinned cards included.
     val sortedShelf = shelf.pinnedFirst(pinnedPlaylists).sortedForLibrary(librarySort)
     BoxWithConstraints(modifier.fillMaxSize()) {
         val grid = libraryGrid(maxWidth - PAGE_GUTTER * 2)
@@ -449,9 +459,6 @@ fun LibraryGridPage(
  * Moves whichever of this shelf's cards are in [pinned] to the front, in the
  * order they were pinned, leaving everything else in its existing order behind
  * them.
- *
- * A no-op on any shelf that isn't Playlists: [pinned] only ever holds playlist
- * browse ids, so an album or artist shelf never has a card that matches.
  */
 private fun HomeShelf.pinnedFirst(pinned: List<String>): HomeShelf {
     if (pinned.isEmpty()) return this
