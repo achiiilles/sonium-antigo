@@ -250,7 +250,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.itemsIndexedShelves(
     onRecentsViewTypeToggle: () -> Unit,
 ) {
     shelves.forEachIndexed { index, shelf ->
-        item(key = shelf.title + index) {
+        item(key = shelf.browseId ?: shelf.title) {
             val openItem: (ShelfItem) -> Unit = { item -> onItemClick(item, shelf.title) }
             if (index == 0 && shelf.title.equals(RECENTS_TITLE, ignoreCase = true)) {
                 RecentShelf(
@@ -484,27 +484,12 @@ fun CompactTrackRow(
 }
 
 /**
- * Listen now's large heading, with the wordmark stacked above it.
- *
- * Only the home tab carries it — the top bar no longer shows the logo, so this
- * is where the app's mark lives. Its height is taken from the heading's own
- * font size rather than a fixed dp, so the two keep their proportion under the
- * system font scale.
+ * Listen now's large heading. Tipografia limpa sem logo, estilo Apple Music.
  */
 @Composable
 private fun HomeTitle(title: String, modifier: Modifier = Modifier) {
     val style = MaterialTheme.typography.displayLarge
-    val logoHeight = with(LocalDensity.current) { (style.fontSize * LOGO_TO_FONT).toDp() }
     Column(modifier = modifier.padding(horizontal = PAGE_GUTTER, vertical = 8.dp)) {
-        Icon(
-            painter = painterResource(Res.drawable.ic_logo),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier
-                .padding(bottom = 14.dp)
-                .height(logoHeight)
-                .aspectRatio(LOGO_ASPECT),
-        )
         Text(
             text = title,
             style = style,
@@ -512,12 +497,6 @@ private fun HomeTitle(title: String, modifier: Modifier = Modifier) {
         )
     }
 }
-
-/** The wordmark's height against the heading's font size. */
-private const val LOGO_TO_FONT = 0.9f
-
-/** ic_logo's viewport, 1:1. */
-private const val LOGO_ASPECT = 1f
 
 /**
  * Shared by the home feed, Explore and Library so headings line up across tabs.
