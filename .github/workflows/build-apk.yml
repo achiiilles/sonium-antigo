@@ -1,8 +1,8 @@
 name: Build Android APK
 
-ln:
+on:
   push:
-    branches: [main]
+    branches: [main, feat/unificar-artistas]
   workflow_dispatch:
 
 concurrency:
