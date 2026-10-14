@@ -30,11 +30,14 @@ jobs:
       - name: Setup local.properties
         run: |
           touch local.properties
-          echo "LASTFS_API_KEY=" > local.properties
+          echo "LASTFM_API_KEY=" > local.properties
           echo "LASTFM_SECRET=" >> local.properties
 
       - name: Apply DetailScreen patch
         run: python3 .github/scripts/patch_detail_screen.py
+
+      - name: Apply MainActivity patch
+        run: python3 .github/scripts/patch_main_activity.py
 
       - name: Apply Sonium Branding patch
         run: python3 .github/scripts/patch_branding.py
