@@ -819,8 +819,7 @@ object YtMusicRepository {
     private val LIBRARY_FEEDS = listOf(
         PLAYLISTS_SHELF to LIBRARY_PLAYLISTS,
         "Albums" to "FEmusic_liked_albums",
-        "Artists" to "FEmusic_library_corpus_track_artists",
-        "Subscriptions" to "FEmusic_library_corpus_artists",
+        "Artists" to "FEmusic_library_corpus_artists",
         "Podcasts" to "FEmusic_library_non_music_audio_list",
     )
 
