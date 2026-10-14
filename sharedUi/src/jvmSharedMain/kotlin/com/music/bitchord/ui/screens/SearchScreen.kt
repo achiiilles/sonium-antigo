@@ -378,11 +378,11 @@ private data class SearchSection(val title: String?, val rows: List<SearchResult
 private fun searchSections(rows: List<SearchResult>, filter: SearchFilter): List<SearchSection> {
     if (filter != SearchFilter.ALL) return listOf(SearchSection(null, rows))
     return listOf(
-        SearchSection("Songs", rows.filterIsInstance<SearchResult.Track>()),
-        SearchSection("Artists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
-        SearchSection("Albums", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
+        SearchSection("Artistas", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
+        SearchSection("Músicas", rows.filterIsInstance<SearchResult.Track>()),
+        SearchSection("Álbuns", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
         SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
-        SearchSection("More", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
+        SearchSection("Mais", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
     ).filter { it.rows.isNotEmpty() }
 }
 
@@ -452,7 +452,7 @@ private fun TopResultCard(
             .contextClick(onLongPress),
     ) {
         Text(
-            text = "Top result",
+            text = "Melhor resultado",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -779,13 +779,15 @@ private fun RecentSearchEntityRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(52.dp)) {
+            val isArtist = entity.entityType == EntityType.ARTIST
+            val entityShape = if (isArtist) CircleShape else RoundedCornerShape(8.dp)
             AsyncImage(
                 model = entity.artworkUrl,
                 contentDescription = null,
                 modifier = Modifier
                     .size(52.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .thumbnailBorder(RoundedCornerShape(8.dp))
+                    .clip(entityShape)
+                    .thumbnailBorder(entityShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             )
             if (isCurrent && isPlaying) {
