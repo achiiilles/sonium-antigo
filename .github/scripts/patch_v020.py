@@ -1,20 +1,68 @@
 import os
 import re
 
-print("Starting Sonium 0.2.0 patch application...")
+print("Starting Sonium 0.2.5 patch application...")
 
-# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.2.0)
+# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.2.5)
 gradle_path = "app/build.gradle.kts"
 if os.path.exists(gradle_path):
     with open(gradle_path, "r", encoding="utf-8") as f:
         gc = f.read()
-    gc = gc.replace('versionName = "1.8"', 'versionName = "0.2.0"')
+    gc = gc.replace('versionName = "1.8"', 'versionName = "0.2.5"')
+    gc = gc.replace('versionName = "0.2.0"', 'versionName = "0.2.5"')
     gc = gc.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Sonium Dev")')
     with open(gradle_path, "w", encoding="utf-8") as f:
         f.write(gc)
-    print("app/build.gradle.kts patched to version 0.2.0 and Sonium Dev.")
+    print("app/build.gradle.kts patched to version 0.2.5 and Sonium Dev.")
 
-# 1. Patch PlayerConnection.kt (Artista limpo no player)
+# 1. Patch InnertubeParser.kt (Parser de artista limpo sem rótulo de tipo)
+ip_path = "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/innertube/InnertubeParser.kt"
+if os.path.exists(ip_path):
+    with open(ip_path, "r", encoding="utf-8") as f:
+        ipc = f.read()
+
+    old_type_words = """    private val TYPE_WORDS = setOf(
+        "song", "video", "album", "single", "ep", "artist",
+        "playlist", "podcast", "episode",
+    )"""
+    new_type_words = """    private val TYPE_WORDS = setOf(
+        "song", "video", "album", "single", "ep", "artist",
+        "playlist", "podcast", "episode", "música", "musica",
+        "vídeo", "faixa", "áudio", "audio", "track", "álbum", "artista",
+    )"""
+    if old_type_words in ipc:
+        ipc = ipc.replace(old_type_words, new_type_words)
+
+    target_artist_runs = """        val artistGroup = groups.firstOrNull { group ->
+            group.any { run ->
+                val pageType = run.o("navigationEndpoint").o("browseEndpoint")
+                    .o("browseEndpointContextSupportedConfigs")
+                    .o("browseEndpointContextMusicConfig").s("pageType").orEmpty()
+                "ARTIST" in pageType
+            }
+        } ?: return null"""
+    replacement_artist_runs = """        val validGroups = groups.filter { group ->
+            val text = group.joinToString("") { it.s("text").orEmpty() }.trim()
+            val lower = text.lowercase(Locale.ROOT)
+            text.isNotBlank() && lower !in TYPE_WORDS && !text.matches(DURATION) && !text.matches(TALLY) && !text.matches(YEAR)
+        }
+        val artistGroup = validGroups.firstOrNull { group ->
+            group.any { run ->
+                val browse = run.o("navigationEndpoint").o("browseEndpoint")
+                val pageType = browse?.o("browseEndpointContextSupportedConfigs")
+                    ?.o("browseEndpointContextMusicConfig")?.s("pageType").orEmpty()
+                val browseId = browse?.s("browseId").orEmpty()
+                "ARTIST" in pageType || "USER_CHANNEL" in pageType || browseId.startsWith("UC")
+            }
+        } ?: validGroups.firstOrNull() ?: return null"""
+    if target_artist_runs in ipc:
+        ipc = ipc.replace(target_artist_runs, replacement_artist_runs)
+
+    with open(ip_path, "w", encoding="utf-8") as f:
+        f.write(ipc)
+    print("InnertubeParser.kt patched for clean artist runs.")
+
+# 2. Patch PlayerConnection.kt (Sanitização de artista no player)
 pc_path = "app/src/main/java/com/music/bitchord/playback/PlayerConnection.kt"
 if os.path.exists(pc_path):
     with open(pc_path, "r", encoding="utf-8") as f:
@@ -24,39 +72,56 @@ if os.path.exists(pc_path):
 private const val ARTISTS_IDS = "artistIds"
 
 private val MEDIA_PREFIX_REGEX = Regex("^(?:(?:m[úu]sica|song|v[íi]deo|track|faixa|áudio|audio|single|ep|álbum|album)\\s*[•·\\-|:]\\s*)+", RegexOption.IGNORE_CASE)
+private val MEDIA_TYPE_ISOLATED = setOf("música", "musica", "song", "vídeo", "video", "track", "faixa", "áudio", "audio", "álbum", "album", "single", "ep", "artist", "artista")
 
-fun cleanMediaArtist(raw: String): String =
-    raw.replace(MEDIA_PREFIX_REGEX, "").trim()
+fun cleanMediaArtist(raw: String): String {
+    val cleaned = raw.replace(MEDIA_PREFIX_REGEX, "").trim()
+    if (cleaned.lowercase(Locale.ROOT) in MEDIA_TYPE_ISOLATED) {
+        return ""
+    }
+    return cleaned
+}
 '''
-
     if "fun cleanMediaArtist(" not in pc:
         target_artists = 'private const val ARTISTS_NAMES = "artistNames"\nprivate const val ARTISTS_IDS = "artistIds"'
         if target_artists in pc:
             pc = pc.replace(target_artists, helper.strip())
         else:
             pc = re.sub(r'private const val ARTISTS_NAMES = "artistNames"\r?\nprivate const val ARTISTS_IDS = "artistIds"', helper.strip(), pc)
+    else:
+        old_helper = r'''fun cleanMediaArtist(raw: String): String =
+    raw.replace(MEDIA_PREFIX_REGEX, "").trim()'''
+        new_helper = r'''fun cleanMediaArtist(raw: String): String {
+    val cleaned = raw.replace(MEDIA_PREFIX_REGEX, "").trim()
+    if (cleaned.lowercase(Locale.ROOT) in MEDIA_TYPE_ISOLATED) {
+        return ""
+    }
+    return cleaned
+}'''
+        if old_helper in pc:
+            pc = pc.replace(old_helper, new_helper)
 
     pc = pc.replace(
         'artist = mediaMetadata.artist?.toString().orEmpty(),',
-        'artist = cleanMediaArtist(mediaMetadata.artist?.toString().orEmpty()),'
+        'artist = cleanMediaArtist(mediaMetadata.artist?.toString().orEmpty()).ifBlank { mediaMetadata.extras?.artistsFromBundle()?.firstOrNull()?.name?.let { cleanMediaArtist(it) }?.ifBlank { null } ?: "Unknown artist" },'
     )
 
     pc = pc.replace(
         'artist = b.getString("artist").orEmpty(),',
-        'artist = cleanMediaArtist(b.getString("artist").orEmpty()),'
+        'artist = cleanMediaArtist(b.getString("artist").orEmpty()).ifBlank { b.artistsFromBundle().firstOrNull()?.name?.let { cleanMediaArtist(it) }?.ifBlank { null } ?: "Unknown artist" },'
     )
 
     old_to_media = """.setTitle(title)
             .setArtist(artist)"""
     new_to_media = """.setTitle(title)
-            .setArtist(cleanMediaArtist(artist))"""
+            .setArtist(cleanMediaArtist(artist).ifBlank { artists.firstOrNull()?.name?.let { cleanMediaArtist(it) }?.ifBlank { null } ?: artist })"""
     pc = pc.replace(old_to_media, new_to_media)
 
     with open(pc_path, "w", encoding="utf-8") as f:
         f.write(pc)
     print("PlayerConnection.kt patched for clean artist.")
 
-# 2. Patch PlaybackService.kt (Álbum no MediaSession mesmo em rádio/aleatório)
+# 3. Patch PlaybackService.kt (Álbum no MediaSession mesmo em rádio/aleatório)
 ps_path = "app/src/main/java/com/music/bitchord/playback/PlaybackService.kt"
 if os.path.exists(ps_path):
     with open(ps_path, "r", encoding="utf-8") as f:
@@ -123,7 +188,7 @@ if os.path.exists(ps_path):
             f.write(ps)
         print("PlaybackService.kt patched for album metadata resolution.")
 
-# 3. Patch HomeScreen.kt (Memória de rolagem global + fotos redondas de artistas)
+# 4. Patch HomeScreen.kt (Memória de rolagem global + fotos redondas de artistas)
 hs_path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt"
 if os.path.exists(hs_path):
     with open(hs_path, "r", encoding="utf-8") as f:
@@ -187,7 +252,8 @@ internal fun Shelf(
             contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {"""
-    hs = hs.replace(old_shelf, new_shelf)
+    if old_shelf in hs:
+        hs = hs.replace(old_shelf, new_shelf)
 
     old_hero_shelf = """@Composable
 private fun HeroShelf(
@@ -199,10 +265,6 @@ private fun HeroShelf(
 ) {
     Column(Modifier.padding(bottom = 26.dp)) {
         SectionHeader(shelf.title, shelf.subtitle)
-        // Measured rather than taken as a share of the parent, because the card
-        // has a ceiling as well as a fraction — see [heroCardWidth]. A fixed
-        // width is also the only one of the two the aspect ratio below can turn
-        // into a height, so the card keeps its shape however it was arrived at.
         BoxWithConstraints {
             val cardWidth = heroCardWidth(maxWidth)
             ShelfRow(
@@ -238,7 +300,8 @@ private fun HeroShelf(
                 contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {"""
-    hs = hs.replace(old_hero_shelf, new_hero_shelf)
+    if old_hero_shelf in hs:
+        hs = hs.replace(old_hero_shelf, new_hero_shelf)
 
     old_shelf_card_art = """            else -> {
                 Box(
@@ -268,26 +331,95 @@ private fun HeroShelf(
                         .thumbnailBorder(cardShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                 ) {"""
-    hs = hs.replace(old_shelf_card_art, new_shelf_card_art)
+    if old_shelf_card_art in hs:
+        hs = hs.replace(old_shelf_card_art, new_shelf_card_art)
 
     with open(hs_path, "w", encoding="utf-8") as f:
         f.write(hs)
     print("HomeScreen.kt patched for scroll memory and round artist cards.")
 
-# 4. Patch SearchScreen.kt (Prioridade na busca: artistas no topo + fotos circulares)
+# 5. Patch DetailScreen.kt (Fotos redondas na seção de fãs também podem gostar)
+ds_path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+if os.path.exists(ds_path):
+    with open(ds_path, "r", encoding="utf-8") as f:
+        ds = f.read()
+
+    old_sec_card = """        AsyncImage(
+            model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .thumbnailBorder(RoundedCornerShape(10.dp))
+                .background(palette.elevated),
+        )"""
+
+    new_sec_card = """        val isArtistCard = item.browseId?.startsWith("UC") == true ||
+            item.browseId?.startsWith("FEmusic_library_corpus_artist") == true ||
+            item.subtitle.equals("Artist", ignoreCase = true) ||
+            item.subtitle.equals("Artista", ignoreCase = true) ||
+            item.subtitle.contains("Artist •", ignoreCase = true) ||
+            item.subtitle.contains("Artista •", ignoreCase = true) ||
+            item.subtitle.contains("• Artist", ignoreCase = true) ||
+            item.subtitle.contains("• Artista", ignoreCase = true) ||
+            item.subtitle.contains("subscribers", ignoreCase = true) ||
+            item.subtitle.contains("inscritos", ignoreCase = true)
+        val cardShape = if (isArtistCard) CircleShape else RoundedCornerShape(10.dp)
+        AsyncImage(
+            model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(cardShape)
+                .thumbnailBorder(cardShape)
+                .background(palette.elevated),
+        )"""
+
+    if old_sec_card in ds:
+        ds = ds.replace(old_sec_card, new_sec_card)
+        with open(ds_path, "w", encoding="utf-8") as f:
+            f.write(ds)
+        print("DetailScreen.kt patched for round artist SectionCard.")
+    elif "val isArtistCard = item.browseId?.startsWith(\"UC\")" in ds:
+        print("DetailScreen.kt SectionCard already patched.")
+
+# 6. Patch SearchScreen.kt (Prioridade na busca: artistas no topo + tradução para português)
 ss_path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/SearchScreen.kt"
 if os.path.exists(ss_path):
     with open(ss_path, "r", encoding="utf-8") as f:
         ss = f.read()
 
-    old_sections = """    return listOf(
+    old_sec_1 = """    return listOf(
         SearchSection("Songs", rows.filterIsInstance<SearchResult.Track>()),
-        SearchSection("Artists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),"""
-
-    new_sections = """    return listOf(
         SearchSection("Artists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
-        SearchSection("Songs", rows.filterIsInstance<SearchResult.Track>()),"""
-    ss = ss.replace(old_sections, new_sections)
+        SearchSection("Albums", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
+        SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
+        SearchSection("More", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
+    ).filter { it.rows.isNotEmpty() }"""
+
+    old_sec_2 = """    return listOf(
+        SearchSection("Artists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
+        SearchSection("Songs", rows.filterIsInstance<SearchResult.Track>()),
+        SearchSection("Albums", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
+        SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
+        SearchSection("More", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
+    ).filter { it.rows.isNotEmpty() }"""
+
+    new_sec_pt = """    return listOf(
+        SearchSection("Artistas", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
+        SearchSection("Músicas", rows.filterIsInstance<SearchResult.Track>()),
+        SearchSection("Álbuns", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
+        SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
+        SearchSection("Mais", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
+    ).filter { it.rows.isNotEmpty() }"""
+
+    if old_sec_1 in ss:
+        ss = ss.replace(old_sec_1, new_sec_pt)
+    elif old_sec_2 in ss:
+        ss = ss.replace(old_sec_2, new_sec_pt)
 
     old_recent_entity = """        Box(Modifier.size(52.dp)) {
             AsyncImage(
@@ -312,10 +444,11 @@ if os.path.exists(ss_path):
                     .thumbnailBorder(entityShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             )"""
-    ss = ss.replace(old_recent_entity, new_recent_entity)
+    if old_recent_entity in ss:
+        ss = ss.replace(old_recent_entity, new_recent_entity)
 
     with open(ss_path, "w", encoding="utf-8") as f:
         f.write(ss)
-    print("SearchScreen.kt patched for artist priority in search and round recent entity cards.")
+    print("SearchScreen.kt patched for translated sections and round recent entity cards.")
 
-print("All Sonium 0.2.0 patches applied successfully!")
+print("All Sonium 0.2.5 patches applied successfully!")
