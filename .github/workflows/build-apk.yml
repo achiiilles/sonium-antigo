@@ -1,6 +1,6 @@
 name: Build Android APK
 
-on:
+ln:
   push:
     branches: [main]
   workflow_dispatch:
@@ -29,8 +29,11 @@ jobs:
       - name: Setup local.properties
         run: |
           touch local.properties
-          echo "LASTFM_API_KEY=" > local.properties
+          echo "LASTFS_API_KEY=" > local.properties
           echo "LASTFM_SECRET=" >> local.properties
+
+      - name: Apply DetailScreen patch
+        run: python3 .github/scripts/patch_detail_screen.py
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
