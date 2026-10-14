@@ -10,7 +10,7 @@ if os.path.exists(settings_path):
     
     # Substituir colophon do rodapé
     old_colophon_pattern = re.compile(r'if \(searchQuery\.isBlank\(\)\) \{\s*Text\(\s*text = buildAnnotatedString \{.*?\n\s*append\("\\n~YouTube Music & Listen Together Backend"\)\s*\},', re.DOTALL)
-    new_colophon = """if (searchQuery.isBlank()) {
+    new_colophon = r'''if (searchQuery.isBlank()) {
         Text(
             text = buildAnnotatedString {
                 append("Sonium $version  ")
@@ -23,10 +23,10 @@ if os.path.exists(settings_path):
                 withLink(LinkAnnotation.Url("https://github.com/achiilles75/Sonium", linkStyles)) {
                     append("GitHub")
                 }
-                append("\\n~YouTube Music & Listen Together Backend")
-            },"""
+                append("\n~YouTube Music & Listen Together Backend")
+            },'''
     if old_colophon_pattern.search(sc):
-        sc = old_colophon_pattern.sub(new_colophon, sc)
+        sc = old_colophon_pattern.sub(lambda m: new_colophon, sc)
         print("SettingsSheet.kt colophon updated cleanly with regex")
     else:
         # Fallback manual string replacement
