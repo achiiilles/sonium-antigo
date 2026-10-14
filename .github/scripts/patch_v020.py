@@ -20,19 +20,21 @@ if os.path.exists(pc_path):
     with open(pc_path, "r", encoding="utf-8") as f:
         pc = f.read()
 
-    if "fun cleanMediaArtist(" not in pc:
-        helper = """private const val ARTISTS_NAMES = "artistNames"
+    helper = r'''private const val ARTISTS_NAMES = "artistNames"
 private const val ARTISTS_IDS = "artistIds"
 
-private val MEDIA_PREFIX_REGEX = Regex("^(?:(?:m[úu]sica|song|v[íi]deo|track|faixa|áudio|audio|single|ep|álbum|album)\\\\s*[•·\\\\-|:]\\\\s*)+", RegexOption.IGNORE_CASE)
+private val MEDIA_PREFIX_REGEX = Regex("^(?:(?:m[úu]sica|song|v[íi]deo|track|faixa|áudio|audio|single|ep|álbum|album)\\s*[•·\\-|:]\\s*)+", RegexOption.IGNORE_CASE)
 
 fun cleanMediaArtist(raw: String): String =
     raw.replace(MEDIA_PREFIX_REGEX, "").trim()
-"""
-        pc = pc.replace(
-            """private const val ARTISTS_NAMES = "artistNames"\nprivate const val ARTISTS_IDS = "artistIds"\n""",
-            helper
-        )
+'''
+
+    if "fun cleanMediaArtist(" not in pc:
+        target_artists = 'private const val ARTISTS_NAMES = "artistNames"\nprivate const val ARTISTS_IDS = "artistIds"'
+        if target_artists in pc:
+            pc = pc.replace(target_artists, helper.strip())
+        else:
+            pc = re.sub(r'private const val ARTISTS_NAMES = "artistNames"\r?\nprivate const val ARTISTS_IDS = "artistIds"', helper.strip(), pc)
 
     pc = pc.replace(
         'artist = mediaMetadata.artist?.toString().orEmpty(),',
@@ -128,15 +130,19 @@ if os.path.exists(hs_path):
         hs = f.read()
 
     if "import androidx.compose.runtime.saveable.rememberSaveable" not in hs:
-        hs = hs.replace(
-            "import androidx.compose.runtime.remember",
-            "import androidx.compose.runtime.remember\\nimport androidx.compose.runtime.DisposableEffect\\nimport androidx.compose.runtime.saveable.rememberSaveable"
+        hs = re.sub(
+            r'import androidx\.compose\.runtime\.remember\r?\n',
+            'import androidx.compose.runtime.remember\nimport androidx.compose.runtime.DisposableEffect\nimport androidx.compose.runtime.saveable.rememberSaveable\n',
+            hs,
+            count=1
         )
 
     if "homeShelfScrollPositions" not in hs:
-        hs = hs.replace(
-            'private const val RECENT_TRACKS_PER_COLUMN = 4',
-            'private const val RECENT_TRACKS_PER_COLUMN = 4\\n\\n/** Stores the scroll state of home shelves across screen transitions. */\\nprivate val homeShelfScrollPositions = mutableMapOf<String, Pair<Int, Int>>()'
+        hs = re.sub(
+            r'private const val RECENT_TRACKS_PER_COLUMN = 4',
+            'private const val RECENT_TRACKS_PER_COLUMN = 4\n\n/** Stores the scroll state of home shelves across screen transitions. */\nprivate val homeShelfScrollPositions = mutableMapOf<String, Pair<Int, Int>>()',
+            hs,
+            count=1
         )
 
     old_shelf = """@Composable
@@ -165,7 +171,7 @@ internal fun Shelf(
     isPlaying: Boolean = false,
 ) {
     val shelfKey = shelf.browseId ?: shelf.title
-    val rowState = rememberSaveable(shelfKey, saver = LazyListState.Saver) {
+    val rowState = rememberSaveable(key = shelfKey, saver = LazyListState.Saver) {
         val (index, offset) = homeShelfScrollPositions[shelfKey] ?: (0 to 0)
         LazyListState(firstVisibleItemIndex = index, firstVisibleItemScrollOffset = offset)
     }
@@ -214,7 +220,7 @@ private fun HeroShelf(
     isPlaying: Boolean = false,
 ) {
     val shelfKey = shelf.browseId ?: shelf.title
-    val rowState = rememberSaveable(shelfKey, saver = LazyListState.Saver) {
+    val rowState = rememberSaveable(key = shelfKey, saver = LazyListState.Saver) {
         val (index, offset) = homeShelfScrollPositions[shelfKey] ?: (0 to 0)
         LazyListState(firstVisibleItemIndex = index, firstVisibleItemScrollOffset = offset)
     }
