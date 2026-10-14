@@ -379,7 +379,9 @@ data class HomeShelf(
     val subtitle: String = "",
     val moreBrowseId: String? = null,
     val moreParams: String? = null,
-)
+) {
+    val browseId: String? get() = moreBrowseId
+}
 
 /**
  * These shelves minus any that mostly repeat one already on the page, or one earlier in this
