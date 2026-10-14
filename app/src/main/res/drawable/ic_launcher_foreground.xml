@@ -8,8 +8,13 @@
         android:scaleY="2.5"
         android:translateX="24"
         android:translateY="24">
+        <!-- Sombra sutil de profundidade -->
         <path
-            android:fillColor="#FFFFFFFF"
+            android:fillColor="#33000000"
+            android:pathData="M21,3.5L9,6v11.05C8.42,16.71 7.73,16.5 7,16.5c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V9.37l8,-1.67V14.05C18.42,13.71 17.73,13.5 17,13.5c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V3.5z"/>
+        <!-- Nota musical em vidro translúcido brilhante -->
+        <path
+            android:fillColor="#F0FFFFFF"
             android:pathData="M21,3L9,5.5v11.05C8.42,16.21 7.73,16 7,16c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V8.87l8,-1.67V13.55C18.42,13.21 17.73,13 17,13c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V3z"/>
     </group>
 </vector>
