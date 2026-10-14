@@ -3,6 +3,17 @@ import re
 
 print("Starting Sonium 0.2.0 patch application...")
 
+# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.2.0)
+gradle_path = "app/build.gradle.kts"
+if os.path.exists(gradle_path):
+    with open(gradle_path, "r", encoding="utf-8") as f:
+        gc = f.read()
+    gc = gc.replace('versionName = "1.8"', 'versionName = "0.2.0"')
+    gc = gc.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Sonium Dev")')
+    with open(gradle_path, "w", encoding="utf-8") as f:
+        f.write(gc)
+    print("app/build.gradle.kts patched to version 0.2.0 and Sonium Dev.")
+
 # 1. Patch PlayerConnection.kt (Artista limpo no player)
 pc_path = "app/src/main/java/com/music/bitchord/playback/PlayerConnection.kt"
 if os.path.exists(pc_path):
@@ -79,7 +90,7 @@ if os.path.exists(ps_path):
                 if (!liveItem.mediaMetadata.albumTitle.isNullOrBlank()) return@withContext
 
                 val updatedExtras = (liveItem.mediaMetadata.extras ?: Bundle()).apply {
-                    if (song.albumId != null) putString(EXTRA_ALBUM_ID, song.albumId)
+                    if (song.albumId != null) putString("bitchord.albumId", song.albumId)
                 }
                 val updatedMetadata = liveItem.mediaMetadata.buildUpon()
                     .setAlbumTitle(albumName)
@@ -89,8 +100,12 @@ if os.path.exists(ps_path):
                     .setMediaMetadata(updatedMetadata)
                     .build()
 
+                val pos = activePlayer.currentPosition
+                val wasPlaying = activePlayer.isPlaying
                 swappingMediaId = mediaId
                 activePlayer.replaceMediaItem(currentIndex, updatedItem)
+                activePlayer.seekTo(currentIndex, pos)
+                if (wasPlaying) activePlayer.play()
                 val updatedSong = updatedItem.toSong()
                 if (listenBrainzSong?.videoId == mediaId) {
                     listenBrainzSong = updatedSong
