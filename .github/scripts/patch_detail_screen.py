@@ -38,23 +38,28 @@ target = """    LaunchedEffect(page.browseId, page.title, isArtist) {
 
 replacement = """    LaunchedEffect(page.browseId, page.title, isArtist, rawSongs) {
         if (!isArtist) return@LaunchedEffect
-        val matching: List<Song> = withContext(Dispatchers.IO) {
-            val liked: List<Song> = com.music.bitchord.data.YtMusicRepository.likedSongsList()
-            val downloaded: List<Song> = runCatching { LocalMediaRepository.getDownloadedSongs(context) }.getOrDefault(emptyList())
-            val local: List<Song> = if (LocalMediaRepository.hasStoragePermission(context)) {
+        withContext(Dispatchers.IO) {
+            val liked = runCatching { com.music.bitchord.data.YtMusicRepository.likedSongsList() }.getOrDefault(emptyList())
+            val downloaded = runCatching { LocalMediaRepository.getDownloadedSongs(context) }.getOrDefault(emptyList())
+            val local = if (LocalMediaRepository.hasStoragePermission(context)) {
                 runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
             } else {
                 emptyList()
             }
             val likedIds = LikeState.overrides.value.filterValues { it == LikeStatus.LIKE }.keys
             val downloadedIds = Downloads.saved.value.keys
-            val savedFromPage: List<Song> = rawSongs.filter { it.videoId in likedIds || it.videoId in downloadedIds }
-            val allLibrary: List<Song> = (liked + downloaded + local + savedFromPage)
-            allLibrary
+            val savedFromPage = rawSongs.filter { it.videoId in likedIds || it.videoId in downloadedIds }
+
+            val allLibrary = (liked + downloaded + local + savedFromPage)
                 .distinctBy { it.videoId.ifBlank { it.localUri ?: it.title } }
-                .filter { isSongByArtist(it, page.browseId, page.title) }
+
+            val matching = allLibrary.filter { song ->
+                isSongByArtist(song, page.browseId, page.title)
+            }
+            withContext(Dispatchers.Main) {
+                libraryArtistSongs = matching
+            }
         }
-        libraryArtistSongs = matching
     }"""
 
 if target in content:
