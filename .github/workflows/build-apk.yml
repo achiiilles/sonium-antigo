@@ -13,6 +13,7 @@ jobs:
   build:
     name: Build Dev Debug APK
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +36,9 @@ jobs:
       - name: Apply DetailScreen patch
         run: python3 .github/scripts/patch_detail_screen.py
 
+      - name: Apply Sonium Branding patch
+        run: python3 .github/scripts/patch_branding.py
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -44,5 +48,5 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bitchord-dev-debug
+          name: sonium-dev-debug
           path: app/build/outputs/apk/dev/debug/*.apk
