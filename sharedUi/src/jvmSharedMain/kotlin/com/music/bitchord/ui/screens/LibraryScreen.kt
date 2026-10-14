@@ -107,7 +107,7 @@ fun LibraryScreen(
     contentPadding: PaddingValues,
     /**
      * The device's folders — downloads, local files, the remote libraries this
-     * build supports — drawn as a list under the Replay cards. Built by the
+       build supports — drawn as a list under the Replay cards. Built by the
      * app, since which of those exist is the platform's business.
      */
     links: List<LibraryLink>,
@@ -196,7 +196,7 @@ fun LibraryScreen(
                                 shelf = emptyPlaylists,
                                 onItemClick = onShelfItemClick,
                                 onItemLongPress = onShelfItemLongPress,
-                                onItemNewPlaylist = onNewPlaylist,
+                                onNewPlaylist = onNewPlaylist,
                                 onImportSpotifyPlaylist = onImportSpotifyPlaylist,
                                 onShowAll = { onShowAll(emptyPlaylists) },
                             )
