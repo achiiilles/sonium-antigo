@@ -4,6 +4,7 @@
     android:height="108dp"
     android:viewportWidth="1024"
     android:viewportHeight="1024">
+    <!-- Fundo gradiente vibrante estilo Apple Music vermelho/magenta -->
     <path android:pathData="M0,0h1024v1024h-1024z">
         <aapt:attr name="android:fillColor">
             <gradient
@@ -12,8 +13,23 @@
                 android:endX="512"
                 android:endY="1024"
                 android:type="linear">
-                <item android:color="#FB5C74" android:offset="0.0" />
-                <item android:color="#FA233B" android:offset="1.0" />
+                <item android:color="#FF2D55" android:offset="0.0" />
+                <item android:color="#FA233B" android:offset="0.5" />
+                <item android:color="#D81B60" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Camada de brilho e textura de vidro translúcido superior -->
+    <path android:pathData="M0,0h1024v512h-1024z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="512"
+                android:startY="0"
+                android:endX="512"
+                android:endY="512"
+                android:type="linear">
+                <item android:color="#4DFFFFFF" android:offset="0.0" />
+                <item android:color="#00FFFFFF" android:offset="1.0" />
             </gradient>
         </aapt:attr>
     </path>
