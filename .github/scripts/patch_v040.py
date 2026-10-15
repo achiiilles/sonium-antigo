@@ -2,17 +2,17 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
-print("Applying and validating Sonium v0.4.5 patch...")
+print("Applying and validating Sonium v0.4.6 patch...")
 
-# 1. Verify build.gradle.kts has 0.4.5 and versionCode 30
+# 1. Verify build.gradle.kts has 0.4.6 and versionCode 31
 gradle_path = Path("app/build.gradle.kts")
 gradle = gradle_path.read_text(encoding="utf-8")
-if 'versionName = "0.4.5"' not in gradle:
-    gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.5"', gradle)
-if 'versionCode = 30' not in gradle:
-    gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 30', gradle)
+if 'versionName = "0.4.6"' not in gradle:
+    gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.6"', gradle)
+if 'versionCode = 31' not in gradle:
+    gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 31', gradle)
 gradle_path.write_text(gradle, encoding="utf-8")
-print("Verified app/build.gradle.kts: versionName = 0.4.5, versionCode = 30")
+print("Verified app/build.gradle.kts: versionName = 0.4.6, versionCode = 31")
 
 # 2. Verify values-pt-rBR strings.xml
 pt_br_res = Path("app/src/main/res/values-pt-rBR/strings.xml")
@@ -30,6 +30,7 @@ print("Verified sharedUi/src/commonMain/composeResources/values-pt-rBR/strings.x
 # 3. Verify SettingsSheet.kt has iOS grouped blocks & 6 categories
 settings_path = Path("app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt")
 settings_code = settings_path.read_text(encoding="utf-8")
+
 required_sections = [
     "Reprodução & Áudio",
     "Letras",
@@ -42,4 +43,4 @@ for sec in required_sections:
         raise RuntimeError(f"Required iOS section '{sec}' missing in SettingsSheet.kt")
     print(f"Verified iOS section in SettingsSheet.kt: {sec}")
 
-print("All Sonium v0.4.5 patch checks passed successfully!")
+print("All Sonium v0.4.6 patch checks passed successfully!")
