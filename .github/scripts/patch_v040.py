@@ -2,17 +2,17 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
-print("Applying and validating Sonium v0.4.0 patch...")
+print("Applying and validating Sonium v0.4.5 patch...")
 
-# 1. Verify build.gradle.kts has 0.4.0 and versionCode 29
+# 1. Verify build.gradle.kts has 0.4.5 and versionCode 30
 gradle_path = Path("app/build.gradle.kts")
 gradle = gradle_path.read_text(encoding="utf-8")
-if 'versionName = "0.4.0"' not in gradle:
-    gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.0"', gradle)
-if 'versionCode = 29' not in gradle:
-    gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 29', gradle)
+if 'versionName = "0.4.5"' not in gradle:
+    gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.5"', gradle)
+if 'versionCode = 30' not in gradle:
+    gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 30', gradle)
 gradle_path.write_text(gradle, encoding="utf-8")
-print("Verified app/build.gradle.kts: versionName = 0.4.0, versionCode = 29")
+print("Verified app/build.gradle.kts: versionName = 0.4.5, versionCode = 30")
 
 # 2. Verify values-pt-rBR strings.xml
 pt_br_res = Path("app/src/main/res/values-pt-rBR/strings.xml")
@@ -39,6 +39,7 @@ required_sections = [
 ]
 for sec in required_sections:
     if sec not in settings_code:
-        print(f"Warning: Section '{sec}' check in SettingsSheet.kt")
+        raise RuntimeError(f"Required iOS section '{sec}' missing in SettingsSheet.kt")
+    print(f"Verified iOS section in SettingsSheet.kt: {sec}")
 
-print("All Sonium v0.4.0 patch checks passed successfully!")
+print("All Sonium v0.4.5 patch checks passed successfully!")
