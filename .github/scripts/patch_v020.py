@@ -1,19 +1,19 @@
 import os
 import re
 
-print("Starting Sonium 0.4.5 patch application...")
+print("Starting Sonium 0.4.6 patch application...")
 
-# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.4.5)
+# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.4.6)
 gradle_path = "app/build.gradle.kts"
 if os.path.exists(gradle_path):
     with open(gradle_path, "r", encoding="utf-8") as f:
         gc = f.read()
-    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.5"', gc)
-    gc = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 30', gc)
+    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.6"', gc)
+    gc = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 31', gc)
     gc = gc.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Sonium Dev")')
     with open(gradle_path, "w", encoding="utf-8") as f:
         f.write(gc)
-    print("app/build.gradle.kts patched to version 0.4.5 and Sonium Dev.")
+    print("app/build.gradle.kts patched to version 0.4.6 and Sonium Dev.")
 
 # 1. Patch InnertubeParser.kt (Parser de artista limpo sem rótulo de tipo)
 ip_path = "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/innertube/InnertubeParser.kt"
@@ -66,7 +66,6 @@ if os.path.exists(pc_path):
 
     helper = r'''private const val ARTISTS_NAMES = "artistNames"
 private const val ARTISTS_IDS = "artistIds"
-
 private val MEDIA_PREFIX_REGEX = Regex("^(?:(?:m[úu]sica|song|v[íi]deo|track|faixa|áudio|audio|single|ep|álbum|album)\\s*[•·\\-|:]\\s*)+", RegexOption.IGNORE_CASE)
 private val MEDIA_TYPE_ISOLATED = setOf("música", "musica", "song", "vídeo", "video", "track", "faixa", "áudio", "audio", "álbum", "album", "single", "ep", "artist", "artista")
 
@@ -101,12 +100,10 @@ fun cleanMediaArtist(raw: String): String {
         'artist = mediaMetadata.artist?.toString().orEmpty(),',
         'artist = cleanMediaArtist(mediaMetadata.artist?.toString().orEmpty()).ifBlank { mediaMetadata.extras?.artistsFromBundle()?.firstOrNull()?.name?.let { cleanMediaArtist(it) }?.ifBlank { null } ?: "Unknown artist" },'
     )
-
     pc = pc.replace(
         'artist = b.getString("artist").orEmpty(),',
         'artist = cleanMediaArtist(b.getString("artist").orEmpty()).ifBlank { b.artistsFromBundle().firstOrNull()?.name?.let { cleanMediaArtist(it) }?.ifBlank { null } ?: "Unknown artist" },'
     )
-
     old_to_media = """.setTitle(title)
             .setArtist(artist)"""
     new_to_media = """.setTitle(title)
@@ -138,7 +135,6 @@ if os.path.exists(ps_path):
         ps = ps.replace(target_trigger, new_trigger, 1)
 
         method_code = """    private var albumResolveJob: Job? = null
-
     private fun resolveAlbumMetadata(currentItem: MediaItem) {
         val mediaId = currentItem.mediaId
         albumResolveJob?.cancel()
@@ -151,7 +147,6 @@ if os.path.exists(ps_path):
                 val liveItem = activePlayer.currentMediaItem ?: return@withContext
                 if (liveItem.mediaId != mediaId) return@withContext
                 if (!liveItem.mediaMetadata.albumTitle.isNullOrBlank()) return@withContext
-
                 val updatedExtras = (liveItem.mediaMetadata.extras ?: Bundle()).apply {
                     if (song.albumId != null) putString("bitchord.albumId", song.albumId)
                 }
@@ -162,7 +157,6 @@ if os.path.exists(ps_path):
                 val updatedItem = liveItem.buildUpon()
                     .setMediaMetadata(updatedMetadata)
                     .build()
-
                 val pos = activePlayer.currentPosition
                 val wasPlaying = activePlayer.isPlaying
                 swappingMediaId = mediaId
@@ -176,13 +170,12 @@ if os.path.exists(ps_path):
             }
         }
     }
-
 """
         ps = ps.replace("    override fun onCreate() {", method_code + "    override fun onCreate() {", 1)
 
-        with open(ps_path, "w", encoding="utf-8") as f:
-            f.write(ps)
-        print("PlaybackService.kt patched for album metadata resolution.")
+    with open(ps_path, "w", encoding="utf-8") as f:
+        f.write(ps)
+    print("PlaybackService.kt patched for album metadata resolution.")
 
 # 4. Patch HomeScreen.kt (Memória de rolagem global + fotos redondas de artistas)
 hs_path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt"
@@ -299,34 +292,34 @@ private fun HeroShelf(
     if old_hero_shelf in hs:
         hs = hs.replace(old_hero_shelf, new_hero_shelf)
 
-    old_shelf_card_art = """            else -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .thumbnailBorder(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                ) {"""
+    old_shelf_card_art = """        else -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .thumbnailBorder(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {"""
 
-    new_shelf_card_art = """            else -> {
-                val isArtistCard = item.browseId?.startsWith("UC") == true ||
-                    item.browseId?.startsWith("FEmusic_library_corpus_artist") == true ||
-                    item.subtitle.equals("Artist", ignoreCase = true) ||
-                    item.subtitle.equals("Artista", ignoreCase = true) ||
-                    item.subtitle.contains("Artist •", ignoreCase = true) ||
-                    item.subtitle.contains("Artista •", ignoreCase = true) ||
-                    item.subtitle.contains("• Artist", ignoreCase = true) ||
-                    item.subtitle.contains("• Artista", ignoreCase = true)
-                val cardShape = if (isArtistCard) CircleShape else RoundedCornerShape(12.dp)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(cardShape)
-                        .thumbnailBorder(cardShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                ) {"""
+    new_shelf_card_art = """        else -> {
+            val isArtistCard = item.browseId?.startsWith("UC") == true ||
+                item.browseId?.startsWith("FEmusic_library_corpus_artist") == true ||
+                item.subtitle.equals("Artist", ignoreCase = true) ||
+                item.subtitle.equals("Artista", ignoreCase = true) ||
+                item.subtitle.contains("Artist •", ignoreCase = true) ||
+                item.subtitle.contains("Artista •", ignoreCase = true) ||
+                item.subtitle.contains("• Artist", ignoreCase = true) ||
+                item.subtitle.contains("• Artista", ignoreCase = true)
+            val cardShape = if (isArtistCard) CircleShape else RoundedCornerShape(12.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(cardShape)
+                    .thumbnailBorder(cardShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {"""
     if old_shelf_card_art in hs:
         hs = hs.replace(old_shelf_card_art, new_shelf_card_art)
 
@@ -344,7 +337,6 @@ if os.path.exists(ds_path):
         r'(\s+)AsyncImage\(\s*model\s*=\s*item\.thumbnailUrl\.artworkAt\(CARD_ART_PX\),\s*contentDescription\s*=\s*null,\s*modifier\s*=\s*Modifier\s*\.fillMaxWidth\(\)\s*\.aspectRatio\(1f\)\s*\.clip\(RoundedCornerShape\(10\.dp\)\)\s*\.thumbnailBorder\(RoundedCornerShape\(10\.dp\)\)\s*\.background\(palette\.elevated\),\s*\)',
         re.DOTALL
     )
-
     new_sec_card_replacement = r'''\1val isArtistCard = item.browseId?.startsWith("UC") == true ||
 \1    item.browseId?.startsWith("FEmusic_library_corpus_artist") == true ||
 \1    item.subtitle.equals("Artist", ignoreCase = true) ||
@@ -367,7 +359,6 @@ if os.path.exists(ds_path):
 \1        .thumbnailBorder(cardShape)
 \1        .background(palette.elevated),
 \1)'''
-
     if sec_card_pattern.search(ds):
         ds = sec_card_pattern.sub(new_sec_card_replacement, ds)
         with open(ds_path, "w", encoding="utf-8") as f:
@@ -382,13 +373,13 @@ if os.path.exists(ss_path):
     with open(ss_path, "r", encoding="utf-8") as f:
         ss = f.read()
 
-    new_sec_pt = """    return listOf(
-        SearchSection("Artistas", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
-        SearchSection("Músicas", rows.filterIsInstance<SearchResult.Track>()),
-        SearchSection("Álbuns", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
-        SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
-        SearchSection("Mais", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
-    ).filter { it.rows.isNotEmpty() }"""
+    new_sec_pt = """        return listOf(
+            SearchSection("Artistas", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
+            SearchSection("Músicas", rows.filterIsInstance<SearchResult.Track>()),
+            SearchSection("Álbuns", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
+            SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
+            SearchSection("Mais", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
+        ).filter { it.rows.isNotEmpty() }"""
 
     ss = re.sub(
         r'return listOf\(\s*SearchSection\("(?:Songs|Artists)".*?\)\.filter \{ it\.rows\.isNotEmpty\(\) \}',
@@ -433,59 +424,57 @@ if os.path.exists(ls_path):
     with open(ls_path, "r", encoding="utf-8") as f:
         ls = f.read()
 
-    old_grid_items = """            items(sortedShelf.items, key = { it.browseId ?: it.title }) { item ->
-                ShelfCard(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    onLongPress = { onItemLongPress(item) },
-                    modifier = Modifier.fillMaxWidth(),
-                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
-                )
-            }"""
+    old_grid_items = """                items(sortedShelf.items, key = { it.browseId ?: it.title }) { item ->
+                    ShelfCard(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onLongPress = { onItemLongPress(item) },
+                        modifier = Modifier.fillMaxWidth(),
+                        isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                    )
+                }"""
 
-    new_grid_items = """            val isArtistShelf = shelf.title.equals("Artists", ignoreCase = true) ||
-                shelf.title.equals("Artistas", ignoreCase = true)
-            items(sortedShelf.items, key = { it.browseId ?: it.title }) { rawItem ->
-                val item = if (isArtistShelf && rawItem.subtitle.isBlank()) {
-                    rawItem.copy(subtitle = "Artista")
-                } else if (isArtistShelf && !rawItem.subtitle.contains("Artist", ignoreCase = true) && !rawItem.subtitle.contains("Artista", ignoreCase = true)) {
-                    rawItem.copy(subtitle = "Artista • ${rawItem.subtitle}")
-                } else rawItem
-                ShelfCard(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    onLongPress = { onItemLongPress(item) },
-                    modifier = Modifier.fillMaxWidth(),
-                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
-                )
-            }"""
-
+    new_grid_items = """                val isArtistShelf = shelf.title.equals("Artists", ignoreCase = true) ||
+                    shelf.title.equals("Artistas", ignoreCase = true)
+                items(sortedShelf.items, key = { it.browseId ?: it.title }) { rawItem ->
+                    val item = if (isArtistShelf && rawItem.subtitle.isBlank()) {
+                        rawItem.copy(subtitle = "Artista")
+                    } else if (isArtistShelf && !rawItem.subtitle.contains("Artist", ignoreCase = true) && !rawItem.subtitle.contains("Artista", ignoreCase = true)) {
+                        rawItem.copy(subtitle = "Artista • ${rawItem.subtitle}")
+                    } else rawItem
+                    ShelfCard(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onLongPress = { onItemLongPress(item) },
+                        modifier = Modifier.fillMaxWidth(),
+                        isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                    )
+                }"""
     if old_grid_items in ls:
         ls = ls.replace(old_grid_items, new_grid_items)
 
-    old_shelf_items = """            items(visibleItems) { item ->
-                ShelfCard(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    onLongPress = { onItemLongPress(item) },
-                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
-                )
-            }"""
+    old_shelf_items = """                items(visibleItems) { item ->
+                    ShelfCard(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onLongPress = { onItemLongPress(item) },
+                        isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                    )
+                }"""
 
-    new_shelf_items = """            items(visibleItems) { rawItem ->
-                val item = if (isArtistShelf && rawItem.subtitle.isBlank()) {
-                    rawItem.copy(subtitle = "Artista")
-                } else if (isArtistShelf && !rawItem.subtitle.contains("Artist", ignoreCase = true) && !rawItem.subtitle.contains("Artista", ignoreCase = true)) {
-                    rawItem.copy(subtitle = "Artista • ${rawItem.subtitle}")
-                } else rawItem
-                ShelfCard(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    onLongPress = { onItemLongPress(item) },
-                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
-                )
-            }"""
-
+    new_shelf_items = """                items(visibleItems) { rawItem ->
+                    val item = if (isArtistShelf && rawItem.subtitle.isBlank()) {
+                        rawItem.copy(subtitle = "Artista")
+                    } else if (isArtistShelf && !rawItem.subtitle.contains("Artist", ignoreCase = true) && !rawItem.subtitle.contains("Artista", ignoreCase = true)) {
+                        rawItem.copy(subtitle = "Artista • ${rawItem.subtitle}")
+                    } else rawItem
+                    ShelfCard(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onLongPress = { onItemLongPress(item) },
+                        isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                    )
+                }"""
     if old_shelf_items in ls:
         ls = ls.replace(old_shelf_items, new_shelf_items)
 
@@ -498,6 +487,7 @@ models_path = "shared/src/commonMain/kotlin/com/music/bitchord/data/model/Models
 if os.path.exists(models_path):
     with open(models_path, "r", encoding="utf-8") as f:
         mc = f.read()
+
     mc = mc.replace('ALL("All", null)', 'ALL("Tudo", null)')
     mc = mc.replace('ALL("Todos", null)', 'ALL("Tudo", null)')
     mc = mc.replace('SONGS("Songs",', 'SONGS("Músicas",')
@@ -505,8 +495,9 @@ if os.path.exists(models_path):
     mc = mc.replace('ALBUMS("Albums",', 'ALBUMS("Álbuns",')
     mc = mc.replace('ARTISTS("Artists",', 'ARTISTS("Artistas",')
     mc = mc.replace('PLAYLISTS("Playlists",', 'PLAYLISTS("Playlists",')
+
     with open(models_path, "w", encoding="utf-8") as f:
         f.write(mc)
     print("Models.kt patched for Portuguese SearchFilter labels.")
 
-print("All Sonium 0.4.5 patches applied successfully!")
+print("All Sonium 0.4.6 patches applied successfully!")
