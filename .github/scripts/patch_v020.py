@@ -8,8 +8,7 @@ gradle_path = "app/build.gradle.kts"
 if os.path.exists(gradle_path):
     with open(gradle_path, "r", encoding="utf-8") as f:
         gc = f.read()
-    gc = gc.replace('versionName = "1.8"', 'versionName = "0.2.5"')
-    gc = gc.replace('versionName = "0.2.0"', 'versionName = "0.2.5"')
+    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.2.5"', gc)
     gc = gc.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Sonium Dev")')
     with open(gradle_path, "w", encoding="utf-8") as f:
         f.write(gc)
@@ -21,27 +20,24 @@ if os.path.exists(ip_path):
     with open(ip_path, "r", encoding="utf-8") as f:
         ipc = f.read()
 
-    old_type_words = """    private val TYPE_WORDS = setOf(
-        "song", "video", "album", "single", "ep", "artist",
-        "playlist", "podcast", "episode",
-    )"""
     new_type_words = """    private val TYPE_WORDS = setOf(
         "song", "video", "album", "single", "ep", "artist",
         "playlist", "podcast", "episode", "música", "musica",
         "vídeo", "faixa", "áudio", "audio", "track", "álbum", "artista",
     )"""
-    if old_type_words in ipc:
-        ipc = ipc.replace(old_type_words, new_type_words)
+    ipc = re.sub(
+        r'private val TYPE_WORDS\s*=\s*setOf\([^)]+\)',
+        new_type_words.strip(),
+        ipc,
+        flags=re.DOTALL
+    )
 
-    target_artist_runs = """        val artistGroup = groups.firstOrNull { group ->
-            group.any { run ->
-                val pageType = run.o("navigationEndpoint").o("browseEndpoint")
-                    .o("browseEndpointContextSupportedConfigs")
-                    .o("browseEndpointContextMusicConfig").s("pageType").orEmpty()
-                "ARTIST" in pageType
-            }
-        } ?: return null"""
-    replacement_artist_runs = """        val validGroups = groups.filter { group ->
+    if "val validGroups = groups.filter" not in ipc:
+        target_runs_pattern = re.compile(
+            r'val artistGroup = groups\.firstOrNull \{ group ->\s*group\.any \{ run ->\s*val pageType = run\.o\("navigationEndpoint"\)\.o\("browseEndpoint"\)\s*\.o\("browseEndpointContextSupportedConfigs"\)\s*\.o\("browseEndpointContextMusicConfig"\)\.s\("pageType"\)\.orEmpty\(\)\s*"ARTIST" in pageType\s*\}\s*\} \?: return null',
+            re.DOTALL
+        )
+        replacement_artist_runs = """val validGroups = groups.filter { group ->
             val text = group.joinToString("") { it.s("text").orEmpty() }.trim()
             val lower = text.lowercase(Locale.ROOT)
             text.isNotBlank() && lower !in TYPE_WORDS && !text.matches(DURATION) && !text.matches(TALLY) && !text.matches(YEAR)
@@ -55,8 +51,7 @@ if os.path.exists(ip_path):
                 "ARTIST" in pageType || "USER_CHANNEL" in pageType || browseId.startsWith("UC")
             }
         } ?: validGroups.firstOrNull() ?: return null"""
-    if target_artist_runs in ipc:
-        ipc = ipc.replace(target_artist_runs, replacement_artist_runs)
+        ipc = target_runs_pattern.sub(replacement_artist_runs, ipc)
 
     with open(ip_path, "w", encoding="utf-8") as f:
         f.write(ipc)
@@ -321,7 +316,9 @@ private fun HeroShelf(
                     item.subtitle.contains("Artist •", ignoreCase = true) ||
                     item.subtitle.contains("Artista •", ignoreCase = true) ||
                     item.subtitle.contains("• Artist", ignoreCase = true) ||
-                    item.subtitle.contains("• Artista", ignoreCase = true)
+                    item.subtitle.contains("• Artista", ignoreCase = true) ||
+                    item.subtitle.contains("subscribers", ignoreCase = true) ||
+                    item.subtitle.contains("inscritos", ignoreCase = true)
                 val cardShape = if (isArtistCard) CircleShape else RoundedCornerShape(12.dp)
                 Box(
                     modifier = Modifier
@@ -344,42 +341,36 @@ if os.path.exists(ds_path):
     with open(ds_path, "r", encoding="utf-8") as f:
         ds = f.read()
 
-    old_sec_card = """        AsyncImage(
-            model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(10.dp))
-                .thumbnailBorder(RoundedCornerShape(10.dp))
-                .background(palette.elevated),
-        )"""
+    sec_card_pattern = re.compile(
+        r'(\s+)AsyncImage\(\s*model\s*=\s*item\.thumbnailUrl\.artworkAt\(CARD_ART_PX\),\s*contentDescription\s*=\s*null,\s*modifier\s*=\s*Modifier\s*\.fillMaxWidth\(\)\s*\.aspectRatio\(1f\)\s*\.clip\(RoundedCornerShape\(10\.dp\)\)\s*\.thumbnailBorder\(RoundedCornerShape\(10\.dp\)\)\s*\.background\(palette\.elevated\),\s*\)',
+        re.DOTALL
+    )
 
-    new_sec_card = """        val isArtistCard = item.browseId?.startsWith("UC") == true ||
-            item.browseId?.startsWith("FEmusic_library_corpus_artist") == true ||
-            item.subtitle.equals("Artist", ignoreCase = true) ||
-            item.subtitle.equals("Artista", ignoreCase = true) ||
-            item.subtitle.contains("Artist •", ignoreCase = true) ||
-            item.subtitle.contains("Artista •", ignoreCase = true) ||
-            item.subtitle.contains("• Artist", ignoreCase = true) ||
-            item.subtitle.contains("• Artista", ignoreCase = true) ||
-            item.subtitle.contains("subscribers", ignoreCase = true) ||
-            item.subtitle.contains("inscritos", ignoreCase = true)
-        val cardShape = if (isArtistCard) CircleShape else RoundedCornerShape(10.dp)
-        AsyncImage(
-            model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(cardShape)
-                .thumbnailBorder(cardShape)
-                .background(palette.elevated),
-        )"""
+    new_sec_card_replacement = r'''\1val isArtistCard = item.browseId?.startsWith("UC") == true ||
+\1    item.browseId?.startsWith("FEmusic_library_corpus_artist") == true ||
+\1    item.subtitle.equals("Artist", ignoreCase = true) ||
+\1    item.subtitle.equals("Artista", ignoreCase = true) ||
+\1    item.subtitle.contains("Artist •", ignoreCase = true) ||
+\1    item.subtitle.contains("Artista •", ignoreCase = true) ||
+\1    item.subtitle.contains("• Artist", ignoreCase = true) ||
+\1    item.subtitle.contains("• Artista", ignoreCase = true) ||
+\1    item.subtitle.contains("subscribers", ignoreCase = true) ||
+\1    item.subtitle.contains("inscritos", ignoreCase = true)
+\1val cardShape = if (isArtistCard) CircleShape else RoundedCornerShape(10.dp)
+\1AsyncImage(
+\1    model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
+\1    contentDescription = null,
+\1    contentScale = ContentScale.Crop,
+\1    modifier = Modifier
+\1        .fillMaxWidth()
+\1        .aspectRatio(1f)
+\1        .clip(cardShape)
+\1        .thumbnailBorder(cardShape)
+\1        .background(palette.elevated),
+\1)'''
 
-    if old_sec_card in ds:
-        ds = ds.replace(old_sec_card, new_sec_card)
+    if sec_card_pattern.search(ds):
+        ds = sec_card_pattern.sub(new_sec_card_replacement, ds)
         with open(ds_path, "w", encoding="utf-8") as f:
             f.write(ds)
         print("DetailScreen.kt patched for round artist SectionCard.")
@@ -392,22 +383,6 @@ if os.path.exists(ss_path):
     with open(ss_path, "r", encoding="utf-8") as f:
         ss = f.read()
 
-    old_sec_1 = """    return listOf(
-        SearchSection("Songs", rows.filterIsInstance<SearchResult.Track>()),
-        SearchSection("Artists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
-        SearchSection("Albums", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
-        SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
-        SearchSection("More", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
-    ).filter { it.rows.isNotEmpty() }"""
-
-    old_sec_2 = """    return listOf(
-        SearchSection("Artists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
-        SearchSection("Songs", rows.filterIsInstance<SearchResult.Track>()),
-        SearchSection("Albums", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
-        SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
-        SearchSection("More", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
-    ).filter { it.rows.isNotEmpty() }"""
-
     new_sec_pt = """    return listOf(
         SearchSection("Artistas", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
         SearchSection("Músicas", rows.filterIsInstance<SearchResult.Track>()),
@@ -416,10 +391,12 @@ if os.path.exists(ss_path):
         SearchSection("Mais", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
     ).filter { it.rows.isNotEmpty() }"""
 
-    if old_sec_1 in ss:
-        ss = ss.replace(old_sec_1, new_sec_pt)
-    elif old_sec_2 in ss:
-        ss = ss.replace(old_sec_2, new_sec_pt)
+    ss = re.sub(
+        r'return listOf\(\s*SearchSection\("(?:Songs|Artists)".*?\)\.filter \{ it\.rows\.isNotEmpty\(\) \}',
+        new_sec_pt.strip(),
+        ss,
+        flags=re.DOTALL
+    )
 
     old_recent_entity = """        Box(Modifier.size(52.dp)) {
             AsyncImage(
