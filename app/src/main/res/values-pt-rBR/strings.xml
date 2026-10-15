@@ -60,4 +60,26 @@
     <string name="widget_open_bitchord">Abrir Sonium</string>
     <string name="default_replay_holder">Ouvinte Sonium</string>
     <string name="counted_on_device_with_bitchord">Contabilizado neste dispositivo com o Sonium</string>
+
+    <string name="translation_language">Idioma de tradução</string>
+    <string name="translation_language_description">O idioma para o qual o botão traduzir converte as letras.</string>
+    <string name="translation_language_app_default">Idioma do aplicativo</string>
+    <string name="translation_language_subtitle">Segue o idioma do aplicativo</string>
+    <string name="search_languages">Pesquisar idiomas</string>
+    <string name="no_languages_match">Nenhum idioma correspondente</string>
+
+    <string name="audio_pipeline">Pipeline de áudio</string>
+    <string name="audio_pipeline_subtitle">Caminho do sinal ao vivo, do decodificador à saída</string>
+    <string name="cast_dialog_title">Transmitir</string>
+    <string name="cast_dialog_subtitle">Reproduzir em um alto-falante Chromecast ou Google Cast</string>
+    <string name="cast_searching">Procurando dispositivos…</string>
+    <string name="cast_searching_hint">Seu celular e o receptor precisam estar na mesma rede Wi-Fi.</string>
+    <string name="cast_device_connecting">Conectando…</string>
+    <string name="cast_device_connected">Transmitindo</string>
+    <string name="cast_stop">Parar transmissão</string>
+    <string name="cast_track_unsupported">Esta faixa não pode ser transmitida</string>
+    <string name="cast_connect_failed">Não foi possível conectar ao receptor</string>
+    <string name="shared_link">Link compartilhado</string>
+    <string name="song_will_play_next">A música tocará a seguir</string>
+    <string name="song_added_to_queue">Música adicionada à fila</string>
 </resources>
