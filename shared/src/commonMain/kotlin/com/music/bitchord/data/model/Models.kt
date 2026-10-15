@@ -318,11 +318,11 @@ sealed interface SearchResult {
 
 enum class SearchFilter(val label: String, val params: String?) {
     /** YouTube Music's mixed search page: songs, artists, albums and playlists. */
-    ALL("All", null),
-    SONGS("Songs", "EgWKAQIIAWoKEAkQChAFEAMQBA=="),
-    VIDEOS("Videos", "EgWKAQIQAWoKEAkQChAFEAMQBA=="),
-    ALBUMS("Albums", "EgWKAQIYAWoKEAkQChAFEAMQBA=="),
-    ARTISTS("Artists", "EgWKAQIgAWoKEAkQChAFEAMQBA=="),
+    ALL("Tudo", null),
+    SONGS("Músicas", "EgWKAQIIAWoKEAkQChAFEAMQBA=="),
+    VIDEOS("Vídeos", "EgWKAQIQAWoKEAkQChAFEAMQBA=="),
+    ALBUMS("Álbuns", "EgWKAQIYAWoKEAkQChAFEAMQBA=="),
+    ARTISTS("Artistas", "EgWKAQIgAWoKEAkQChAFEAMQBA=="),
     PLAYLISTS("Playlists", "EgWKAQIoAWoKEAkQChAFEAMQBA=="),
 }
 
