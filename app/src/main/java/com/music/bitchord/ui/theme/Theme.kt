@@ -177,6 +177,7 @@ fun IosSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    colors: Any? = null,
 ) {
     val haptics = LocalHapticFeedback.current
     val trackColor by animateColorAsState(
