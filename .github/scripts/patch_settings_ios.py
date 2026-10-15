@@ -13,65 +13,48 @@ with urllib.request.urlopen(req) as resp:
 
 print(f"Downloaded authentic SettingsSheet.kt ({len(code)} bytes)")
 
-# 1. Add imports from ui.theme
-theme_imports = """
+# 1. Add imports from ui.theme and typography at the very top after package declaration
+package_decl = "package com.music.bitchord.ui.screens"
+extra_imports = """package com.music.bitchord.ui.screens
+
+import androidx.compose.ui.text.font.FontWeight
 import com.music.bitchord.ui.theme.IosSwitch
 import com.music.bitchord.ui.theme.SettingsPillCard
 import com.music.bitchord.ui.theme.CapsuleShape
 import com.music.bitchord.ui.theme.InsetGroupedShape
 """
-code = code.replace("import androidx.compose.ui.text.font.FontWeight", "import androidx.compose.ui.text.font.FontWeight" + theme_imports)
+assert package_decl in code, "package declaration missing"
+code = code.replace(package_decl, extra_imports, 1)
 
-# 2. Update subpage header title to bold headlineMedium
-code = code.replace(
-    'text = selectedCategory!!.title,\n                    style = MaterialTheme.typography.headlineMedium,',
-    'text = selectedCategory!!.title,\n                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),'
+# 2. Remove the old local SettingsPillCard declaration from SettingsSheet.kt so it uses Theme.kt's official one
+m = re.search(r'@Composable\s*\nfun SettingsPillCard\([\s\S]*?\n\}\n\}', code)
+if m:
+    code = code[:m.start()] + code[m.end():]
+    print("Removed local SettingsPillCard definition.")
+
+# 3. Add trailing = { Chevron() } to SettingsPillCard in the category loop
+code = re.sub(
+    r'(SettingsPillCard\s*\(\s*icon\s*=\s*category\.icon,\s*title\s*=\s*category\.title,\s*subtitle\s*=\s*category\.subtitle,\s*onClick\s*=\s*\{\s*selectedCategory\s*=\s*category\s*\},\s*modifier\s*=\s*Modifier\.padding\([^)]+\),)',
+    r'\1\n                    trailing = { Chevron() },',
+    code
 )
 
-# 3. Update search empty condition so it only displays when searchQuery.isNotBlank()
-code = code.replace(
-    'if (!search.anyMatch) {\n            MessageState(stringResource(R.string.settings_search_empty, searchQuery))\n        }',
-    'if (searchQuery.isNotBlank() && !search.anyMatch) {\n            MessageState(stringResource(R.string.settings_search_empty, searchQuery))\n        }'
+# 4. Update subpage header title to bold headlineMedium
+code = re.sub(
+    r'text\s*=\s*selectedCategory!!\.title,\s*style\s*=\s*MaterialTheme\.typography\.headlineMedium,',
+    'text = selectedCategory!!.title,\n                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),',
+    code
 )
 
-# 4. Clean footer (remove Discord, Developer, Website and keep only Sonium + GPL v3)
-colophon_old = """        if (searchQuery.isBlank() && selectedCategory == null) {
-            Text(
-                text = buildAnnotatedString {
-                    append("Sonium $version  ")
-                    val linkStyles = TextLinkStyles(
-                        style = SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                            textDecoration = TextDecoration.Underline,
-                        ),
-                    )
-                    withLink(LinkAnnotation.Url("https://discord.gg/7cR3R9Cq6F", linkStyles)) {
-                        append("Discord")
-                    }
-                    append("  ")
-                    withLink(LinkAnnotation.Url("https://bitchord.com", linkStyles)) {
-                        append("Website")
-                    }
-                    append("  ")
-                    withLink(LinkAnnotation.Url("https://github.com/fast4x", linkStyles)) {
-                        append("Developer")
-                    }
-                    append("  ")
-                    withLink(LinkAnnotation.Url("https://github.com/achiilles75/Sonium", linkStyles)) {
-                        append("GitHub")
-                    }
-                    append("\\nGNU General Public License v3.0")
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp, bottom = 16.dp),
-            )
-        }"""
+# 5. Update search empty condition so it only displays when searchQuery.isNotBlank()
+code = re.sub(
+    r'if\s*\(!search\.anyMatch\)\s*\{\s*MessageState\(stringResource\(R\.string\.settings_search_empty,\s*searchQuery\)\)\s*\}',
+    'if (searchQuery.isNotBlank() && !search.anyMatch) {\n            MessageState(stringResource(R.string.settings_search_empty, searchQuery))\n        }',
+    code
+)
 
-colophon_new = """        if (searchQuery.isBlank() && selectedCategory == null) {
+# 6. Clean footer (remove Discord, Developer, Website and keep only Sonium + GPL v3)
+clean_footer = """        if (searchQuery.isBlank() && selectedCategory == null) {
             Text(
                 text = buildAnnotatedString {
                     append("Sonium $version  ")
@@ -94,42 +77,51 @@ colophon_new = """        if (searchQuery.isBlank() && selectedCategory == null)
                     .padding(top = 24.dp, bottom = 16.dp),
             )
         }"""
-code = code.replace(colophon_old, colophon_new)
 
-# 5. In SettingsGroup, support standalone capsule vs inset grouped multiple
-code = code.replace(
-    'topSpacing: Dp = 26.dp,\n    content: @Composable () -> Unit,\n) {\n    if (header != null) {',
-    'topSpacing: Dp = 26.dp,\n    isSingleItem: Boolean = false,\n    content: @Composable () -> Unit,\n) {\n    val shape = if (isSingleItem) CapsuleShape else InsetGroupedShape\n    if (header != null) {'
-)
-code = code.replace(
-    '.clip(GroupShape)\n            .background(MaterialTheme.colorScheme.surfaceVariant),',
-    '.clip(shape)\n            .background(MaterialTheme.colorScheme.surfaceVariant),'
-)
-code = code.replace(
-    'SettingsGroup(\n        header = header,\n        footer = footer,\n        topSpacing = topSpacing,\n    ) {',
-    'val isSingleItem = scope.entries.size == 1\n    SettingsGroup(\n        header = header,\n        footer = footer,\n        topSpacing = topSpacing,\n        isSingleItem = isSingleItem,\n    ) {'
+code = re.sub(
+    r'if\s*\(searchQuery\.isBlank\(\)\s*&&\s*selectedCategory\s*==\s*null\)\s*\{\s*Text\(\s*text\s*=\s*buildAnnotatedString\s*\{[\s\S]*?padding\(top\s*=\s*24\.dp,\s*bottom\s*=\s*\d+\.dp\),\s*\)\s*\}',
+    clean_footer,
+    code
 )
 
-# 6. Replace all Switch with IosSwitch in SettingsSheet.kt
-# First in trailing/Row scopes
-code = code.replace(
-    'Switch(\n                            checked = ',
-    'IosSwitch(\n                            checked = '
+# 7. In SettingsGroup, support standalone capsule vs inset grouped multiple
+code = re.sub(
+    r'topSpacing:\s*Dp\s*=\s*26\.dp,\s*content:\s*@Composable\s*\(\)\s*->\s*Unit,\s*\)\s*\{\s*if\s*\(header\s*!=\s*null\)\s*\{',
+    'topSpacing: Dp = 26.dp,\n    isSingleItem: Boolean = false,\n    content: @Composable () -> Unit,\n) {\n    val shape = if (isSingleItem) CapsuleShape else InsetGroupedShape\n    if (header != null) {',
+    code
 )
-code = code.replace(
-    'Switch(\n            checked = checked,',
-    'IosSwitch(\n            checked = checked,'
+code = re.sub(
+    r'\.clip\(GroupShape\)\s*\.background\(MaterialTheme\.colorScheme\.surfaceVariant\),',
+    '.clip(shape)\n            .background(MaterialTheme.colorScheme.surfaceVariant),',
+    code
+)
+code = re.sub(
+    r'SettingsGroup\(\s*header\s*=\s*header,\s*footer\s*=\s*footer,\s*topSpacing\s*=\s*topSpacing,\s*\)\s*\{',
+    'val isSingleItem = scope.entries.size == 1\n    SettingsGroup(\n        header = header,\n        footer = footer,\n        topSpacing = topSpacing,\n        isSingleItem = isSingleItem,\n    ) {',
+    code
 )
 
-# 7. Write code to SettingsSheet.kt
+# 8. Replace all Switch with IosSwitch in SettingsSheet.kt
+code = re.sub(r'\bSwitch\(', 'IosSwitch(', code)
+
+# 9. Explicit parameter type for highPerformanceMode onCheckedChange
+code = code.replace(
+    'onCheckedChange = { enabled ->',
+    'onCheckedChange = { enabled: Boolean ->'
+)
+
+# 10. Write code to SettingsSheet.kt
 settings_path.write_text(code, encoding="utf-8")
 print(f"SettingsSheet.kt successfully patched ({len(code)} bytes)!")
 
 # Assertions
 assert "IosSwitch" in code, "IosSwitch not found in SettingsSheet.kt"
 assert "CapsuleShape" in code, "CapsuleShape not found in SettingsSheet.kt"
+assert "InsetGroupedShape" in code, "InsetGroupedShape not found in SettingsSheet.kt"
+assert "FontWeight" in code, "FontWeight missing"
 assert "SettingsCategory" in code, "SettingsCategory enum missing"
-assert "SettingsPillCard" in code, "SettingsPillCard composable missing"
 assert "selectedCategory" in code, "selectedCategory state missing"
 assert "BackHandler" in code, "BackHandler missing"
+assert "Discord" not in code, "Discord link still present in footer"
+assert "bitchord.kushagrasingh.in" not in code, "Website link still present in footer"
 print("All assertions passed!")
