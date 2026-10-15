@@ -25,7 +25,8 @@ import java.util.zip.GZIPOutputStream
 /**
  * Tradutor de letras inteligente por IA com prompt poético dinâmico.
  * Adapta rimas, métrica lírica e vocabulário para o idioma ativo do app,
- * preservando a quantidade estrita de linhas e armazenando traduções em cache local.
+ * preservando a quantidade estrita de linhas com alinhamento resiliente
+ * e armazenando traduções em cache local.
  * Utiliza o endpoint oficial da API do Gemini 1.5 Flash (Google AI Studio).
  */
 object AiLyricsTranslator {
@@ -109,11 +110,11 @@ $originalText"""
         val prompt = buildPoeticPrompt(targetLanguageDisplayName, originalBody, lineCount)
 
         val translatedLines = withContext(Dispatchers.IO) {
-            callAiCompletion(prompt, key)
+            callAiCompletion(prompt, key, lineCount, lines)
         }
 
-        if (translatedLines == null || translatedLines.size != lines.size) {
-            // Em caso de falha na IA ou divergência de linhas, não usa fallback silencioso
+        if (translatedLines == null || translatedLines.isEmpty()) {
+            // Em caso de falha na IA ou resposta vazia
             return LyricsTranslation.Result.Unavailable
         }
 
@@ -134,7 +135,32 @@ $originalText"""
         )
     }
 
-    private fun callAiCompletion(prompt: String, apiKey: String): List<String>? {
+    private fun alignLinesResiliently(originalLines: List<LyricLine>, translatedContent: String): List<String> {
+        val rawLines = translatedContent.lines().map { it.trim() }
+        val lineCount = originalLines.size
+
+        val nonBlank = rawLines.filter { it.isNotEmpty() }
+        val candidates = when {
+            rawLines.size == lineCount -> rawLines
+            nonBlank.size == lineCount -> nonBlank
+            nonBlank.isNotEmpty() -> nonBlank
+            else -> rawLines
+        }
+
+        val result = ArrayList<String>(lineCount)
+        for (i in 0 until lineCount) {
+            val cand = candidates.getOrNull(i).orEmpty()
+            result.add(if (cand.isNotBlank()) cand else originalLines[i].text)
+        }
+        return result
+    }
+
+    private fun callAiCompletion(
+        prompt: String,
+        apiKey: String,
+        lineCount: Int,
+        originalLines: List<LyricLine>
+    ): List<String>? {
         return try {
             val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
             val combinedPrompt = "Você é um poeta e letrista musical de renome internacional especializado em versões e traduções de letras musicais.\n\n$prompt"
@@ -169,8 +195,7 @@ $originalText"""
                 ?.get("parts")?.jsonArray?.getOrNull(0)?.jsonObject
                 ?.get("text")?.jsonPrimitive?.content ?: return null
 
-            val lines = content.lines().map { it.trim() }.filter { it.isNotEmpty() }
-            lines
+            alignLinesResiliently(originalLines, content)
         } catch (_: Exception) {
             null
         }
