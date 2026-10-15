@@ -33,9 +33,10 @@ extra_imports = """package com.music.bitchord.ui.screens
 
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Color
 import com.music.bitchord.ui.theme.IosSwitch
 import com.music.bitchord.ui.theme.SettingsPillCard
-import com.music.bitchord.ui.theme.CapsuleQhape
+import com.music.bitchord.ui.theme.CapsuleShape
 import com.music.bitchord.ui.theme.InsetGroupedShape
 """
 assert "package com.music.bitchord.ui.screens\n" in code, "package decl missing"
@@ -106,7 +107,7 @@ if footer_start != -1:
     footer_end = code.find(footer_marker, footer_start)
     if footer_end != -1:
         footer_end += len(footer_marker)
-        clean_footer = """af (searchQuery.isBlank() && selectedCategory == null) {
+        clean_footer = """if (searchQuery.isBlank() && selectedCategory == null) {
             Text(
                 text = buildAnnotatedString {
                     append("Sonium $version  ")
@@ -160,7 +161,7 @@ new_group_def = """internal fun SettingsGroup(
 assert old_group_def in code, "SettingsGroup signature missing"
 code = code.replace(old_group_def, new_group_def)
 
-Old_column = """    Column(
+old_column = """    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = GROUP_INSET)
