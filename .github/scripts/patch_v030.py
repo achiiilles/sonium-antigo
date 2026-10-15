@@ -19,7 +19,7 @@ if match is None:
     raise RuntimeError("SearchFilter declaration not found")
 body = match.group(2)
 labels = {
-    "ALL": "Todos",
+    "ALL": "Tudo",
     "SONGS": "Músicas",
     "VIDEOS": "Vídeos",
     "ALBUMS": "Álbuns",
@@ -43,4 +43,4 @@ for key, label in labels.items():
 # Write only after every precondition and validation has passed.
 gradle_path.write_text(gradle, encoding="utf-8")
 models_path.write_text(models, encoding="utf-8")
-print("Validated Sonium 0.3.0 (versionCode 28): Todos, Músicas, Vídeos, Álbuns, Artistas, Playlists")
+print("Validated Sonium 0.3.0 (versionCode 28): Tudo, Músicas, Vídeos, Álbuns, Artistas, Playlists")
