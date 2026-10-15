@@ -32,6 +32,7 @@ assert len(code) > 100000, "SettingsSheet.kt is too small or empty"
 extra_imports = """package com.music.bitchord.ui.screens
 
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.border
 import com.music.bitchord.ui.theme.IosSwitch
 import com.music.bitchord.ui.theme.SettingsPillCard
 import com.music.bitchord.ui.theme.CapsuleShape
@@ -54,11 +55,50 @@ if start_pill != -1:
 code = code.replace("Switch(", "IosSwitch(")
 code = code.replace("onCheckedChange = { enabled ->", "onCheckedChange = { enabled: Boolean ->")
 
-# 5. Subpage header bold style
-old_subpage_header = "text = selectedCategory!!.title,\n                    style = MaterialTheme.typography.headlineMedium,"
-new_subpage_header = "text = selectedCategory!!.title,\n                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),"
-assert old_subpage_header in code, "subpage header style missing"
-code = code.replace(old_subpage_header, new_subpage_header)
+# 5. Remove duplicated back button row and replicate AccountAndScrobblingScreen title style
+# AccountAndScrobblingScreen style:
+# Text(
+#     text = ...,
+#     style = MaterialTheme.typography.displayLarge,
+#     color = MaterialTheme.colorScheme.onBackground,
+#     modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 14.dp),
+# )
+old_header_block = """        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = { selectedCategory = null }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = stringResource(R.string.back),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = selectedCategory!!.title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }"""
+
+new_header_block = """        } else {
+            Text(
+                text = selectedCategory!!.title,
+                style = MaterialTheme.typography.displayLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 14.dp),
+            )
+        }"""
+assert old_header_block in code, "old header block missing in SettingsSheet.kt"
+code = code.replace(old_header_block, new_header_block, 1)
+print("Replaced subpage header with AccountAndScrobblingScreen displayLarge style without duplicate back button")
 
 # 6. Search empty message condition
 old_search_empty = "if (!search.anyMatch) {\n            MessageState(stringResource(R.string.settings_search_empty, searchQuery))\n        }"
@@ -99,7 +139,7 @@ if footer_start != -1:
         code = code[:footer_start] + clean_footer + code[footer_end:]
         print("Cleaned footer")
 
-# 8. Standalone capsule vs Inset Grouped in SettingsGroup
+# 8. Standalone capsule vs Inset Grouped in SettingsGroup with subtle depth border (stroke translúcido)
 old_searchable = """    if (scope.entries.isEmpty()) return
     SettingsGroup(header = header, footer = footer, topSpacing = topSpacing) {"""
 new_searchable = """    if (scope.entries.isEmpty()) return
@@ -139,7 +179,8 @@ new_column = """    Column(
             .fillMaxWidth()
             .padding(horizontal = GROUP_INSET)
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),
     ) {"""
 assert old_column in code, "SettingsGroup column clip missing"
 code = code.replace(old_column, new_column)
@@ -173,7 +214,8 @@ if pt_br_shared.exists():
 assert "IosSwitch" in code, "IosSwitch not found in SettingsSheet.kt"
 assert "CapsuleShape" in code, "CapsuleShape not found in SettingsSheet.kt"
 assert "InsetGroupedShape" in code, "InsetGroupedShape not found in SettingsSheet.kt"
-assert "FontWeight.Bold" in code, "FontWeight.Bold missing in subpage header"
+assert "displayLarge" in code, "displayLarge missing in subpage header"
+assert "Icons.AutoMirrored.Rounded.ArrowBack" not in code, "ArrowBack still present in SettingsSheet.kt"
 assert "searchQuery.isNotBlank() && !search.anyMatch" in code, "Search empty fix missing"
 assert "Discord" not in code, "Discord link still in footer"
 assert "bitchord.kushagrasingh.in" not in code, "Website link still in footer"
