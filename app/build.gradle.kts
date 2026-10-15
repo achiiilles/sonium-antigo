@@ -23,16 +23,18 @@ val localProps = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use { load(it) }
 }
+
 val lastfmApiKey: String = (
     localProps.getProperty("LASTFM_API_KEY")
         ?: System.getenv("LASTFM_API_KEY")
         ?: ""
-    ).trim()
+).trim()
+
 val lastfmSecret: String = (
     localProps.getProperty("LASTFM_SECRET")
         ?: System.getenv("LASTFM_SECRET")
         ?: ""
-    ).trim()
+).trim()
 
 /*
  * Where Listen Together's party server lives. Not a credential — it is a public
@@ -50,7 +52,7 @@ val listenTogetherServer: String = (
     localProps.getProperty("LISTEN_TOGETHER_SERVER")
         ?: System.getenv("LISTEN_TOGETHER_SERVER")
         ?: "https://bitchord-listen-together.onrender.com"
-    ).trim().trimEnd('/')
+).trim().trimEnd('/')
 
 /*
  * Bump this by hand before cutting each sideloaded test build ("beta2",
@@ -80,8 +82,8 @@ android {
         // Haze falls back to a translucent scrim below that.
         minSdk = 26
         targetSdk = 36
-        versionCode = 32
-        versionName = "0.4.7"
+        versionCode = 33
+        versionName = "0.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -150,10 +152,12 @@ android {
         debug {
             if (betaSuffix.isNotEmpty()) versionNameSuffix = "-$betaSuffix"
         }
+
         release {
             // Carried here too — see [betaSuffix]. A sideloaded beta is a
             // release build, and it is the one that most needs the marker.
             if (betaSuffix.isNotEmpty()) versionNameSuffix = "-$betaSuffix"
+
             /*
              * On for what it does to speed, not size. Compose is written to be
              * run through R8 — without it every composable keeps the debug-era
@@ -172,10 +176,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
             // Null without a keystore to sign with: the build then produces
             // app-release-unsigned.apk instead of failing outright.
             signingConfig = signingConfigs.findByName("release")
         }
+
         /*
          * The release build, installable next to the dev and prod apps: same R8,
          * same non-debuggable runtime, signed with the debug key under its own
@@ -191,20 +197,24 @@ android {
             matchingFallbacks += listOf("release")
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     packaging {
         resources {
             // SMBJ's BouncyCastle and jspecify both ship this descriptor.
             excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
+
     testOptions {
         unitTests {
             // Unit tests run against a stub android.jar whose methods throw
@@ -245,7 +255,8 @@ val newPipeExtractorRaw: Configuration by configurations.creating {
 dependencies {
     newPipeExtractorRaw("com.github.TeamNewPipe:NewPipeExtractor:v0.26.3")
 }
-val newPipeExtractorStripped = tasks.register<org.gradle.api.tasks.bundling.Jar>(
+
+val newPipeExtractorStripped = tasks.register<Jar>(
     "stripNewPipeExtractorUtils"
 ) {
     archiveFileName.set("NewPipeExtractor-v0.26.3-noutils.jar")
@@ -365,7 +376,7 @@ dependencies {
     // transitive dependencies the module would have brought are listed here
     // because dropping its artifact drops them too. If the version changes,
     // re-derive this list with
-    //   ./gradlew :app:dependencies --configuration prodReleaseRuntimeClasspath
+    // ./gradlew :app:dependencies --configuration prodReleaseRuntimeClasspath
     implementation(files(newPipeExtractorStripped))
     implementation("com.github.TeamNewPipe:nanojson:e9d656ddb49a412a5a0a5d5ef20ca7ef09549996")
     implementation("org.jsoup:jsoup:1.22.2")
