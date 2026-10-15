@@ -45,6 +45,9 @@ jobs:
       - name: Apply Sonium v0.2.0 patch
         run: python3 .github/scripts/patch_v020.py
 
+      - name: Apply Sonium v0.3.0 patch
+        run: python3 .github/scripts/patch_v030.py
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
