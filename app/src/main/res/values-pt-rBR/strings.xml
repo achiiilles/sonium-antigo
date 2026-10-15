@@ -82,4 +82,19 @@
     <string name="shared_link">Link compartilhado</string>
     <string name="song_will_play_next">A música tocará a seguir</string>
     <string name="song_added_to_queue">Música adicionada à fila</string>
+
+    <!-- Atualização do aplicativo / Software Update em PT-BR -->
+    <string name="software_update">Atualização de Software</string>
+    <string name="update_available">Atualização disponível: v%1$s</string>
+    <string name="update_available_body">Sonium %1$s está disponível para download.</string>
+    <string name="update_downloading_body">Baixando Sonium %1$s…</string>
+    <string name="update_ready_body">Sonium %1$s está pronto para instalar.</string>
+    <string name="update_failed_body">Não foi possível baixar o Sonium %1$s.</string>
+    <string name="download_now">Baixar Agora</string>
+    <string name="install_now">Instalar Agora</string>
+    <string name="later">Mais Tarde</string>
+    <string name="remind_me_later">Lembrar Mais Tarde</string>
+    <string name="try_again">Tentar Novamente</string>
+    <string name="open_releases_page">Abrir Página de Lançamentos</string>
+    <string name="whats_new">O que há de novo</string>
 </resources>
