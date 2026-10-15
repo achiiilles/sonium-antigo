@@ -1,26 +1,25 @@
 import os
 import re
 
-print("Starting Sonium 0.4.6 patch application...")
+print("Starting Sonium 0.5.0 patch application...")
 
-# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.4.6)
+# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.5.0)
 gradle_path = "app/build.gradle.kts"
 if os.path.exists(gradle_path):
     with open(gradle_path, "r", encoding="utf-8") as f:
         gc = f.read()
-    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.6"', gc)
-    gc = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 31', gc)
+    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.5.0"', gc)
+    gc = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 33', gc)
     gc = gc.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Sonium Dev")')
     with open(gradle_path, "w", encoding="utf-8") as f:
         f.write(gc)
-    print("app/build.gradle.kts patched to version 0.4.6 and Sonium Dev.")
+    print("app/build.gradle.kts patched to version 0.5.0 and Sonium Dev.")
 
 # 1. Patch InnertubeParser.kt (Parser de artista limpo sem rótulo de tipo)
 ip_path = "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/innertube/InnertubeParser.kt"
 if os.path.exists(ip_path):
     with open(ip_path, "r", encoding="utf-8") as f:
         ipc = f.read()
-
     new_type_words = """    private val TYPE_WORDS = setOf(
         "song", "video", "album", "single", "ep", "artist",
         "playlist", "podcast", "episode", "música", "musica",
@@ -32,7 +31,6 @@ if os.path.exists(ip_path):
         ipc,
         flags=re.DOTALL
     )
-
     if "val validGroups = groups.filter" not in ipc:
         target_runs_pattern = re.compile(
             r'val artistGroup = groups\.firstOrNull \{ group ->\s*group\.any \{ run ->\s*val pageType = run\.o\("navigationEndpoint"\)\.o\("browseEndpoint"\)\s*\.o\("browseEndpointContextSupportedConfigs"\)\s*\.o\("browseEndpointContextMusicConfig"\)\.s\("pageType"\)\.orEmpty\(\)\s*"ARTIST" in pageType\s*\}\s*\} \?: return null',
@@ -53,7 +51,6 @@ if os.path.exists(ip_path):
             }
         } ?: validGroups.firstOrNull() ?: return null"""
         ipc = target_runs_pattern.sub(replacement_artist_runs, ipc)
-
     with open(ip_path, "w", encoding="utf-8") as f:
         f.write(ipc)
     print("InnertubeParser.kt patched for clean artist runs.")
@@ -63,7 +60,6 @@ pc_path = "app/src/main/java/com/music/bitchord/playback/PlayerConnection.kt"
 if os.path.exists(pc_path):
     with open(pc_path, "r", encoding="utf-8") as f:
         pc = f.read()
-
     helper = r'''private const val ARTISTS_NAMES = "artistNames"
 private const val ARTISTS_IDS = "artistIds"
 private val MEDIA_PREFIX_REGEX = Regex("^(?:(?:m[úu]sica|song|v[íi]deo|track|faixa|áudio|audio|single|ep|álbum|album)\\s*[•·\\-|:]\\s*)+", RegexOption.IGNORE_CASE)
@@ -119,7 +115,6 @@ ps_path = "app/src/main/java/com/music/bitchord/playback/PlaybackService.kt"
 if os.path.exists(ps_path):
     with open(ps_path, "r", encoding="utf-8") as f:
         ps = f.read()
-
     if "resolveAlbumMetadata" not in ps:
         target_trigger = """        mediaItem?.mediaId?.let { id ->
             resolveLocalBitrate(id, mediaItem)
@@ -172,17 +167,15 @@ if os.path.exists(ps_path):
     }
 """
         ps = ps.replace("    override fun onCreate() {", method_code + "    override fun onCreate() {", 1)
-
-    with open(ps_path, "w", encoding="utf-8") as f:
-        f.write(ps)
-    print("PlaybackService.kt patched for album metadata resolution.")
+        with open(ps_path, "w", encoding="utf-8") as f:
+            f.write(ps)
+        print("PlaybackService.kt patched for album metadata resolution.")
 
 # 4. Patch HomeScreen.kt (Memória de rolagem global + fotos redondas de artistas)
 hs_path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt"
 if os.path.exists(hs_path):
     with open(hs_path, "r", encoding="utf-8") as f:
         hs = f.read()
-
     if "import androidx.compose.runtime.saveable.rememberSaveable" not in hs:
         hs = re.sub(
             r'import androidx\.compose\.runtime\.remember\r?\n',
@@ -190,7 +183,6 @@ if os.path.exists(hs_path):
             hs,
             count=1
         )
-
     if "homeShelfScrollPositions" not in hs:
         hs = re.sub(
             r'private const val RECENT_TRACKS_PER_COLUMN = 4',
@@ -198,7 +190,6 @@ if os.path.exists(hs_path):
             hs,
             count=1
         )
-
     old_shelf = """@Composable
 internal fun Shelf(
     shelf: HomeShelf,
@@ -214,7 +205,6 @@ internal fun Shelf(
             contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {"""
-
     new_shelf = """@Composable
 internal fun Shelf(
     shelf: HomeShelf,
@@ -261,7 +251,6 @@ private fun HeroShelf(
                 contentPadding = PaddingValues(horizontal = PAGE_GUTTER),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {"""
-
     new_hero_shelf = """@Composable
 private fun HeroShelf(
     shelf: HomeShelf,
@@ -301,7 +290,6 @@ private fun HeroShelf(
                     .thumbnailBorder(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {"""
-
     new_shelf_card_art = """        else -> {
             val isArtistCard = item.browseId?.startsWith("UC") == true ||
                 item.browseId?.startsWith("FEmusic_library_corpus_artist") == true ||
@@ -332,7 +320,6 @@ ds_path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
 if os.path.exists(ds_path):
     with open(ds_path, "r", encoding="utf-8") as f:
         ds = f.read()
-
     sec_card_pattern = re.compile(
         r'(\s+)AsyncImage\(\s*model\s*=\s*item\.thumbnailUrl\.artworkAt\(CARD_ART_PX\),\s*contentDescription\s*=\s*null,\s*modifier\s*=\s*Modifier\s*\.fillMaxWidth\(\)\s*\.aspectRatio\(1f\)\s*\.clip\(RoundedCornerShape\(10\.dp\)\)\s*\.thumbnailBorder\(RoundedCornerShape\(10\.dp\)\)\s*\.background\(palette\.elevated\),\s*\)',
         re.DOTALL
@@ -372,15 +359,13 @@ ss_path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/Searc
 if os.path.exists(ss_path):
     with open(ss_path, "r", encoding="utf-8") as f:
         ss = f.read()
-
-    new_sec_pt = """        return listOf(
-            SearchSection("Artistas", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ARTIST }),
-            SearchSection("Músicas", rows.filterIsInstance<SearchResult.Track>()),
-            SearchSection("Álbuns", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.ALBUM }),
-            SearchSection("Playlists", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.PLAYLIST }),
-            SearchSection("Mais", rows.filterIsInstance<SearchResult.Browse>().filter { it.item.type == BrowseType.OTHER }),
-        ).filter { it.rows.isNotEmpty() }"""
-
+    new_sec_pt = """    return listOf(
+        SearchSection("Artistas", rows.filterIsInstance<SearchRow.ItemRow>().filter { it.item.type == BrowseType.ARTIST }),
+        SearchSection("Músicas", rows.filterIsInstance<SearchRow.ItemRow>().filter { it.item.type == BrowseType.SONG }),
+        SearchSection("Álbuns", rows.filterIsInstance<SearchRow.ItemRow>().filter { it.item.type == BrowseType.ALBUM }),
+        SearchSection("Playlists", rows.filterIsInstance<SearchRow.ItemRow>().filter { it.item.type == BrowseType.PLAYLIST }),
+        SearchSection("Mais", rows.filterIsInstance<SearchRow.ItemRow>().filter { it.item.type == BrowseType.OTHER }),
+    ).filter { it.rows.isNotEmpty() }"""
     ss = re.sub(
         r'return listOf\(\s*SearchSection\("(?:Songs|Artists)".*?\)\.filter \{ it\.rows\.isNotEmpty\(\) \}',
         new_sec_pt.strip(),
@@ -398,7 +383,6 @@ if os.path.exists(ss_path):
                     .thumbnailBorder(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             )"""
-
     new_recent_entity = """        Box(Modifier.size(52.dp)) {
             val isArtist = entity.entityType == EntityType.ARTIST
             val entityShape = if (isArtist) CircleShape else RoundedCornerShape(8.dp)
@@ -423,7 +407,6 @@ ls_path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/Libra
 if os.path.exists(ls_path):
     with open(ls_path, "r", encoding="utf-8") as f:
         ls = f.read()
-
     old_grid_items = """                items(sortedShelf.items, key = { it.browseId ?: it.title }) { item ->
                     ShelfCard(
                         item = item,
@@ -433,7 +416,6 @@ if os.path.exists(ls_path):
                         isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
                     )
                 }"""
-
     new_grid_items = """                val isArtistShelf = shelf.title.equals("Artists", ignoreCase = true) ||
                     shelf.title.equals("Artistas", ignoreCase = true)
                 items(sortedShelf.items, key = { it.browseId ?: it.title }) { rawItem ->
@@ -461,7 +443,6 @@ if os.path.exists(ls_path):
                         isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
                     )
                 }"""
-
     new_shelf_items = """                items(visibleItems) { rawItem ->
                     val item = if (isArtistShelf && rawItem.subtitle.isBlank()) {
                         rawItem.copy(subtitle = "Artista")
@@ -487,7 +468,6 @@ models_path = "shared/src/commonMain/kotlin/com/music/bitchord/data/model/Models
 if os.path.exists(models_path):
     with open(models_path, "r", encoding="utf-8") as f:
         mc = f.read()
-
     mc = mc.replace('ALL("All", null)', 'ALL("Tudo", null)')
     mc = mc.replace('ALL("Todos", null)', 'ALL("Tudo", null)')
     mc = mc.replace('SONGS("Songs",', 'SONGS("Músicas",')
@@ -495,9 +475,8 @@ if os.path.exists(models_path):
     mc = mc.replace('ALBUMS("Albums",', 'ALBUMS("Álbuns",')
     mc = mc.replace('ARTISTS("Artists",', 'ARTISTS("Artistas",')
     mc = mc.replace('PLAYLISTS("Playlists",', 'PLAYLISTS("Playlists",')
-
     with open(models_path, "w", encoding="utf-8") as f:
         f.write(mc)
     print("Models.kt patched for Portuguese SearchFilter labels.")
 
-print("All Sonium 0.4.6 patches applied successfully!")
+print("All Sonium 0.5.0 patches applied successfully!")
