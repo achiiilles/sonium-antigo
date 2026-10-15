@@ -8,34 +8,8 @@ if os.path.exists(settings_path):
     with open(settings_path, "r", encoding="utf-8") as f:
         sc = f.read()
     sc = sc.replace('subtitle = "Music/BitChord".takeIf { exportDownloads },', 'subtitle = "Music/Sonium".takeIf { exportDownloads },')
-    
-    # Substituir colophon do rodapé
-    old_colophon_pattern = re.compile(r'if \(searchQuery\.isBlank\(\)\) \{\s*Text\(\s*text = buildAnnotatedString \{.*?\n\s*append\("\\n~YouTube Music & Listen Together Backend"\)\s*\},', re.DOTALL)
-    new_colophon = r'''if (searchQuery.isBlank()) {
-        Text(
-            text = buildAnnotatedString {
-                append("Sonium $version  ")
-                val linkStyles = TextLinkStyles(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                    ),
-                )
-                withLink(LinkAnnotation.Url("https://github.com/achiilles75/Sonium", linkStyles)) {
-                    append("GitHub")
-                }
-                append("\n~YouTube Music & Listen Together Backend")
-            },'''
-    if old_colophon_pattern.search(sc):
-        sc = old_colophon_pattern.sub(lambda m: new_colophon, sc)
-        print("SettingsSheet.kt colophon updated cleanly with regex")
-    else:
-        # Fallback manual string replacement
-        sc = sc.replace("bitchord $version", "Sonium $version")
-        sc = sc.replace("BitChord $version", "Sonium $version")
-        sc = sc.replace("https://github.com/kushagrasinghx/BitChord", "https://github.com/achiilles75/Sonium")
-        sc = sc.replace("https://github.com/achiilles75/BitChord", "https://github.com/achiilles75/Sonium")
-    
+    sc = sc.replace("bitchord $version", "Sonium $version")
+    sc = sc.replace("BitChord $version", "Sonium $version")
     with open(settings_path, "w", encoding="utf-8") as f:
         f.write(sc)
     print("SettingsSheet.kt updated")
@@ -62,7 +36,6 @@ for strings_file in strings_files:
         with open(strings_file, "r", encoding="utf-8") as f:
             content = f.read()
         content = replace_tag_text(content)
-        
         # Ensure default values/strings.xml has all necessary base resource IDs
         if strings_file == "app/src/main/res/values/strings.xml":
             base_extra = """
@@ -78,7 +51,6 @@ for strings_file in strings_files:
 </resources>"""
             if "portuguese_br" not in content:
                 content = content.replace("</resources>", base_extra)
-        
         # Ensure values-pt/strings.xml differentiates PT-PT and PT-BR without duplicating existing tags
         if strings_file == "app/src/main/res/values-pt/strings.xml":
             pt_extra = """
@@ -97,7 +69,6 @@ for strings_file in strings_files:
             content = content.replace('<string name="portuguese">Português</string>', '<string name="portuguese">Português (Portugal)</string>')
             content = content.replace('<string name="prefer_music_only">Prefer music-only version</string>', '<string name="prefer_music_only">Preferir versão só de música</string>')
             content = content.replace('<string name="prefer_music_only_subtitle">For music videos, show the video details while finding and loading the catalogue audio version</string>', '<string name="prefer_music_only_subtitle">Para vídeos musicais, reproduz automaticamente a versão áudio oficial</string>')
-
         with open(strings_file, "w", encoding="utf-8") as f:
             f.write(content)
         ET.parse(strings_file)
