@@ -1,19 +1,19 @@
 import os
 import re
 
-print("Starting Sonium 0.3.0 patch application...")
+print("Starting Sonium 0.4.0 patch application...")
 
-# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.3.0)
+# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.4.0)
 gradle_path = "app/build.gradle.kts"
 if os.path.exists(gradle_path):
     with open(gradle_path, "r", encoding="utf-8") as f:
         gc = f.read()
-    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.3.0"', gc)
-    gc = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 28', gc)
+    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.0"', gc)
+    gc = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 29', gc)
     gc = gc.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Sonium Dev")')
     with open(gradle_path, "w", encoding="utf-8") as f:
         f.write(gc)
-    print("app/build.gradle.kts patched to version 0.3.0 and Sonium Dev.")
+    print("app/build.gradle.kts patched to version 0.4.0 and Sonium Dev.")
 
 # 1. Patch InnertubeParser.kt (Parser de artista limpo sem rótulo de tipo)
 ip_path = "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/innertube/InnertubeParser.kt"
@@ -509,4 +509,4 @@ if os.path.exists(models_path):
         f.write(mc)
     print("Models.kt patched for Portuguese SearchFilter labels.")
 
-print("All Sonium 0.3.0 patches applied successfully!")
+print("All Sonium 0.4.0 patches applied successfully!")
