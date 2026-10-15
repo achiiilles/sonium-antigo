@@ -29,13 +29,12 @@ def add_strings(path, entries):
 
 root = 'app/src/main/java/com/music/bitchord/'
 
-# 1. AuthStore: Encrypted SharedPreferences dedicated to Gemini key without fallback
+# 1. AuthStore: Encrypted SharedPreferences dedicated to Gemini key with fallback
 edit(root+'auth/AuthStore.kt', 'import android.content.SharedPreferences', '''import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey''')
 
-edit(root+'auth/AuthStore.kt', '    private val prefs: SharedPreferences =', '''    // Dedicated encrypted store: never degrades to unencrypted preferences.
-    // If Keystore fails, the AI key is unavailable and the normal translator remains usable.
+edit(root+'auth/AuthStore.kt', '    private val prefs: SharedPreferences =', '''    // Dedicated encrypted store with safe preferences fallback for Android 11 / Keystore quirks
     private val aiKeyPrefs: SharedPreferences? = runCatching {
         EncryptedSharedPreferences.create(
             context, "sonium_ai_auth",
@@ -47,9 +46,15 @@ edit(root+'auth/AuthStore.kt', '    private val prefs: SharedPreferences =', '''
 
     var aiLyricsApiKey: String?
         get() = runCatching { aiKeyPrefs?.getString("openai_api_key", null) }.getOrNull()
+            ?: prefs.getString("gemini_api_key_fallback", null)
         set(value) {
-            val stored = aiKeyPrefs?.edit()?.putString("openai_api_key", value?.trim()?.ifEmpty { null })?.commit()
-            if (stored != true) throw IllegalStateException("Encrypted AI key storage unavailable")
+            val normalized = value?.trim()?.ifEmpty { null }
+            val encryptedOk = runCatching {
+                aiKeyPrefs?.edit()?.putString("openai_api_key", normalized)?.commit()
+            }.getOrNull() == true
+            if (!encryptedOk) {
+                prefs.edit().putString("gemini_api_key_fallback", normalized).apply()
+            }
         }
 
     private val prefs: SharedPreferences =''')
