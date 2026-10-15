@@ -1,13 +1,13 @@
 from pathlib import Path
 import re
 
-# Runs after patch_v020.py so the previous version cannot overwrite 0.4.6.
+# Runs after patch_v020.py so the previous version cannot overwrite 0.5.0.
 gradle_path = Path("app/build.gradle.kts")
 gradle = gradle_path.read_text(encoding="utf-8")
-gradle, name_count = re.subn(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.6"', gradle)
+gradle, name_count = re.subn(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.5.0"', gradle)
 if name_count != 1:
     raise RuntimeError(f"Expected one versionName, found {name_count}")
-gradle, code_count = re.subn(r'versionCode\s*=\s*\d+', 'versionCode = 31', gradle)
+gradle, code_count = re.subn(r'versionCode\s*=\s*\d+', 'versionCode = 33', gradle)
 if code_count != 1:
     raise RuntimeError(f"Expected one versionCode, found {code_count}")
 
@@ -50,4 +50,4 @@ for key, label in labels.items():
 # Write only after every precondition and validation has passed.
 gradle_path.write_text(gradle, encoding="utf-8")
 models_path.write_text(models, encoding="utf-8")
-print("Validated Sonium 0.4.6 (versionCode 31): Tudo, Músicas, Vídeos, Álbuns, Artistas, Playlists")
+print("Validated Sonium 0.5.0 (versionCode 33): Tudo, Músicas, Vídeos, Álbuns, Artistas, Playlists")
