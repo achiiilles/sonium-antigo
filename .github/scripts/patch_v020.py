@@ -1,18 +1,19 @@
 import os
 import re
 
-print("Starting Sonium 0.2.5 patch application...")
+print("Starting Sonium 0.3.0 patch application...")
 
-# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.2.5)
+# 0. Patch app/build.gradle.kts (Versionamento: Sonium 0.3.0)
 gradle_path = "app/build.gradle.kts"
 if os.path.exists(gradle_path):
     with open(gradle_path, "r", encoding="utf-8") as f:
         gc = f.read()
-    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.2.5"', gc)
+    gc = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.3.0"', gc)
+    gc = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 28', gc)
     gc = gc.replace('resValue("string", "app_name", "BitChord Dev")', 'resValue("string", "app_name", "Sonium Dev")')
     with open(gradle_path, "w", encoding="utf-8") as f:
         f.write(gc)
-    print("app/build.gradle.kts patched to version 0.2.5 and Sonium Dev.")
+    print("app/build.gradle.kts patched to version 0.3.0 and Sonium Dev.")
 
 # 1. Patch InnertubeParser.kt (Parser de artista limpo sem rótulo de tipo)
 ip_path = "shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/innertube/InnertubeParser.kt"
@@ -492,4 +493,20 @@ if os.path.exists(ls_path):
         f.write(ls)
     print("LibraryScreen.kt patched for round artist cards in shelf and Ver tudo grid.")
 
-print("All Sonium 0.2.5 patches applied successfully!")
+# 8. Patch Models.kt (Tradução das cápsulas de busca)
+models_path = "shared/src/commonMain/kotlin/com/music/bitchord/data/model/Models.kt"
+if os.path.exists(models_path):
+    with open(models_path, "r", encoding="utf-8") as f:
+        mc = f.read()
+    mc = mc.replace('ALL("All", null)', 'ALL("Tudo", null)')
+    mc = mc.replace('ALL("Todos", null)', 'ALL("Tudo", null)')
+    mc = mc.replace('SONGS("Songs",', 'SONGS("Músicas",')
+    mc = mc.replace('VIDEOS("Videos",', 'VIDEOS("Vídeos",')
+    mc = mc.replace('ALBUMS("Albums",', 'ALBUMS("Álbuns",')
+    mc = mc.replace('ARTISTS("Artists",', 'ARTISTS("Artistas",')
+    mc = mc.replace('PLAYLISTS("Playlists",', 'PLAYLISTS("Playlists",')
+    with open(models_path, "w", encoding="utf-8") as f:
+        f.write(mc)
+    print("Models.kt patched for Portuguese SearchFilter labels.")
+
+print("All Sonium 0.3.0 patches applied successfully!")
