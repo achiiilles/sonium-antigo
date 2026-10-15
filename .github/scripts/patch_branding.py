@@ -79,10 +79,9 @@ for strings_file in strings_files:
             if "portuguese_br" not in content:
                 content = content.replace("</resources>", base_extra)
         
-        # Ensure values-pt/strings.xml differentiates PT-PT and PT-BR
+        # Ensure values-pt/strings.xml differentiates PT-PT and PT-BR without duplicating existing tags
         if strings_file == "app/src/main/res/values-pt/strings.xml":
             pt_extra = """
-    <string name="portuguese">Português (Portugal)</string>
     <string name="portuguese_pt">Português (Portugal)</string>
     <string name="portuguese_br">Português (Brasil)</string>
     <string name="spatial_audio_bluetooth_only">Ativar apenas com auscultadores Bluetooth</string>
