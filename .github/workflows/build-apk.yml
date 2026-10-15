@@ -48,6 +48,9 @@ jobs:
       - name: Apply Sonium v0.3.0 patch
         run: python3 .github/scripts/patch_v030.py
 
+      - name: Apply AI lyrics patch
+        run: python3 .github/scripts/patch_ai_lyrics.py
+
       - name: Apply Sonium v0.4.0 patch
         run: python3 .github/scripts/patch_v040.py
 
