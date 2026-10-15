@@ -26,6 +26,7 @@ import java.util.zip.GZIPOutputStream
  * Tradutor de letras inteligente por IA com prompt poético dinâmico.
  * Adapta rimas, métrica lírica e vocabulário para o idioma ativo do app,
  * preservando a quantidade estrita de linhas e armazenando traduções em cache local.
+ * Utiliza o endpoint oficial da API do Gemini 1.5 Flash (Google AI Studio).
  */
 object AiLyricsTranslator {
 
@@ -77,6 +78,12 @@ $originalText"""
         if (lines.isEmpty()) return LyricsTranslation.Result.Unavailable
 
         val key = apiKey.trim()
+
+        // Se chave de API não foi configurada ou IA não habilitada, delega para tradução tradicional
+        if (key.isBlank() || !aiLyricsEnabled) {
+            return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
+        }
+
         val plainLines = lines.map { it.text }
         val lineCount = plainLines.size
         val cacheKey = hashKey(trackId, targetLanguageTag, plainLines)
@@ -96,12 +103,7 @@ $originalText"""
             )
         }
 
-        // Se chave de API não foi configurada ou IA não habilitada, delega para tradução tradicional
-        if (key.isBlank() || !aiLyricsEnabled) {
-            return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
-        }
-
-        // 2. Chamada à API de IA
+        // 2. Chamada à API de IA (Google AI Studio - Gemini 1.5 Flash)
         val originalBody = plainLines.joinToString("\n")
         val prompt = buildPoeticPrompt(targetLanguageDisplayName, originalBody, lineCount)
 
@@ -133,19 +135,25 @@ $originalText"""
 
     private fun callAiCompletion(prompt: String, apiKey: String): List<String>? {
         return try {
-            val url = "https://api.openai.com/v1/chat/completions"
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
+            val combinedPrompt = "Você é um poeta e letrista musical de renome internacional especializado em versões e traduções de letras musicais.\n\n$prompt"
             val reqPayload = """{
-                "model": "gpt-4o-mini",
-                "messages": [
-                    {"role": "system", "content": "Você é um poeta e letrista musical de renome internacional especializado em versões e traduções de letras musicais."},
-                    {"role": "user", "content": ${json.encodeToString(prompt)}}
-                ],
-                "temperature": 0.4
-            }"""
+  "contents": [
+    {
+      "parts": [
+        {
+          "text": ${json.encodeToString(combinedPrompt)}
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "temperature": 0.4
+  }
+}"""
             val body = reqPayload.toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
                 .url(url)
-                .header("Authorization", "Bearer $apiKey")
                 .header("Content-Type", "application/json")
                 .post(body)
                 .build()
@@ -155,8 +163,10 @@ $originalText"""
             if (!response.isSuccessful) return null
 
             val parsed = json.parseToJsonElement(respStr).jsonObject
-            val content = parsed["choices"]?.jsonArray?.getOrNull(0)?.jsonObject
-                ?.get("message")?.jsonObject?.get("content")?.jsonPrimitive?.content ?: return null
+            val content = parsed["candidates"]?.jsonArray?.getOrNull(0)?.jsonObject
+                ?.get("content")?.jsonObject
+                ?.get("parts")?.jsonArray?.getOrNull(0)?.jsonObject
+                ?.get("text")?.jsonPrimitive?.content ?: return null
 
             val lines = content.lines().map { it.trim() }.filter { it.isNotEmpty() }
             lines
