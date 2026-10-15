@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sonium</string>
+    <string name="portuguese">Português (Portugal)</string>
+    <string name="portuguese_pt">Português (Portugal)</string>
+    <string name="portuguese_br">Português (Brasil)</string>
+
+    <string name="prefer_music_only">Preferir versão somente música</string>
+    <string name="prefer_music_only_subtitle">Para videoclipes, reproduz automaticamente a faixa oficial de estúdio do YouTube Music</string>
+
+    <string name="loudness_off_on_speaker">Desativar no alto-falante do telefone</string>
+    <string name="loudness_target_subtitle">Mais baixo é ideal para fones; mais alto, para o carro ou o alto-falante do celular</string>
+
+    <string name="spatial_audio_bluetooth_only">Ativar apenas com fones Bluetooth</string>
+    <string name="spatial_audio_bluetooth_only_subtitle">Liga o áudio espacial automaticamente ao conectar fones sem fio e desativa ao desconectar</string>
+
+    <string name="ai_lyrics_translation">Tradução de letras por IA</string>
+    <string name="ai_lyrics_translation_subtitle">Traduz e adapta mantendo ritmo poético e rimas naturais para o idioma do app</string>
+    <string name="ai_lyrics_api_key">Chave de API de Tradução IA</string>
+    <string name="ai_lyrics_api_key_hint">Cole sua chave de API</string>
+
+    <string name="equalizer">Equalizador</string>
+    <string name="equalizer_subtitle">Tom, sete bandas e balanço</string>
+    <string name="equalizer_footer">Modela o som dentro do Sonium antes de chegar ao sistema.</string>
+
+    <string name="system_equalizer">Equalizador do sistema</string>
+    <string name="system_equalizer_subtitle">Painel de áudio do seu dispositivo</string>
+    <string name="system_equalizer_footer">Executado após o equalizador do Sonium em toda a sessão de áudio.</string>
+
+    <string name="settings_search_hint">Pesquisar configurações</string>
+    <string name="settings_search_empty">Nenhuma configuração encontrada para “%1$s”</string>
+    <string name="search_hint">Artistas, músicas, letras e mais</string>
+
+    <string name="auto_quick_picks">Escolhas rápidas</string>
+    <string name="auto_recents">Recentes</string>
+    <string name="auto_liked">Músicas curtidas</string>
+    <string name="auto_login_title">Conecte-se ao YouTube no seu celular</string>
+    <string name="auto_login_subtitle">Abra o Sonium no seu celular para entrar</string>
+    <string name="auto_empty_recents_title">Nenhuma música recente</string>
+    <string name="auto_empty_recents_subtitle">As músicas que você ouvir aparecerão aqui</string>
+    <string name="auto_empty_quick_picks_title">Sem sugestões</string>
+    <string name="auto_empty_quick_picks_subtitle">Verifique sua conexão e tente novamente</string>
+    <string name="auto_empty_playlists_title">Nenhuma playlist disponível</string>
+    <string name="auto_empty_playlists_subtitle">Verifique sua conexão e tente novamente</string>
+    <string name="auto_empty_liked_title">Nenhuma música curtida</string>
+    <string name="auto_empty_liked_subtitle">Toque no coração de uma música para salvá-la aqui</string>
+    <string name="auto_empty_offline_title">Nenhuma música offline</string>
+    <string name="auto_empty_offline_subtitle">Baixe músicas no seu celular para ouvir offline</string>
+    <string name="auto_unavailable_title">Conteúdo indisponível</string>
+    <string name="auto_unavailable_subtitle">Reabra a pasta e tente novamente</string>
+
+    <string name="lyrics_offset">Ajuste de sincronia das letras</string>
+    <string name="lyrics_offset_description">Valores positivos exibem as letras mais tarde</string>
+    <string name="lyrics_share_title">Compartilhar letra</string>
+    <string name="lyrics_share_description">Os versos selecionados em um cartão visual com a capa.</string>
+    <string name="share_your_lyrics">Enviar seu cartão de letra</string>
+    <string name="your_lyrics_card">Seu cartão de letra</string>
+
+    <string name="saved_to_bitchord_folder">Salvo em Música/Sonium</string>
+    <string name="widget_open_bitchord">Abrir Sonium</string>
+    <string name="default_replay_holder">Ouvinte Sonium</string>
+    <string name="counted_on_device_with_bitchord">Contabilizado neste dispositivo com o Sonium</string>
+</resources>
