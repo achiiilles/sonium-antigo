@@ -46,6 +46,9 @@ jobs:
       - name: Apply Sonium v0.3.0 patch
         run: python3 .github/scripts/patch_v030.py
 
+      - name: Apply Settings iOS Inset Grouped patch
+        run: python3 .github/scripts/patch_settings_ios.py
+
       - name: Apply Sonium v0.4.0 patch
         run: python3 .github/scripts/patch_v040.py
 
