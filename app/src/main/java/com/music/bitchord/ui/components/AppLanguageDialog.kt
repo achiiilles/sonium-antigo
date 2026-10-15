@@ -55,11 +55,12 @@ data class AppLanguage(val tag: String, val nameRes: Int)
 
 val SUPPORTED_LANGUAGES = listOf(
     AppLanguage("en", R.string.english),
+    AppLanguage("pt-BR", R.string.portuguese_br),
+    AppLanguage("pt", R.string.portuguese_pt),
     AppLanguage("es", R.string.spanish),
     AppLanguage("fr", R.string.french),
     AppLanguage("de", R.string.german),
     AppLanguage("pl", R.string.polish),
-    AppLanguage("pt", R.string.portuguese),
     AppLanguage("id", R.string.indonesian),
     AppLanguage("hi", R.string.hindi),
     AppLanguage("ja", R.string.japanese),
@@ -75,7 +76,11 @@ val SUPPORTED_LANGUAGES = listOf(
 
 fun languageDisplayNameRes(languageTag: String): Int {
     val norm = com.music.bitchord.data.LocaleTags.normalizeAppTag(languageTag)
+    if (languageTag.equals("pt-BR", ignoreCase = true) || languageTag.startsWith("pt-rBR", ignoreCase = true)) {
+        return R.string.portuguese_br
+    }
     return SUPPORTED_LANGUAGES.firstOrNull {
+        it.tag.equals(languageTag, ignoreCase = true) ||
         com.music.bitchord.data.LocaleTags.normalizeAppTag(it.tag) == norm
     }?.nameRes ?: R.string.english
 }
@@ -98,11 +103,8 @@ fun AppLanguageDialog(
 ) {
     val reduceDynamicBlur by AppSettings.reduceDynamicBlur.collectAsStateWithLifecycle()
     val shape = RoundedCornerShape(ALERT_CORNER)
-    // Full script tag (zh-Hant / zh-Hans preserved); legacy bare "zh" reads as Simplified.
-    val currentLanguage = com.music.bitchord.data.LocaleTags.normalizeAppTag(
-        AppCompatDelegate.getApplicationLocales().get(0)?.toLanguageTag()
-            ?: Locale.getDefault().toLanguageTag(),
-    )
+    val rawTag = AppCompatDelegate.getApplicationLocales().get(0)?.toLanguageTag()
+        ?: Locale.getDefault().toLanguageTag()
 
     Box(
         modifier = modifier
@@ -164,16 +166,22 @@ fun AppLanguageDialog(
                 )
             }
 
-            // Capped and scrolled rather than laid out at full height, same as
-            // [TranslationLanguageDialog] — sixteen rows is short enough not
-            // to need that dialog's filter field, but still taller than the
-            // card should get to stay centred on a phone.
             LazyColumn(modifier = Modifier.heightIn(max = LANGUAGE_LIST_MAX_HEIGHT)) {
                 items(SUPPORTED_LANGUAGES, key = { it.tag }) { language ->
                     AlertRule()
+                    val isSelected = if (language.tag.startsWith("pt", ignoreCase = true)) {
+                        if (language.tag.equals("pt-BR", ignoreCase = true)) {
+                            rawTag.contains("BR", ignoreCase = true)
+                        } else {
+                            rawTag.startsWith("pt", ignoreCase = true) && !rawTag.contains("BR", ignoreCase = true)
+                        }
+                    } else {
+                        com.music.bitchord.data.LocaleTags.normalizeAppTag(language.tag) ==
+                            com.music.bitchord.data.LocaleTags.normalizeAppTag(rawTag)
+                    }
                     LanguageRow(
                         language = language,
-                        selected = com.music.bitchord.data.LocaleTags.normalizeAppTag(language.tag) == currentLanguage,
+                        selected = isSelected,
                         onClick = {
                             AppCompatDelegate.setApplicationLocales(
                                 LocaleListCompat.forLanguageTags(language.tag),
