@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
-print("Running Sonium v0.5.0 restoration & patch...")
+print("Running Sonium v0.5.1 restoration & patch...")
 
 # 1. Restore 125 KB authentic SettingsSheet.kt from commit 61589e28ed41e64766e059ff91ee3de98ed60470
 settings_path = Path("app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt")
@@ -51,7 +51,7 @@ if start_pill != -1:
         code = code[:start_pill] + code[end_pill:]
         print("Removed local SettingsPillCard (using Theme.kt)")
 
-# 4. Inject Spatial Audio Bluetooth Only SubRow into PLAYBACK
+# 4. Inject Spatial Audio Bluetooth Only SubRow unconditionally into PLAYBACK
 spatial_target = """                    trailing = {
                         Switch(
                             checked = spatialAudio,
@@ -79,21 +79,28 @@ spatial_replacement = """                    trailing = {
                     onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
                 )
             }
-            if (spatialAudio) {
-                val spatialBtTitle = stringResource(R.string.spatial_audio_bluetooth_only)
-                row(spatialBtTitle, "bluetooth", "fones", "spatial", divided = false) {
-                    val autoBt by BluetoothRouteMonitor.autoBluetoothFlow.collectAsStateWithLifecycle()
-                    SettingsSubRow(
-                        title = spatialBtTitle,
-                        checked = autoBt,
-                        onCheckedChange = { BluetoothRouteMonitor.setAutoBluetoothEnabled(context, it) },
-                        subtitle = stringResource(R.string.spatial_audio_bluetooth_only_subtitle),
-                    )
-                }
+            val spatialBtTitle = stringResource(R.string.spatial_audio_bluetooth_only)
+            row(spatialBtTitle, "espacial", "áudio", "audio", "bluetooth", "fones", "spatial", "fone", divided = false) {
+                val autoBt by BluetoothRouteMonitor.autoBluetoothFlow.collectAsStateWithLifecycle()
+                SettingsRow(
+                    title = spatialBtTitle,
+                    subtitle = stringResource(R.string.spatial_audio_bluetooth_only_subtitle),
+                    trailing = {
+                        Switch(
+                            checked = autoBt,
+                            onCheckedChange = { BluetoothRouteMonitor.setAutoBluetoothEnabled(context, it) },
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { BluetoothRouteMonitor.setAutoBluetoothEnabled(context, !autoBt) },
+                )
             }"""
 assert spatial_target in code, "spatialAudio block target missing in SettingsSheet.kt"
 code = code.replace(spatial_target, spatial_replacement, 1)
-print("Injected spatial_audio_bluetooth_only into PLAYBACK")
+print("Injected spatial_audio_bluetooth_only into PLAYBACK unconditionally")
 
 # 5. Inject AI Lyrics Translation toggle + Gemini API Key row into LYRICS
 lyrics_ai_target = """                val aiLyricsTitle = stringResource(R.string.ai_lyrics_translation)
@@ -231,7 +238,7 @@ new_search_empty = "if (searchQuery.isNotBlank() && !search.anyMatch) {\n       
 assert old_search_empty in code, "search empty condition missing"
 code = code.replace(old_search_empty, new_search_empty)
 
-# 11. Clean footer: Sonium version 0.5.0, GitHub link, GPL License
+# 11. Clean footer: Sonium version 0.5.1, GitHub link, GPL License
 footer_start = code.find("if (searchQuery.isBlank() && selectedCategory == null) {\n        Text(\n            text = buildAnnotatedString {")
 if footer_start != -1:
     footer_marker = ".padding(top = 24.dp, bottom = 8.dp),\n        )\n        }"
@@ -314,13 +321,13 @@ code = code.replace(old_column, new_column)
 settings_path.write_text(code, encoding="utf-8")
 print(f"SettingsSheet.kt saved: {len(code)} bytes")
 
-# 14. Verify and update build.gradle.kts to version 0.5.0 (versionCode 33)
+# 14. Verify and update build.gradle.kts to version 0.5.1 (versionCode 34)
 gradle_path = Path("app/build.gradle.kts")
 gradle = gradle_path.read_text(encoding="utf-8")
-gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.5.0"', gradle)
-gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 33', gradle)
+gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.5.1"', gradle)
+gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 34', gradle)
 gradle_path.write_text(gradle, encoding="utf-8")
-print("Verified app/build.gradle.kts: versionName = 0.5.0, versionCode = 33")
+print("Verified app/build.gradle.kts: versionName = 0.5.1, versionCode = 34")
 
 # 15. Verify values-pt-rBR strings.xml
 pt_br_res = Path("app/src/main/res/values-pt-rBR/strings.xml")
@@ -341,4 +348,4 @@ assert "BluetoothRouteMonitor" in code, "BluetoothRouteMonitor import missing in
 assert "spatial_audio_bluetooth_only" in code, "spatial_audio_bluetooth_only missing in SettingsSheet.kt"
 assert "ai_lyrics_api_key" in code, "ai_lyrics_api_key missing in SettingsSheet.kt"
 assert "showAiApiKeyDialog" in code, "showAiApiKeyDialog missing in SettingsSheet.kt"
-print("All Sonium v0.5.0 checks passed successfully!")
+print("All Sonium v0.5.1 checks passed successfully!")
