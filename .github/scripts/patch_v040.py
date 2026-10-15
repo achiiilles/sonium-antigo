@@ -31,9 +31,7 @@ assert len(code) > 100000, "SettingsSheet.kt is too small or empty"
 # 2. Add imports
 extra_imports = """package com.music.bitchord.ui.screens
 
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.border
-import androidx.compose.ui.graphics.Color
 import com.music.bitchord.ui.theme.IosSwitch
 import com.music.bitchord.ui.theme.SettingsPillCard
 import com.music.bitchord.ui.theme.CapsuleShape
