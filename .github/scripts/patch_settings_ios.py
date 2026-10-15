@@ -1,48 +1,118 @@
 import re
 from pathlib import Path
 
-print("Applying iOS Inset Grouped Settings patch...")
+print("Applying Sonium iOS Pill & Subpages Settings patch...")
 
 settings_path = Path("app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt")
+if not settings_path.exists():
+    raise FileNotFoundError("SettingsSheet.kt não encontrado")
+
 code = settings_path.read_text(encoding="utf-8")
 
-# 1. Update GroupShape and styling for iOS Inset Grouped
-# rounded corners 18.dp, background translúcido sobre preto puro
-code = code.replace(
-    "internal val GroupShape = RoundedCornerShape(14.dp)",
-    "internal val GroupShape = RoundedCornerShape(18.dp)"
+# 1. Atualizar GroupShape para cantos arredondados de pílula (20.dp) e fundo translúcido iOS
+code = re.sub(
+    r'internal val GroupShape = RoundedCornerShape\(\d+\.dp\)',
+    'internal val GroupShape = RoundedCornerShape(20.dp)\ninternal val PillShape = RoundedCornerShape(20.dp)',
+    code
 )
 
-# In SettingsGroup, update background to subtle translucent card on pure black:
-old_group_col = '''        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = GROUP_INSET)
-                .clip(GroupShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        ) {'''
+# Fundo translúcido sutil sobre preto puro nas pílulas e grupos
+old_group_bg = 'MaterialTheme.colorScheme.surfaceVariant'
+new_group_bg = 'Color(0xFF1C1C1E).copy(alpha = 0.95f)'
 
-new_group_col = '''        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = GROUP_INSET)
-                .clip(GroupShape)
-                .background(Color(0xFF1C1C1E).copy(alpha = 0.95f)),
-        ) {'''
+# Atualiza background do SettingsGroup
+if 'Column(\n        modifier = Modifier\n            .fillMaxWidth()\n            .padding(horizontal = GROUP_INSET)\n            .clip(GroupShape)\n            .background(MaterialTheme.colorScheme.surfaceVariant)' in code:
+    code = code.replace(
+        'Column(\n        modifier = Modifier\n            .fillMaxWidth()\n            .padding(horizontal = GROUP_INSET)\n            .clip(GroupShape)\n            .background(MaterialTheme.colorScheme.surfaceVariant)',
+        'Column(\n        modifier = Modifier\n            .fillMaxWidth()\n            .padding(horizontal = GROUP_INSET)\n            .clip(GroupShape)\n            .background(Color(0xFF1C1C1E).copy(alpha = 0.95f))'
+    )
+elif '.background(MaterialTheme.colorScheme.surfaceVariant)' in code:
+    code = code.replace('.background(MaterialTheme.colorScheme.surfaceVariant)', '.background(Color(0xFF1C1C1E).copy(alpha = 0.95f))')
 
-if old_group_col in code:
-    code = code.replace(old_group_col, new_group_col)
-
-# 2. Add required imports if missing
-required_imports = [
+# 2. Injetar imports necessários se ausentes
+needed_imports = [
+    "import androidx.activity.compose.BackHandler",
+    "import androidx.compose.material.icons.automirrored.rounded.ArrowBack",
     "import androidx.compose.ui.text.input.PasswordVisualTransformation",
     "import com.music.bitchord.playback.audio.bluetooth.BluetoothRouteMonitor",
+    "import com.music.bitchord.data.lyrics.translationLanguageName",
 ]
-for imp in required_imports:
+for imp in needed_imports:
     if imp not in code:
         code = code.replace("package com.music.bitchord.ui.screens", f"package com.music.bitchord.ui.screens\n{imp}")
 
-# 3. Add AI lyrics and Bluetooth state collectors if missing
+# 3. Injetar enum SettingsCategory e componente SettingsPillCard se ausentes
+if "enum class SettingsCategory" not in code:
+    category_enum_and_pill = '''
+/**
+ * Categorias principais de configurações do Sonium para navegação em subpáginas.
+ */
+enum class SettingsCategory(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+) {
+    ACCOUNT("Conta & Conexões", "Contas, Last.fm, Listen Together e sessões", Icons.Rounded.Person),
+    PLAYBACK("Reprodução & Áudio", "Qualidade, áudio espacial, equalizador e saída", Icons.Rounded.GraphicEq),
+    LYRICS("Letras", "Letras sincronizadas, tradução poética e fontes", Icons.AutoMirrored.Rounded.Notes),
+    APPEARANCE("Aparência & Interface", "Tema, efeito de vidro, capas e animações", Icons.Rounded.AutoAwesome),
+    LIBRARY("Biblioteca & Armazenamento", "Downloads, pastas locais, cache e limpeza", Icons.Rounded.Storage),
+    SYSTEM("Geral & Sistema", "Idioma, backup, desempenho e sobre o app", Icons.Rounded.Tune);
+}
+
+/**
+ * Card individual flutuante em formato de pílula (estilo iOS / cápsula com RoundedCornerShape 20.dp).
+ */
+@Composable
+internal fun SettingsPillCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = GROUP_INSET, vertical = 5.dp)
+            .clip(PillShape)
+            .background(Color(0xFF1C1C1E).copy(alpha = 0.95f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = ROW_INSET, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(ICON_SIZE),
+        )
+        Spacer(Modifier.width(ICON_GAP))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Chevron()
+    }
+}
+'''
+    code = code.replace("// ---- Building blocks", category_enum_and_pill + "\n// ---- Building blocks")
+
+# 4. Injetar estados de Bluetooth e AI Lyrics se ausentes
 if "val aiLyricsEnabled" not in code:
     anchor_trans = "val translationLanguage by AppSettings.translationLanguage.collectAsStateWithLifecycle()"
     replacement_trans = '''val translationLanguage by AppSettings.translationLanguage.collectAsStateWithLifecycle()
@@ -61,6 +131,7 @@ if "BluetoothRouteMonitor.init" not in code:
     val spatialAudioAutoBluetooth by BluetoothRouteMonitor.autoBluetoothFlow.collectAsStateWithLifecycle()'''
     code = code.replace(anchor_spatial, replacement_spatial, 1)
 
+# Diálogo de configuração da chave Gemini
 if "if (editingAiKey) {" not in code:
     anchor_dialog = "if (showListenBrainzTokenDialog) {"
     replacement_dialog = '''if (editingAiKey) {
@@ -99,22 +170,19 @@ if "if (editingAiKey) {" not in code:
     if (showListenBrainzTokenDialog) {'''
     code = code.replace(anchor_dialog, replacement_dialog, 1)
 
-# 4. Restructure sections into the 5 iOS Grouped Cards:
-# 1) "Reprodução & Áudio" (includes playback, audio quality, spatial audio + Bluetooth auto)
-# 2) "Letras" (synced lyrics, translation, AI translation toggle, Gemini key)
-# 3) "Conteúdo & Biblioteca" (account, listen together, downloads, local music, replay/data)
-# 4) "Aparência" (theme, reduce animation/blur, liquid glass, full screen artwork, cover art, app language)
-# 5) "Sobre" (version, credits, links, licenses)
+# Injetar estado de navegação de subpáginas
+if "var selectedCategory by rememberSaveable" not in code:
+    anchor_state = "var searchQuery by remember { mutableStateOf(\"\") }"
+    replacement_state = '''var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
+    if (selectedCategory != null) {
+        BackHandler { selectedCategory = null }
+    }'''
+    code = code.replace(anchor_state, replacement_state, 1)
 
-# Update section headers:
-code = code.replace('header = stringResource(R.string.audio_quality)', 'header = "Reprodução & Áudio"')
-code = code.replace('header = stringResource(R.string.playback)', 'header = "Opções de Reprodução"')
-code = code.replace('header = stringResource(R.string.downloads)', 'header = "Conteúdo & Biblioteca"')
-code = code.replace('header = stringResource(R.string.appearance)', 'header = "Aparência"')
-
-# Add Bluetooth switch inside spatial audio if not present:
+# 5. Adicionar chave Bluetooth auto no grupo de Áudio Espacial se ausente
 if "spatialAudioBluetoothTitle" not in code:
-    old_spatial_block = '''            val spatialAudioTitle = stringResource(R.string.spatial_audio)
+    old_spatial = '''            val spatialAudioTitle = stringResource(R.string.spatial_audio)
             row(spatialAudioTitle, "surround", "3d") {
                 SettingsRow(
                     icon = Icons.Rounded.SurroundSound,
@@ -137,8 +205,7 @@ if "spatialAudioBluetoothTitle" not in code:
                     onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
                 )
             }'''
-
-    new_spatial_block = '''            val spatialAudioTitle = stringResource(R.string.spatial_audio)
+    new_spatial = '''            val spatialAudioTitle = stringResource(R.string.spatial_audio)
             row(spatialAudioTitle, "surround", "3d") {
                 SettingsRow(
                     icon = Icons.Rounded.SurroundSound,
@@ -170,11 +237,36 @@ if "spatialAudioBluetoothTitle" not in code:
                     onCheckedChange = { BluetoothRouteMonitor.setAutoBluetoothEnabled(context.applicationContext, it) },
                 )
             }'''
-    code = code.replace(old_spatial_block, new_spatial_block, 1)
+    if old_spatial in code:
+        code = code.replace(old_spatial, new_spatial, 1)
 
-# Ensure "Letras" has its own dedicated card
+# 6. Remover bloco duplicado de letras de dentro de Aparência se presente
+# O bloco de letras deve residir única e exclusivamente na categoria Letras
+duplicate_lyrics_pattern = r'val syncedLyricsTitle = stringResource\(R\.string\.synced_lyrics\)[\s\S]*?onClick = onTranslationLanguage,\s*\)\s*\}\s*\}'
+# Verifica se há mais de uma ocorrência de syncedLyricsTitle e remove a que estiver dentro de Aparência
+if code.count("val syncedLyricsTitle = stringResource(R.string.synced_lyrics)") > 1:
+    first_idx = code.find("val syncedLyricsTitle = stringResource(R.string.synced_lyrics)")
+    second_idx = code.find("val syncedLyricsTitle = stringResource(R.string.synced_lyrics)", first_idx + 1)
+    # A segunda ocorrência geralmente é a duplicata dentro de Aparência
+    if second_idx > 0:
+        # Encontra o final do if (syncedLyrics) {...}
+        end_idx = code.find("SearchableSettingsGroup(search, header = stringResource(R.string.performance))", second_idx)
+        if end_idx > 0:
+            dup_block = code[second_idx:end_idx]
+            code = code[:second_idx] + code[end_idx:]
+
+# 7. Renomear e alinhar os headers das 6 categorias oficiais
+code = code.replace('header = stringResource(R.string.account_integrations)', 'header = "Conta & Conexões"')
+code = code.replace('header = stringResource(R.string.audio_quality)', 'header = "Reprodução & Áudio"')
+code = code.replace('header = stringResource(R.string.playback)', 'header = "Opções de Reprodução"')
+code = code.replace('header = stringResource(R.string.appearance)', 'header = "Aparência & Interface"')
+code = code.replace('header = stringResource(R.string.downloads)', 'header = "Biblioteca & Armazenamento"')
+code = code.replace('header = stringResource(R.string.miscellaneous)', 'header = "Geral & Sistema"')
+code = code.replace('header = stringResource(R.string.storage)', 'header = "Armazenamento & Cache"')
+
+# Card dedicado de Letras com AI Lyrics e Chave Gemini se não existir
 if 'header = "Letras"' not in code:
-    lyrics_card = '''        SearchableSettingsGroup(search, header = "Letras") {
+    lyrics_group = '''        SearchableSettingsGroup(search, header = "Letras") {
             val syncedLyricsTitle = stringResource(R.string.synced_lyrics)
             row(syncedLyricsTitle, "lyrics", "translation", "lrclib", "musixmatch") {
                 SettingsRow(
@@ -193,6 +285,27 @@ if 'header = "Letras"' not in code:
                     },
                     onClick = { AppSettings.setSyncedLyrics(!syncedLyrics) },
                 )
+            }
+            if (syncedLyrics) {
+                val lyricsBlurTitle = stringResource(R.string.blur_unfocused_lyrics)
+                row(lyricsBlurTitle, "lyrics", "blur") {
+                    SettingsRow(
+                        icon = Icons.Rounded.BlurOn,
+                        title = lyricsBlurTitle,
+                        subtitle = stringResource(R.string.blur_unfocused_lyrics_subtitle),
+                        trailing = {
+                            Switch(
+                                checked = lyricsBlur,
+                                onCheckedChange = AppSettings::setLyricsBlur,
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                    checkedBorderColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        onClick = { AppSettings.setLyricsBlur(!lyricsBlur) },
+                    )
+                }
             }
             val aiTitle = stringResource(R.string.ai_lyrics_translation)
             row(aiTitle, "lyrics", "AI", "translate") {
@@ -250,22 +363,8 @@ if 'header = "Letras"' not in code:
             }
         }
 '''
-    # Insert "Letras" right before "Aparência"
-    code = code.replace('SearchableSettingsGroup(search, header = "Aparência")', lyrics_card + '        SearchableSettingsGroup(search, header = "Aparência")')
+    code = code.replace('SearchableSettingsGroup(search, header = "Aparência & Interface")', lyrics_group + '        SearchableSettingsGroup(search, header = "Aparência & Interface")')
 
-# Add "Sobre" section card wrapping the version and links if not present
-if 'header = "Sobre"' not in code:
-    about_card = '''        SearchableSettingsGroup(search, header = "Sobre") {
-            row("versão", "sobre", "sonium", "créditos") {
-                SettingsRow(
-                    icon = Icons.Rounded.BarChart,
-                    title = "Sonium $version",
-                    subtitle = "Repositório achiilles75/Sonium · Base BitChord",
-                )
-            }
-        }
-'''
-    code = code.replace('SearchableSettingsGroup(search, header = stringResource(R.string.language))', about_card + '        SearchableSettingsGroup(search, header = stringResource(R.string.language))')
-
+# Salva arquivo atualizado
 settings_path.write_text(code, encoding="utf-8")
-print("SettingsSheet.kt successfully updated to 5 Inset Grouped iOS cards!")
+print("patch_settings_ios.py executado com sucesso: Pílulas, Subpáginas e Desduplicação aplicados!")
