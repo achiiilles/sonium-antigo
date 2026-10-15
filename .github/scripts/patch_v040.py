@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
-print("Running Sonium v0.4.7 restoration & patch...")
+print("Running Sonium v0.5.0 restoration & patch...")
 
 # 1. Restore 125 KB authentic SettingsSheet.kt from commit 61589e28ed41e64766e059ff91ee3de98ed60470
 settings_path = Path("app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt")
@@ -28,7 +28,7 @@ code = settings_path.read_text(encoding="utf-8")
 print(f"Loaded SettingsSheet.kt: {len(code)} bytes")
 assert len(code) > 100000, "SettingsSheet.kt is too small or empty"
 
-# 2. Add imports
+# 2. Add extra imports
 extra_imports = """package com.music.bitchord.ui.screens
 
 import androidx.compose.foundation.border
@@ -36,6 +36,7 @@ import com.music.bitchord.ui.theme.IosSwitch
 import com.music.bitchord.ui.theme.SettingsPillCard
 import com.music.bitchord.ui.theme.CapsuleShape
 import com.music.bitchord.ui.theme.InsetGroupedShape
+import com.music.bitchord.playback.audio.bluetooth.BluetoothRouteMonitor
 """
 assert "package com.music.bitchord.ui.screens\n" in code, "package decl missing"
 code = code.replace("package com.music.bitchord.ui.screens\n", extra_imports, 1)
@@ -50,11 +51,143 @@ if start_pill != -1:
         code = code[:start_pill] + code[end_pill:]
         print("Removed local SettingsPillCard (using Theme.kt)")
 
-# 4. Replace Switch with IosSwitch and fix lambda parameter type
+# 4. Inject Spatial Audio Bluetooth Only SubRow into PLAYBACK
+spatial_target = """                    trailing = {
+                        Switch(
+                            checked = spatialAudio,
+                            onCheckedChange = AppSettings::setSpatialAudio,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
+                )
+            }"""
+
+spatial_replacement = """                    trailing = {
+                        Switch(
+                            checked = spatialAudio,
+                            onCheckedChange = AppSettings::setSpatialAudio,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
+                )
+            }
+            if (spatialAudio) {
+                val spatialBtTitle = stringResource(R.string.spatial_audio_bluetooth_only)
+                row(spatialBtTitle, "bluetooth", "fones", "spatial", divided = false) {
+                    val autoBt by BluetoothRouteMonitor.autoBluetoothFlow.collectAsStateWithLifecycle()
+                    SettingsSubRow(
+                        title = spatialBtTitle,
+                        checked = autoBt,
+                        onCheckedChange = { BluetoothRouteMonitor.setAutoBluetoothEnabled(context, it) },
+                        subtitle = stringResource(R.string.spatial_audio_bluetooth_only_subtitle),
+                    )
+                }
+            }"""
+assert spatial_target in code, "spatialAudio block target missing in SettingsSheet.kt"
+code = code.replace(spatial_target, spatial_replacement, 1)
+print("Injected spatial_audio_bluetooth_only into PLAYBACK")
+
+# 5. Inject AI Lyrics Translation toggle + Gemini API Key row into LYRICS
+lyrics_ai_target = """                val aiLyricsTitle = stringResource(R.string.ai_lyrics_translation)
+                row(aiLyricsTitle, "gemini", "ai", "tradução", "letras") {
+                    SettingsRow(
+                        icon = Icons.Rounded.AutoAwesome,
+                        title = aiLyricsTitle,
+                        subtitle = stringResource(R.string.ai_lyrics_translation_subtitle),
+                    )
+                }"""
+
+lyrics_ai_replacement = """                val aiLyricsEnabled by AppSettings.aiLyricsEnabled.collectAsStateWithLifecycle()
+                val aiLyricsApiKey by AppSettings.aiLyricsApiKey.collectAsStateWithLifecycle()
+                val aiLyricsTitle = stringResource(R.string.ai_lyrics_translation)
+                row(aiLyricsTitle, "gemini", "ai", "tradução", "letras") {
+                    SettingsRow(
+                        icon = Icons.Rounded.AutoAwesome,
+                        title = aiLyricsTitle,
+                        subtitle = stringResource(R.string.ai_lyrics_translation_subtitle),
+                        trailing = {
+                            Switch(
+                                checked = aiLyricsEnabled,
+                                onCheckedChange = AppSettings::setAiLyricsEnabled,
+                                colors = SwitchDefaults.colors(
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                    checkedBorderColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        onClick = { AppSettings.setAiLyricsEnabled(!aiLyricsEnabled) },
+                    )
+                }
+                if (aiLyricsEnabled) {
+                    val apiKeyTitle = stringResource(R.string.ai_lyrics_api_key)
+                    row(apiKeyTitle, "gemini", "api key", "chave", divided = false) {
+                        SettingsRow(
+                            title = apiKeyTitle,
+                            subtitle = if (aiLyricsApiKey.isNotBlank()) "Chave configurada (Gemini 1.5 Flash)" else stringResource(R.string.ai_lyrics_api_key_hint),
+                            onClick = { showAiApiKeyDialog = true },
+                        )
+                    }
+                }"""
+assert lyrics_ai_target in code, "aiLyricsTitle block target missing in SettingsSheet.kt"
+code = code.replace(lyrics_ai_target, lyrics_ai_replacement, 1)
+print("Injected ai_lyrics_translation and Gemini key row into LYRICS")
+
+# 6. Add showAiApiKeyDialog state
+dialog_state_target = "    var showListenBrainzTokenDialog by remember { mutableStateOf(false) }"
+dialog_state_replacement = "    var showAiApiKeyDialog by remember { mutableStateOf(false) }\n    var showListenBrainzTokenDialog by remember { mutableStateOf(false) }"
+assert dialog_state_target in code, "dialog_state_target missing in SettingsSheet.kt"
+code = code.replace(dialog_state_target, dialog_state_replacement, 1)
+
+# 7. Add showAiApiKeyDialog AlertDialog
+dialog_block_target = "    if (showListenBrainzTokenDialog) {"
+dialog_block_replacement = """    if (showAiApiKeyDialog) {
+        var keyInput by remember { mutableStateOf(AppSettings.aiLyricsApiKey.value) }
+        AlertDialog(
+            onDismissRequest = { showAiApiKeyDialog = false },
+            title = { Text(stringResource(R.string.ai_lyrics_api_key)) },
+            text = {
+                OutlinedTextField(
+                    value = keyInput,
+                    onValueChange = { keyInput = it },
+                    label = { Text("Google AI Studio API Key") },
+                    placeholder = { Text("AIza...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    AppSettings.setAiLyricsApiKey(keyInput.trim())
+                    showAiApiKeyDialog = false
+                }) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAiApiKeyDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (showListenBrainzTokenDialog) {"""
+assert dialog_block_target in code, "dialog_block_target missing in SettingsSheet.kt"
+code = code.replace(dialog_block_target, dialog_block_replacement, 1)
+
+# 8. Replace Switch with IosSwitch and fix lambda parameter type
 code = code.replace("Switch(", "IosSwitch(")
 code = code.replace("onCheckedChange = { enabled ->", "onCheckedChange = { enabled: Boolean ->")
 
-# 5. Remove duplicated back button row and replicate AccountAndScrobblingScreen title style
+# 9. Remove duplicated back button row and replicate AccountAndScrobblingScreen title style
 old_header_block = """        } else {
             Row(
                 modifier = Modifier
@@ -92,13 +225,13 @@ assert old_header_block in code, "old header block missing in SettingsSheet.kt"
 code = code.replace(old_header_block, new_header_block, 1)
 print("Replaced subpage header with AccountAndScrobblingScreen displayLarge style without duplicate back button")
 
-# 6. Search empty message condition
+# 10. Search empty message condition
 old_search_empty = "if (!search.anyMatch) {\n            MessageState(stringResource(R.string.settings_search_empty, searchQuery))\n        }"
 new_search_empty = "if (searchQuery.isNotBlank() && !search.anyMatch) {\n            MessageState(stringResource(R.string.settings_search_empty, searchQuery))\n        }"
 assert old_search_empty in code, "search empty condition missing"
 code = code.replace(old_search_empty, new_search_empty)
 
-# 7. Clean footer: Sonium version, GitHub letter, GPL License
+# 11. Clean footer: Sonium version 0.5.0, GitHub link, GPL License
 footer_start = code.find("if (searchQuery.isBlank() && selectedCategory == null) {\n        Text(\n            text = buildAnnotatedString {")
 if footer_start != -1:
     footer_marker = ".padding(top = 24.dp, bottom = 8.dp),\n        )\n        }"
@@ -131,7 +264,7 @@ if footer_start != -1:
         code = code[:footer_start] + clean_footer + code[footer_end:]
         print("Cleaned footer")
 
-# 8. Standalone capsule vs Inset Grouped in SettingsGroup with subtle depth border
+# 12. Standalone capsule vs Inset Grouped in SettingsGroup with subtle depth border
 old_searchable = """    if (scope.entries.isEmpty()) return
     SettingsGroup(header = header, footer = footer, topSpacing = topSpacing) {"""
 new_searchable = """    if (scope.entries.isEmpty()) return
@@ -177,32 +310,25 @@ new_column = """    Column(
 assert old_column in code, "SettingsGroup column clip missing"
 code = code.replace(old_column, new_column)
 
-# 9. Write patched SettingsSheet.kt
+# 13. Write patched SettingsSheet.kt
 settings_path.write_text(code, encoding="utf-8")
 print(f"SettingsSheet.kt saved: {len(code)} bytes")
 
-# 10. Verify build.gradle.kts
+# 14. Verify and update build.gradle.kts to version 0.5.0 (versionCode 33)
 gradle_path = Path("app/build.gradle.kts")
 gradle = gradle_path.read_text(encoding="utf-8")
-if 'versionName = "0.4.7"' not in gradle:
-    gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.4.7"', gradle)
-if 'versionCode = 32' not in gradle:
-    gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 32', gradle)
+gradle = re.sub(r'versionName\s*=\s*"[^"]+"', 'versionName = "0.5.0"', gradle)
+gradle = re.sub(r'versionCode\s*=\s*\d+', 'versionCode = 33', gradle)
 gradle_path.write_text(gradle, encoding="utf-8")
-print("Verified app/build.gradle.kts: versionName = 0.4.7, versionCode = 32")
+print("Verified app/build.gradle.kts: versionName = 0.5.0, versionCode = 33")
 
-# 11. Verify values-pt-rBR strings.xml
+# 15. Verify values-pt-rBR strings.xml
 pt_br_res = Path("app/src/main/res/values-pt-rBR/strings.xml")
 if pt_br_res.exists():
     ET.parse(str(pt_br_res))
     print("Verified app/src/main/res/values-pt-rBR/strings.xml syntax")
 
-pt_br_shared = Path("sharedUi/src/commonMain/composeResources/values-pt-rBR/strings.xml")
-if pt_br_shared.exists():
-    ET.parse(str(pt_br_shared))
-    print("Verified sharedUi/src/commonMain/composeResources/values-pt-rBR/strings.xml syntax")
-
-# 12. Final Assertions
+# 16. Final Assertions
 assert "IosSwitch" in code, "IosSwitch not found in SettingsSheet.kt"
 assert "CapsuleShape" in code, "CapsuleShape not found in SettingsSheet.kt"
 assert "InsetGroupedShape" in code, "InsetGroupedShape not found in SettingsSheet.kt"
@@ -211,4 +337,8 @@ assert "Icons.AutoMirrored.Rounded.ArrowBack" not in code, "ArrowBack still pres
 assert "searchQuery.isNotBlank() && !search.anyMatch" in code, "Search empty fix missing"
 assert "Discord" not in code, "Discord link still in footer"
 assert "bitchord.kushagrasingh.in" not in code, "Website link still in footer"
-print("All Sonium v0.4.7 checks passed successfully!")
+assert "BluetoothRouteMonitor" in code, "BluetoothRouteMonitor import missing in SettingsSheet.kt"
+assert "spatial_audio_bluetooth_only" in code, "spatial_audio_bluetooth_only missing in SettingsSheet.kt"
+assert "ai_lyrics_api_key" in code, "ai_lyrics_api_key missing in SettingsSheet.kt"
+assert "showAiApiKeyDialog" in code, "showAiApiKeyDialog missing in SettingsSheet.kt"
+print("All Sonium v0.5.0 checks passed successfully!")
