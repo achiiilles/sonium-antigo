@@ -29,7 +29,7 @@ def add_strings(path, entries):
 
 root = 'app/src/main/java/com/music/bitchord/'
 
-# 1. AuthStore: Encrypted SharedPreferences dedicated to OpenAI key without fallback
+# 1. AuthStore: Encrypted SharedPreferences dedicated to Gemini key without fallback
 edit(root+'auth/AuthStore.kt', 'import android.content.SharedPreferences', '''import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey''')
@@ -68,20 +68,20 @@ for resource in ['backup_rules.xml', 'data_extraction_rules.xml']:
 add_strings('app/src/main/res/values/strings.xml', {
     'ai_lyrics_translation': 'AI lyric translation',
     'ai_lyrics_translation_subtitle': 'Poetic, rhythmic translation in the active language',
-    'ai_lyrics_api_key': 'OpenAI API key',
-    'ai_lyrics_api_key_hint': 'sk-…',
+    'ai_lyrics_api_key': 'Google AI Studio (Gemini) API key',
+    'ai_lyrics_api_key_hint': 'AIza…',
 })
 add_strings('app/src/main/res/values-pt-rBR/strings.xml', {
     'ai_lyrics_translation': 'Tradução de letras por IA',
     'ai_lyrics_translation_subtitle': 'Tradução poética e rítmica no idioma ativo',
-    'ai_lyrics_api_key': 'Chave de API OpenAI',
-    'ai_lyrics_api_key_hint': 'sk-…',
+    'ai_lyrics_api_key': 'Chave Google AI Studio (Gemini)',
+    'ai_lyrics_api_key_hint': 'AIza…',
 })
 add_strings('app/src/main/res/values-pt/strings.xml', {
     'ai_lyrics_translation': 'Tradução de letras por IA',
     'ai_lyrics_translation_subtitle': 'Tradução poética e rítmica no idioma ativo',
-    'ai_lyrics_api_key': 'Chave de API OpenAI',
-    'ai_lyrics_api_key_hint': 'sk-…',
+    'ai_lyrics_api_key': 'Chave Google AI Studio (Gemini)',
+    'ai_lyrics_api_key_hint': 'AIza…',
 })
 
 # 4. AppSettings
@@ -131,19 +131,19 @@ edit(app, '        LyricsTranslation.cacheDir = cacheDir', '''        LyricsTran
 
 # 7. AiLyricsTranslator
 translator = 'shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/AiLyricsTranslator.kt'
-edit(translator, '''        // 1. Verificar cache em memória ou disco''', '''        // The off switch must bypass AI output, including previously cached AI output.
+edit(translator, ''''        // 1. Verificar cache em memória ou disco''', ''''        // The off switch must bypass AI output, including previously cached AI output.
         if (key.isBlank() || !aiLyricsEnabled) {
             return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
         }
 
         // 1. Verificar cache em memória ou disco''')
 
-edit(translator, '''        // Se chave de API não foi configurada ou IA não habilitada, delega para tradução tradicional
+edit(translator, ''''        // Se chave de API não foi configurada ou IA não habilitada, delega para tradução tradicional
         if (key.isBlank() || !aiLyricsEnabled) {
             return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
         }
 
-        // 2. Chamada à API de IA''', '''        // 2. Chamada à API de IA''')
+        // 2. Chamada à API de IA''', ''''        // 2. Chamada à API de IA''')
 
 # 8. SettingsSheet
 ui = root+'ui/screens/SettingsSheet.kt'
@@ -156,7 +156,7 @@ edit(ui, '    val translationLanguage by AppSettings.translationLanguage.collect
     var editingAiKey by remember { mutableStateOf(false) }
     var aiKeyError by remember { mutableStateOf(false) }''')
 
-edit(ui, '''                val translationLanguageTitle = stringResource(R.string.translation_language)''', '''                val aiTitle = stringResource(R.string.ai_lyrics_translation)
+edit(ui, ''''                val translationLanguageTitle = stringResource(R.string.translation_language)''', ''''                val aiTitle = stringResource(R.string.ai_lyrics_translation)
                 row(aiTitle, "lyrics", "AI", "translate") {
                     SettingsRow(
                         icon = Icons.Rounded.AutoAwesome,
@@ -172,7 +172,7 @@ edit(ui, '''                val translationLanguageTitle = stringResource(R.stri
                     )
                 }
                 val keyTitle = stringResource(R.string.ai_lyrics_api_key)
-                row(keyTitle, "AI", "OpenAI", "lyrics") {
+                row(keyTitle, "AI", "Gemini", "Google", "lyrics") {
                     SettingsRow(
                         icon = Icons.Rounded.Tune,
                         title = keyTitle,
@@ -217,4 +217,4 @@ edit(ui, '    if (showListenBrainzTokenDialog) {', '''    if (editingAiKey) {
     }
     if (showListenBrainzTokenDialog) {''')
 
-print('AI lyrics patch applied: secure key, settings UI, player, cache and fallback')
+print('AI lyrics patch applied: Google AI Studio (Gemini) key, settings UI, player, cache and fallback')
