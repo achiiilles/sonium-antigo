@@ -16,8 +16,8 @@
 
     <string name="ai_lyrics_translation">Tradução de letras por IA</string>
     <string name="ai_lyrics_translation_subtitle">Traduz e adapta mantendo ritmo poético e rimas naturais para o idioma do app</string>
-    <string name="ai_lyrics_api_key">Chave de API de Tradução IA</string>
-    <string name="ai_lyrics_api_key_hint">Cole sua chave de API</string>
+    <string name="ai_lyrics_api_key">Chave Google AI Studio (Gemini)</string>
+    <string name="ai_lyrics_api_key_hint">Cole sua chave do Google AI Studio</string>
 
     <string name="equalizer">Equalizador</string>
     <string name="equalizer_subtitle">Tom, sete bandas e balanço</string>
