@@ -70,18 +70,24 @@ add_strings('app/src/main/res/values/strings.xml', {
     'ai_lyrics_translation_subtitle': 'Poetic, rhythmic translation in the active language',
     'ai_lyrics_api_key': 'Google AI Studio (Gemini) API key',
     'ai_lyrics_api_key_hint': 'AIza…',
+    'spatial_audio_bluetooth_only': 'Enable only with Bluetooth headphones',
+    'spatial_audio_bluetooth_only_subtitle': 'Automatically enables spatial audio when connected to Bluetooth headphones and disables on speaker',
 })
 add_strings('app/src/main/res/values-pt-rBR/strings.xml', {
     'ai_lyrics_translation': 'Tradução de letras por IA',
     'ai_lyrics_translation_subtitle': 'Tradução poética e rítmica no idioma ativo',
     'ai_lyrics_api_key': 'Chave Google AI Studio (Gemini)',
     'ai_lyrics_api_key_hint': 'AIza…',
+    'spatial_audio_bluetooth_only': 'Ativar apenas com fones Bluetooth',
+    'spatial_audio_bluetooth_only_subtitle': 'Liga o áudio espacial automaticamente ao conectar fones sem fio e desativa ao desconectar',
 })
 add_strings('app/src/main/res/values-pt/strings.xml', {
     'ai_lyrics_translation': 'Tradução de letras por IA',
     'ai_lyrics_translation_subtitle': 'Tradução poética e rítmica no idioma ativo',
     'ai_lyrics_api_key': 'Chave Google AI Studio (Gemini)',
     'ai_lyrics_api_key_hint': 'AIza…',
+    'spatial_audio_bluetooth_only': 'Ativar apenas com fones Bluetooth',
+    'spatial_audio_bluetooth_only_subtitle': 'Liga o áudio espacial automaticamente ao conectar fones sem fio e desativa ao desconectar',
 })
 
 # 4. AppSettings
@@ -129,23 +135,9 @@ import com.music.bitchord.data.lyrics.AiLyricsTranslator''')
 edit(app, '        LyricsTranslation.cacheDir = cacheDir', '''        LyricsTranslation.cacheDir = cacheDir
         AiLyricsTranslator.cacheDir = cacheDir''')
 
-# 7. AiLyricsTranslator
-translator = 'shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/AiLyricsTranslator.kt'
-edit(translator, ''''        // 1. Verificar cache em memória ou disco''', ''''        // The off switch must bypass AI output, including previously cached AI output.
-        if (key.isBlank() || !aiLyricsEnabled) {
-            return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
-        }
+# 7. AiLyricsTranslator: Já migrado diretamente no repositório para o Gemini 1.5 Flash.
 
-        // 1. Verificar cache em memória ou disco''')
-
-edit(translator, ''''        // Se chave de API não foi configurada ou IA não habilitada, delega para tradução tradicional
-        if (key.isBlank() || !aiLyricsEnabled) {
-            return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
-        }
-
-        // 2. Chamada à API de IA''', ''''        // 2. Chamada à API de IA''')
-
-# 8. SettingsSheet
+# 8. SettingsSheet - Tradução por IA
 ui = root+'ui/screens/SettingsSheet.kt'
 edit(ui, 'import androidx.compose.ui.text.LinkAnnotation', '''import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.LinkAnnotation''')
@@ -156,7 +148,7 @@ edit(ui, '    val translationLanguage by AppSettings.translationLanguage.collect
     var editingAiKey by remember { mutableStateOf(false) }
     var aiKeyError by remember { mutableStateOf(false) }''')
 
-edit(ui, ''''                val translationLanguageTitle = stringResource(R.string.translation_language)''', ''''                val aiTitle = stringResource(R.string.ai_lyrics_translation)
+edit(ui, '''                val translationLanguageTitle = stringResource(R.string.translation_language)''', '''                val aiTitle = stringResource(R.string.ai_lyrics_translation)
                 row(aiTitle, "lyrics", "AI", "translate") {
                     SettingsRow(
                         icon = Icons.Rounded.AutoAwesome,
@@ -217,4 +209,85 @@ edit(ui, '    if (showListenBrainzTokenDialog) {', '''    if (editingAiKey) {
     }
     if (showListenBrainzTokenDialog) {''')
 
-print('AI lyrics patch applied: Google AI Studio (Gemini) key, settings UI, player, cache and fallback')
+# 9. SettingsSheet - Switch de Áudio Espacial Bluetooth
+edit(ui, 'import com.music.bitchord.playback.AudioCache', '''import com.music.bitchord.playback.AudioCache
+import com.music.bitchord.playback.audio.bluetooth.BluetoothRouteMonitor''')
+
+edit(ui, '    val spatialAudio by AppSettings.spatialAudio.collectAsStateWithLifecycle()', '''    val spatialAudio by AppSettings.spatialAudio.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        BluetoothRouteMonitor.init(context.applicationContext)
+    }
+    val spatialAudioAutoBluetooth by BluetoothRouteMonitor.autoBluetoothFlow.collectAsStateWithLifecycle()''')
+
+edit(ui, '''            val spatialAudioTitle = stringResource(R.string.spatial_audio)
+            row(spatialAudioTitle, "surround", "3d") {
+                SettingsRow(
+                    icon = Icons.Rounded.SurroundSound,
+                    title = spatialAudioTitle,
+                    // Widening a JOC stream would fight the object-based mix
+                    // Dolby has already spatialized, so the service holds this
+                    // off for the duration of an Atmos track — see
+                    // `PlaybackService.applySpatialAudioEnabled`. Said on the
+                    // row because the switch stays where the listener left it,
+                    // and a switch reading "on" over an effect that is not
+                    // running is the same silent lie the equaliser screen used
+                    // to tell.
+                    subtitle = if (playingDolbyAtmos) {
+                        stringResource(R.string.spatial_audio_atmos_subtitle)
+                    } else {
+                        stringResource(R.string.spatial_audio_subtitle)
+                    },
+                    trailing = {
+                        Switch(
+                            checked = spatialAudio,
+                            onCheckedChange = AppSettings::setSpatialAudio,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
+                )
+            }''', '''            val spatialAudioTitle = stringResource(R.string.spatial_audio)
+            row(spatialAudioTitle, "surround", "3d") {
+                SettingsRow(
+                    icon = Icons.Rounded.SurroundSound,
+                    title = spatialAudioTitle,
+                    // Widening a JOC stream would fight the object-based mix
+                    // Dolby has already spatialized, so the service holds this
+                    // off for the duration of an Atmos track — see
+                    // `PlaybackService.applySpatialAudioEnabled`. Said on the
+                    // row because the switch stays where the listener left it,
+                    // and a switch reading "on" over an effect that is not
+                    // running is the same silent lie the equaliser screen used
+                    // to tell.
+                    subtitle = if (playingDolbyAtmos) {
+                        stringResource(R.string.spatial_audio_atmos_subtitle)
+                    } else {
+                        stringResource(R.string.spatial_audio_subtitle)
+                    },
+                    trailing = {
+                        Switch(
+                            checked = spatialAudio,
+                            onCheckedChange = AppSettings::setSpatialAudio,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setSpatialAudio(!spatialAudio) },
+                )
+            }
+            val spatialAudioBluetoothTitle = stringResource(R.string.spatial_audio_bluetooth_only)
+            row(spatialAudioBluetoothTitle, "bluetooth", "surround", "3d", "headphones", divided = false) {
+                SettingsSubRow(
+                    title = spatialAudioBluetoothTitle,
+                    subtitle = stringResource(R.string.spatial_audio_bluetooth_only_subtitle),
+                    checked = spatialAudioAutoBluetooth,
+                    onCheckedChange = { BluetoothRouteMonitor.setAutoBluetoothEnabled(context.applicationContext, it) },
+                )
+            }''')
+
+print('AI lyrics & Bluetooth Spatial Audio patch applied: Gemini 1.5 Flash key, settings UI, Bluetooth switch, cache and fallback')
