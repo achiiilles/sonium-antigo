@@ -8,6 +8,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -227,6 +228,7 @@ fun IosSwitch(
  * Cartão de configurações estilo Apple / iOS Inset Grouped:
  * - Se [isStandalone] for true (apenas 1 item): cápsula 100% redonda (CapsuleShape).
  * - Se houver múltiplos itens no mesmo bloco: bloco retangular com cantos arredondados (InsetGroupedShape).
+ * - Borda translúcida de 0.5dp dando profundidade e relevo idêntico ao da barra de navegação.
  */
 @Composable
 fun SettingsPillCard(
@@ -244,6 +246,7 @@ fun SettingsPillCard(
             .fillMaxWidth()
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -298,7 +301,9 @@ fun InsetGroupedContainer(
 ) {
     val shape = if (isStandalone) CapsuleShape else InsetGroupedShape
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceVariant,
         contentColor = MaterialTheme.colorScheme.onBackground,
