@@ -316,9 +316,7 @@ private fun HeroShelf(
                     item.subtitle.contains("Artist •", ignoreCase = true) ||
                     item.subtitle.contains("Artista •", ignoreCase = true) ||
                     item.subtitle.contains("• Artist", ignoreCase = true) ||
-                    item.subtitle.contains("• Artista", ignoreCase = true) ||
-                    item.subtitle.contains("subscribers", ignoreCase = true) ||
-                    item.subtitle.contains("inscritos", ignoreCase = true)
+                    item.subtitle.contains("• Artista", ignoreCase = true)
                 val cardShape = if (isArtistCard) CircleShape else RoundedCornerShape(12.dp)
                 Box(
                     modifier = Modifier
@@ -427,5 +425,71 @@ if os.path.exists(ss_path):
     with open(ss_path, "w", encoding="utf-8") as f:
         f.write(ss)
     print("SearchScreen.kt patched for translated sections and round recent entity cards.")
+
+# 7. Patch LibraryScreen.kt (Fotos redondas nos artistas da biblioteca e Ver tudo)
+ls_path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/LibraryScreen.kt"
+if os.path.exists(ls_path):
+    with open(ls_path, "r", encoding="utf-8") as f:
+        ls = f.read()
+
+    old_grid_items = """            items(sortedShelf.items, key = { it.browseId ?: it.title }) { item ->
+                ShelfCard(
+                    item = item,
+                    onClick = { onItemClick(item) },
+                    onLongPress = { onItemLongPress(item) },
+                    modifier = Modifier.fillMaxWidth(),
+                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                )
+            }"""
+
+    new_grid_items = """            val isArtistShelf = shelf.title.equals("Artists", ignoreCase = true) ||
+                shelf.title.equals("Artistas", ignoreCase = true)
+            items(sortedShelf.items, key = { it.browseId ?: it.title }) { rawItem ->
+                val item = if (isArtistShelf && rawItem.subtitle.isBlank()) {
+                    rawItem.copy(subtitle = "Artista")
+                } else if (isArtistShelf && !rawItem.subtitle.contains("Artist", ignoreCase = true) && !rawItem.subtitle.contains("Artista", ignoreCase = true)) {
+                    rawItem.copy(subtitle = "Artista • ${rawItem.subtitle}")
+                } else rawItem
+                ShelfCard(
+                    item = item,
+                    onClick = { onItemClick(item) },
+                    onLongPress = { onItemLongPress(item) },
+                    modifier = Modifier.fillMaxWidth(),
+                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                )
+            }"""
+
+    if old_grid_items in ls:
+        ls = ls.replace(old_grid_items, new_grid_items)
+
+    old_shelf_items = """            items(visibleItems) { item ->
+                ShelfCard(
+                    item = item,
+                    onClick = { onItemClick(item) },
+                    onLongPress = { onItemLongPress(item) },
+                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                )
+            }"""
+
+    new_shelf_items = """            items(visibleItems) { rawItem ->
+                val item = if (isArtistShelf && rawItem.subtitle.isBlank()) {
+                    rawItem.copy(subtitle = "Artista")
+                } else if (isArtistShelf && !rawItem.subtitle.contains("Artist", ignoreCase = true) && !rawItem.subtitle.contains("Artista", ignoreCase = true)) {
+                    rawItem.copy(subtitle = "Artista • ${rawItem.subtitle}")
+                } else rawItem
+                ShelfCard(
+                    item = item,
+                    onClick = { onItemClick(item) },
+                    onLongPress = { onItemLongPress(item) },
+                    isPinned = item.browseId != null && item.browseId in pinnedPlaylists,
+                )
+            }"""
+
+    if old_shelf_items in ls:
+        ls = ls.replace(old_shelf_items, new_shelf_items)
+
+    with open(ls_path, "w", encoding="utf-8") as f:
+        f.write(ls)
+    print("LibraryScreen.kt patched for round artist cards in shelf and Ver tudo grid.")
 
 print("All Sonium 0.2.5 patches applied successfully!")
