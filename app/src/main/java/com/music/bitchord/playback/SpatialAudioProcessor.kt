@@ -7,6 +7,7 @@ import androidx.media3.common.util.UnstableApi
 import com.music.bitchord.playback.audio.AudioBlock
 import com.music.bitchord.playback.audio.FloatAudioProcessor
 import com.music.bitchord.playback.audio.PcmBoundary
+import com.music.bitchord.playback.audio.bluetooth.BluetoothRouteMonitor
 import java.nio.ByteOrder
 import kotlin.math.roundToInt
 
@@ -20,12 +21,30 @@ import kotlin.math.roundToInt
  * audible difference on the reference device — likely swallowed by the OEM's
  * own audio effect chain — so this runs inside ExoPlayer's own audio
  * processor pipeline instead, where nothing else can intercept it.
+ *
+ * Integrated with [BluetoothRouteMonitor]: when auto-Bluetooth spatial audio
+ * is enabled, processing activates only when effective audio output is a
+ * Bluetooth media route (A2DP or LE), and immediately deactivates upon
+ * disconnection or routing to phone speaker / telephony SCO.
  */
 @UnstableApi
 class SpatialAudioProcessor : BaseAudioProcessor() {
 
     @Volatile
     var enabled: Boolean = false
+
+    /**
+     * Whether spatial audio is actively applied to audio frames, accounting
+     * for [enabled] and automatic Bluetooth route filtering.
+     */
+    val isEffectivelyEnabled: Boolean
+        get() {
+            if (!enabled) return false
+            if (BluetoothRouteMonitor.isAutoBluetoothEnabled) {
+                return BluetoothRouteMonitor.isBluetoothActive
+            }
+            return true
+        }
 
     /** How much wider the stereo image gets. 1.0 = untouched. */
     private val widthGain = 2.5f
@@ -41,7 +60,6 @@ class SpatialAudioProcessor : BaseAudioProcessor() {
 
     private var sampleRate: Int = 0
     private var channelCount: Int = 0
-
     private var delayLeft = FloatArray(0)
     private var delayRight = FloatArray(0)
     private var delayIndex = 0
@@ -77,9 +95,8 @@ class SpatialAudioProcessor : BaseAudioProcessor() {
      * Preserves dynamic headroom without clamping to [-1.0f, +1.0f].
      */
     fun process(block: AudioBlock) {
-        if (!enabled || block.frameCount == 0) return
+        if (!isEffectivelyEnabled || block.frameCount == 0) return
         if (block.channelCount != 2) return // Spatial widening only applies to stereo
-
         val delaySize = delayLeft.size
         if (delaySize == 0) return
 
@@ -95,13 +112,16 @@ class SpatialAudioProcessor : BaseAudioProcessor() {
 
             val mid = (left + right) * 0.5f
             val side = (left - right) * 0.5f * widthGain
+
             var widenedLeft = mid + side
             var widenedRight = mid - side
 
             val delayedRight = delayRight[dIdx]
             val delayedLeft = delayLeft[dIdx]
+
             lpL += lowpassCoeff * (delayedRight - lpL)
             lpR += lowpassCoeff * (delayedLeft - lpR)
+
             widenedLeft += lpL * crossfeedGain
             widenedRight += lpR * crossfeedGain
 
@@ -112,6 +132,7 @@ class SpatialAudioProcessor : BaseAudioProcessor() {
             // Headroom is preserved: no clamping to [-1.0f, +1.0f]
             block.samples[idx] = widenedLeft * outputGain
             block.samples[idx + 1] = widenedRight * outputGain
+
             idx += 2
         }
 
@@ -170,8 +191,7 @@ class SpatialAudioProcessor : BaseAudioProcessor() {
         val frameCount = inputBuffer.remaining() / BYTES_PER_FRAME
         if (frameCount == 0) return
         val outputBuffer = replaceOutputBuffer(frameCount * BYTES_PER_FRAME)
-
-        if (!enabled) {
+        if (!isEffectivelyEnabled) {
             outputBuffer.put(inputBuffer)
             outputBuffer.flip()
             return
@@ -190,21 +210,24 @@ class SpatialAudioProcessor : BaseAudioProcessor() {
         var dIdx = delayIndex
         var lpL = lowpassLeft
         var lpR = lowpassRight
-        val invScale = 1.0f / 32768.0f
 
+        val invScale = 1.0f / 32768.0f
         repeat(frameCount) {
             val left = inputBuffer.short.toFloat() * invScale
             val right = inputBuffer.short.toFloat() * invScale
 
             val mid = (left + right) * 0.5f
             val side = (left - right) * 0.5f * widthGain
+
             var widenedLeft = mid + side
             var widenedRight = mid - side
 
             val delayedRight = delayRight[dIdx]
             val delayedLeft = delayLeft[dIdx]
+
             lpL += lowpassCoeff * (delayedRight - lpL)
             lpR += lowpassCoeff * (delayedLeft - lpR)
+
             widenedLeft += lpL * crossfeedGain
             widenedRight += lpR * crossfeedGain
 
@@ -215,6 +238,7 @@ class SpatialAudioProcessor : BaseAudioProcessor() {
             outputBuffer.putShort(PcmBoundary.clamp16FromFloat(widenedLeft * outputGain))
             outputBuffer.putShort(PcmBoundary.clamp16FromFloat(widenedRight * outputGain))
         }
+
         delayIndex = dIdx
         lowpassLeft = lpL
         lowpassRight = lpR
