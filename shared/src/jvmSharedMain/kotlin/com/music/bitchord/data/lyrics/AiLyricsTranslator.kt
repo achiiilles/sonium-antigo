@@ -65,7 +65,8 @@ $originalText"""
     }
 
     /**
-     * Traduz uma lista de linhas de letra de forma poética.
+     * Traduz uma lista de linhas de letra de forma poética exclusivamente por IA.
+     * Sem fallback silencioso para o tradutor tradicional.
      */
     suspend fun translatePoetic(
         trackId: String,
@@ -79,9 +80,9 @@ $originalText"""
 
         val key = apiKey.trim()
 
-        // Se chave de API não foi configurada ou IA não habilitada, delega para tradução tradicional
+        // Se chave de API não foi configurada ou IA não habilitada, não faz tradução oculta
         if (key.isBlank() || !aiLyricsEnabled) {
-            return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
+            return LyricsTranslation.Result.Unavailable
         }
 
         val plainLines = lines.map { it.text }
@@ -112,8 +113,8 @@ $originalText"""
         }
 
         if (translatedLines == null || translatedLines.size != lines.size) {
-            // Fallback transparente para o tradutor nativo em caso de divergência de linhas
-            return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
+            // Em caso de falha na IA ou divergência de linhas, não usa fallback silencioso
+            return LyricsTranslation.Result.Unavailable
         }
 
         val entry = CachedAiTranslation(
