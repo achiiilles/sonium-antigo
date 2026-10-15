@@ -27,15 +27,15 @@ if not pt_br_shared.exists():
 ET.parse(str(pt_br_shared))
 print("Verified sharedUi/src/commonMain/composeResources/values-pt-rBR/strings.xml syntax")
 
-# 3. Verify SettingsSheet.kt has iOS grouped blocks
+# 3. Verify SettingsSheet.kt has iOS grouped blocks & 6 categories
 settings_path = Path("app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt")
 settings_code = settings_path.read_text(encoding="utf-8")
 required_sections = [
     "Reprodução & Áudio",
     "Letras",
-    "Conteúdo & Biblioteca",
-    "Aparência",
-    "Sobre",
+    "Aparência & Interface",
+    "Biblioteca & Armazenamento",
+    "Geral & Sistema",
 ]
 for sec in required_sections:
     if sec not in settings_code:
