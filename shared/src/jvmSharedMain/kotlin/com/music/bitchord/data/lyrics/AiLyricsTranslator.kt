@@ -1,7 +1,6 @@
 package com.music.bitchord.data.lyrics
 
 import com.music.bitchord.data.Http
-import com.music.bitchord.data.settings.AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -72,10 +71,12 @@ $originalText"""
         lines: List<LyricLine>,
         targetLanguageTag: String,
         targetLanguageDisplayName: String,
+        apiKey: String = "",
+        aiLyricsEnabled: Boolean = true,
     ): LyricsTranslation.Result {
         if (lines.isEmpty()) return LyricsTranslation.Result.Unavailable
 
-        val apiKey = AppSettings.aiLyricsApiKey.value.trim()
+        val key = apiKey.trim()
         val plainLines = lines.map { it.text }
         val lineCount = plainLines.size
         val cacheKey = hashKey(trackId, targetLanguageTag, plainLines)
@@ -95,8 +96,8 @@ $originalText"""
             )
         }
 
-        // Se chave de API não foi configurada, delega para tradução tradicional
-        if (apiKey.isBlank() || !AppSettings.aiLyricsEnabled.value) {
+        // Se chave de API não foi configurada ou IA não habilitada, delega para tradução tradicional
+        if (key.isBlank() || !aiLyricsEnabled) {
             return LyricsTranslation.translate(trackId, lines, targetLanguageTag)
         }
 
@@ -105,7 +106,7 @@ $originalText"""
         val prompt = buildPoeticPrompt(targetLanguageDisplayName, originalBody, lineCount)
 
         val translatedLines = withContext(Dispatchers.IO) {
-            callAiCompletion(prompt, apiKey)
+            callAiCompletion(prompt, key)
         }
 
         if (translatedLines == null || translatedLines.size != lines.size) {
