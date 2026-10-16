@@ -1,7 +1,6 @@
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
-
 def edit(path, old, new):
     file = Path(path)
     text = file.read_text(encoding='utf-8')
@@ -10,7 +9,6 @@ def edit(path, old, new):
             return
         raise RuntimeError(f'Expected anchor missing: {path}: {old[:70]}')
     file.write_text(text.replace(old, new, 1), encoding='utf-8')
-
 
 def add_strings(path, entries):
     file = Path(path)
@@ -25,7 +23,6 @@ def add_strings(path, entries):
         text = text.replace('</resources>', '\n'.join(to_add) + '\n</resources>')
         file.write_text(text, encoding='utf-8')
         ET.parse(path)
-
 
 root = 'app/src/main/java/com/music/bitchord/'
 
@@ -65,7 +62,7 @@ for resource in ['backup_rules.xml', 'data_extraction_rules.xml']:
     if Path(path).exists():
         text = Path(path).read_text(encoding='utf-8')
         if 'sonium_ai_auth.xml' not in text:
-            text = text.replace('path="bitchord_auth.xml" />', 'path="bitchord_auth.xml" />\n        <exclude domain="sharedpref" path="sonium_ai_auth.xml" />')
+            text = text.replace('path="bitchord_auth.xml" />', 'path="bitchord_auth.xml" />\n    <exclude domain="sharedpref" path="sonium_ai_auth.xml" />')
             Path(path).write_text(text, encoding='utf-8')
             ET.parse(path)
 
@@ -77,7 +74,9 @@ add_strings('app/src/main/res/values/strings.xml', {
     'ai_lyrics_api_key_hint': 'AIza…',
     'spatial_audio_bluetooth_only': 'Enable only with Bluetooth headphones',
     'spatial_audio_bluetooth_only_subtitle': 'Automatically enables spatial audio when connected to Bluetooth headphones and disables on speaker',
+    'translating_lyrics': 'Traduzindo por IA…',
 })
+
 add_strings('app/src/main/res/values-pt-rBR/strings.xml', {
     'ai_lyrics_translation': 'Tradução de letras por IA',
     'ai_lyrics_translation_subtitle': 'Tradução poética e rítmica no idioma ativo',
@@ -85,7 +84,9 @@ add_strings('app/src/main/res/values-pt-rBR/strings.xml', {
     'ai_lyrics_api_key_hint': 'AIza…',
     'spatial_audio_bluetooth_only': 'Ativar apenas com fones Bluetooth',
     'spatial_audio_bluetooth_only_subtitle': 'Liga o áudio espacial automaticamente ao conectar fones sem fio e desativa ao desconectar',
+    'translating_lyrics': 'Traduzindo por IA…',
 })
+
 add_strings('app/src/main/res/values-pt/strings.xml', {
     'ai_lyrics_translation': 'Tradução de letras por IA',
     'ai_lyrics_translation_subtitle': 'Tradução poética e rítmica no idioma ativo',
@@ -93,6 +94,7 @@ add_strings('app/src/main/res/values-pt/strings.xml', {
     'ai_lyrics_api_key_hint': 'AIza…',
     'spatial_audio_bluetooth_only': 'Ativar apenas com fones Bluetooth',
     'spatial_audio_bluetooth_only_subtitle': 'Liga o áudio espacial automaticamente ao conectar fones sem fio e desativa ao desconectar',
+    'translating_lyrics': 'Traduzindo por IA…',
 })
 
 # 4. AppSettings
@@ -119,24 +121,10 @@ edit(settings, '    fun setSyncedLyrics(value: Boolean) {', '''    fun setAiLyri
 
     fun setSyncedLyrics(value: Boolean) {''')
 
-# 5. AndroidPlayerHost
-host = root+'ui/player/AndroidPlayerHost.kt'
-edit(host, 'import com.music.bitchord.data.lyrics.LyricsTranslation', '''import com.music.bitchord.data.lyrics.LyricsTranslation
-import com.music.bitchord.data.lyrics.AiLyricsTranslator
-import com.music.bitchord.data.lyrics.translationLanguageName''')
-
-edit(host, '        when (val result = LyricsTranslation.translate(trackId, lines, targetLanguageTag)) {', '''        when (val result = AiLyricsTranslator.translatePoetic(
-            trackId, lines, targetLanguageTag,
-            translationLanguageName(targetLanguageTag, Locale.forLanguageTag(targetLanguageTag)),
-            apiKey = AppSettings.aiLyricsApiKey.value,
-            aiLyricsEnabled = AppSettings.aiLyricsEnabled.value,
-        )) {''')
-
-# 6. BitChordApplication
+# 5. BitChordApplication
 app = root+'BitChordApplication.kt'
 edit(app, 'import com.music.bitchord.data.lyrics.LyricsTranslation', '''import com.music.bitchord.data.lyrics.LyricsTranslation
 import com.music.bitchord.data.lyrics.AiLyricsTranslator''')
-
 edit(app, '        LyricsTranslation.cacheDir = cacheDir', '''        LyricsTranslation.cacheDir = cacheDir
         AiLyricsTranslator.cacheDir = cacheDir''')
 

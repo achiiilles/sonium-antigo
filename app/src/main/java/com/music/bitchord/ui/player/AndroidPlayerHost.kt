@@ -17,6 +17,8 @@ import com.music.bitchord.data.canvas.CanvasRepository
 import com.music.bitchord.data.listentogether.ListenTogether
 import com.music.bitchord.data.lyrics.LyricLine
 import com.music.bitchord.data.lyrics.LyricsTranslation
+import com.music.bitchord.data.lyrics.AiLyricsTranslator
+import com.music.bitchord.data.lyrics.translationLanguageName
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.LastPlayerScreen
@@ -82,7 +84,6 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     }
 
     override fun cachedCanvas(song: Song): CanvasArtwork? = CanvasRepository.cached(song)
-
     override suspend fun canvasFor(song: Song): CanvasArtwork? = CanvasRepository.canvasFor(song)
 
     @Composable
@@ -97,7 +98,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override val volume: SystemVolume by lazy { CastAwareVolume(MusicStreamVolume(app), scope) }
 
     @Composable
-    override fun rememberAudioOutputs(): List<AudioOutputDevice> {
+    override fun rememberAudioOutputs(): List<AudioOutputUi> {
         val outputs = rememberAndroidAudioOutputs()
         val cast by CastController.state.collectAsStateWithLifecycle()
         // While a receiver is the speaker no output of this phone is the one
@@ -131,12 +132,42 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         trackId: String,
         lines: List<LyricLine>,
         targetLanguageTag: String,
-    ): LyricsTranslationResult =
-        when (val result = LyricsTranslation.translate(trackId, lines, targetLanguageTag)) {
+    ): LyricsTranslationResult {
+        val apiKey = AppSettings.aiLyricsApiKey.value.trim().ifEmpty {
+            try {
+                val field = AppSettings::class.java.getDeclaredField("authStore")
+                field.isAccessible = true
+                (field.get(AppSettings) as? com.music.bitchord.auth.AuthStore)?.aiLyricsApiKey.orEmpty().trim()
+            } catch (_: Exception) { "" }
+        }
+        val targetName = translationLanguageName(
+            targetLanguageTag,
+            Locale.forLanguageTag(targetLanguageTag),
+        )
+        if (apiKey.isNotEmpty()) {
+            when (val aiResult = AiLyricsTranslator.translatePoetic(
+                trackId = trackId,
+                lines = lines,
+                targetLanguageTag = targetLanguageTag,
+                targetLanguageDisplayName = targetName,
+                apiKey = apiKey,
+                aiLyricsEnabled = true,
+            )) {
+                is LyricsTranslation.Result.Translated ->
+                    return LyricsTranslationResult.Translated(aiResult.lines)
+                is LyricsTranslation.Result.SameLanguage ->
+                    return LyricsTranslationResult.SameLanguage(aiResult.language)
+                LyricsTranslation.Result.Unavailable -> {
+                    // Try traditional fallback
+                }
+            }
+        }
+        return when (val result = LyricsTranslation.translate(trackId, lines, targetLanguageTag)) {
             is LyricsTranslation.Result.Translated -> LyricsTranslationResult.Translated(result.lines)
             is LyricsTranslation.Result.SameLanguage -> LyricsTranslationResult.SameLanguage(result.language)
             LyricsTranslation.Result.Unavailable -> LyricsTranslationResult.Unavailable
         }
+    }
 
     override suspend fun romanizeLyrics(
         trackId: String,
@@ -255,7 +286,6 @@ private class MusicStreamVolume(private val context: Context) : SystemVolume {
     }
 
     private fun max(): Int = manager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC)?.coerceAtLeast(1) ?: 15
-
     private fun read(): Float =
         (manager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0).toFloat() / max()
 

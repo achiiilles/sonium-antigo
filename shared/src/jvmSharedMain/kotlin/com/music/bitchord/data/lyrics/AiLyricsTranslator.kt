@@ -27,10 +27,9 @@ import java.util.zip.GZIPOutputStream
  * Adapta rimas, métrica lírica e vocabulário para o idioma ativo do app,
  * preservando a quantidade estrita de linhas com alinhamento resiliente
  * e armazenando traduções em cache local.
- * Utiliza o endpoint oficial da API do Gemini 1.5 Flash (Google AI Studio).
+ * Utiliza o endpoint oficial da API do Gemini (Google AI Studio).
  */
 object AiLyricsTranslator {
-
     private const val CACHE_DIR_NAME = "sonium_ai_lyrics_v1"
     private const val MAX_CACHE_BYTES = 5L * 1024L * 1024L // 5MB
     private val json = Json { ignoreUnknownKeys = true }
@@ -61,7 +60,6 @@ object AiLyricsTranslator {
 
     fun buildPoeticPrompt(targetLanguageName: String, originalText: String, lineCount: Int): String {
         return """Traduza e adapte a letra para $targetLanguageName, preservando o ritmo lírico, rimas e expressões naturais de falantes nativos de $targetLanguageName. Devolva estritamente a mesma quantidade de linhas ($lineCount linhas), linha por linha, sem numeração, sem comentários ou explicações adicionais:
-
 $originalText"""
     }
 
@@ -78,10 +76,7 @@ $originalText"""
         aiLyricsEnabled: Boolean = true,
     ): LyricsTranslation.Result {
         if (lines.isEmpty()) return LyricsTranslation.Result.Unavailable
-
         val key = apiKey.trim()
-
-        // Se chave de API não foi configurada ou IA não habilitada, não faz tradução oculta
         if (key.isBlank() || !aiLyricsEnabled) {
             return LyricsTranslation.Result.Unavailable
         }
@@ -105,16 +100,14 @@ $originalText"""
             )
         }
 
-        // 2. Chamada à API de IA (Google AI Studio - Gemini 1.5 Flash)
+        // 2. Chamada à API de IA (Google AI Studio - Gemini)
         val originalBody = plainLines.joinToString("\n")
         val prompt = buildPoeticPrompt(targetLanguageDisplayName, originalBody, lineCount)
-
         val translatedLines = withContext(Dispatchers.IO) {
             callAiCompletion(prompt, key, lineCount, lines)
         }
 
         if (translatedLines == null || translatedLines.isEmpty()) {
-            // Em caso de falha na IA ou resposta vazia
             return LyricsTranslation.Result.Unavailable
         }
 
@@ -136,9 +129,17 @@ $originalText"""
     }
 
     private fun alignLinesResiliently(originalLines: List<LyricLine>, translatedContent: String): List<String> {
-        val rawLines = translatedContent.lines().map { it.trim() }
+        val rawLines = translatedContent.lines().map { line ->
+            line.trim()
+                .removePrefix("```json")
+                .removePrefix("```")
+                .removeSuffix("```")
+                .trim()
+                .removeSurrounding("\"")
+                .removePrefix("- ")
+                .removePrefix("* ")
+        }
         val lineCount = originalLines.size
-
         val nonBlank = rawLines.filter { it.isNotEmpty() }
         val candidates = when {
             rawLines.size == lineCount -> rawLines
@@ -146,7 +147,6 @@ $originalText"""
             nonBlank.isNotEmpty() -> nonBlank
             else -> rawLines
         }
-
         val result = ArrayList<String>(lineCount)
         for (i in 0 until lineCount) {
             val cand = candidates.getOrNull(i).orEmpty()
@@ -161,10 +161,17 @@ $originalText"""
         lineCount: Int,
         originalLines: List<LyricLine>
     ): List<String>? {
-        return try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
-            val combinedPrompt = "Você é um poeta e letrista musical de renome internacional especializado em versões e traduções de letras musicais.\n\n$prompt"
-            val reqPayload = """{
+        val models = listOf(
+            "gemini-1.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro",
+        )
+        val combinedPrompt = "Você é um poeta e letrista musical de renome internacional especializado em versões e traduções de letras musicais.\n\n$prompt"
+
+        for (model in models) {
+            try {
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+                val reqPayload = """{
   "contents": [
     {
       "parts": [
@@ -178,27 +185,29 @@ $originalText"""
     "temperature": 0.4
   }
 }"""
-            val body = reqPayload.toRequestBody("application/json".toMediaType())
-            val request = Request.Builder()
-                .url(url)
-                .header("Content-Type", "application/json")
-                .post(body)
-                .build()
+                val body = reqPayload.toRequestBody("application/json".toMediaType())
+                val request = Request.Builder()
+                    .url(url)
+                    .header("Content-Type", "application/json")
+                    .post(body)
+                    .build()
 
-            val response = Http.client.newCall(request).execute()
-            val respStr = response.body?.string() ?: return null
-            if (!response.isSuccessful) return null
+                val response = Http.client.newCall(request).execute()
+                if (!response.isSuccessful) continue
+                val respStr = response.body?.string() ?: continue
+                val parsed = json.parseToJsonElement(respStr).jsonObject
+                val content = parsed["candidates"]?.jsonArray?.getOrNull(0)?.jsonObject
+                    ?.get("content")?.jsonObject
+                    ?.get("parts")?.jsonArray?.getOrNull(0)?.jsonObject
+                    ?.get("text")?.jsonPrimitive?.content ?: continue
 
-            val parsed = json.parseToJsonElement(respStr).jsonObject
-            val content = parsed["candidates"]?.jsonArray?.getOrNull(0)?.jsonObject
-                ?.get("content")?.jsonObject
-                ?.get("parts")?.jsonArray?.getOrNull(0)?.jsonObject
-                ?.get("text")?.jsonPrimitive?.content ?: return null
-
-            alignLinesResiliently(originalLines, content)
-        } catch (_: Exception) {
-            null
+                val aligned = alignLinesResiliently(originalLines, content)
+                if (aligned.isNotEmpty()) return aligned
+            } catch (_: Exception) {
+                // try next model
+            }
         }
+        return null
     }
 
     private fun hashKey(trackId: String, target: String, lines: List<String>): String {
