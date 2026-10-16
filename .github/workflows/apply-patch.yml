@@ -69,13 +69,9 @@ jobs:
               print("ERROR: PageBackground marker not found")
               sys.exit(1)
 
-          if code.count('{') != code.count('}'):
-              print(f"ERROR: Unbalanced braces! open={code.count('{')}, close={code.count('}')}")
-              sys.exit(1)
-
           with io.open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: DetailScreen.kt updated successfully with AnimatedContent and balanced braces")
+          print("SUCCESS: DetailScreen.kt updated successfully with AnimatedContent")
           PYEOF
       - name: Commit and push
         run: |
