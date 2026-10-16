@@ -120,7 +120,8 @@
     <string name="shuffle_on">Ordem aleatória ativada</string>
     <string name="stereo">Estéreo</string>
     <string name="translate_lyrics">Traduzir letra</string>
-    <string name="translating_lyrics_to">Traduzindo para %1$s…</string>
+    <string name="translating_lyrics">Traduzindo por IA…</string>
+    <string name="translating_lyrics_to">Traduzindo por IA para %1$s…</string>
     <string name="up_next">A seguir</string>
     <string name="upgrading_quality">Atualizando qualidade</string>
     <string name="waiting">aguardando</string>

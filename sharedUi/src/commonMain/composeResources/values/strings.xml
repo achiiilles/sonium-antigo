@@ -120,7 +120,8 @@
     <string name="shuffle_on">Shuffle on</string>
     <string name="stereo">Stereo</string>
     <string name="translate_lyrics">Translate lyrics</string>
-    <string name="translating_lyrics_to">Translating to %1$s…</string>
+    <string name="translating_lyrics">Translating with AI…</string>
+    <string name="translating_lyrics_to">Translating with AI to %1$s…</string>
     <string name="up_next">Up next</string>
     <string name="upgrading_quality">Upgrading quality</string>
     <string name="waiting">waiting</string>
@@ -158,11 +159,6 @@
     <string name="search">Search</string>
     <string name="search_empty">Search millions of songs on YouTube Music.</string>
     <string name="search_hint">Artists, Songs, Lyrics and More</string>
-    <string name="search_library_empty">Search the songs in your Local Music folder.</string>
-    <string name="search_library_hint">Songs, Artists and Albums</string>
-    <string name="search_library_no_results">Nothing in Local Music matches “%1$s”.</string>
-    <string name="selected">Selected</string>
-    <string name="share">Share</string>
     <string name="shelf_artists_on_the_rise">Artists on the rise</string>
     <string name="shelf_chart">Chart</string>
     <string name="shelf_charts">Charts</string>

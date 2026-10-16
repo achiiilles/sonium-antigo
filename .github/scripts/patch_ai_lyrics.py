@@ -75,6 +75,7 @@ add_strings('app/src/main/res/values/strings.xml', {
     'spatial_audio_bluetooth_only': 'Enable only with Bluetooth headphones',
     'spatial_audio_bluetooth_only_subtitle': 'Automatically enables spatial audio when connected to Bluetooth headphones and disables on speaker',
     'translating_lyrics': 'Traduzindo por IA…',
+    'translating_lyrics_to': 'Traduzindo por IA para %1$s…',
 })
 
 add_strings('app/src/main/res/values-pt-rBR/strings.xml', {
@@ -85,6 +86,7 @@ add_strings('app/src/main/res/values-pt-rBR/strings.xml', {
     'spatial_audio_bluetooth_only': 'Ativar apenas com fones Bluetooth',
     'spatial_audio_bluetooth_only_subtitle': 'Liga o áudio espacial automaticamente ao conectar fones sem fio e desativa ao desconectar',
     'translating_lyrics': 'Traduzindo por IA…',
+    'translating_lyrics_to': 'Traduzindo por IA para %1$s…',
 })
 
 add_strings('app/src/main/res/values-pt/strings.xml', {
@@ -95,6 +97,7 @@ add_strings('app/src/main/res/values-pt/strings.xml', {
     'spatial_audio_bluetooth_only': 'Ativar apenas com fones Bluetooth',
     'spatial_audio_bluetooth_only_subtitle': 'Liga o áudio espacial automaticamente ao conectar fones sem fio e desativa ao desconectar',
     'translating_lyrics': 'Traduzindo por IA…',
+    'translating_lyrics_to': 'Traduzindo por IA para %1$s…',
 })
 
 # 4. AppSettings
