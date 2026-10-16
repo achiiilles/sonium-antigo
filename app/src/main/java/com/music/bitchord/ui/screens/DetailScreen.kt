@@ -266,6 +266,8 @@ fun DetailScreen(
     listState: LazyListState = rememberLazyListState(),
     activeShelf: HomeShelf? = null,
     onActiveShelfChange: (HomeShelf?) -> Unit = {},
+    artistLibraryOpen: Boolean = false,
+    onArtistLibraryOpenChange: (Boolean) -> Unit = {},
     /**
      * Holding one of the album cards on an artist page — the same menu the
      * shelves on every other tab open, so a release can be queued from
@@ -396,8 +398,7 @@ fun DetailScreen(
     // is disposed, and a field that asks for focus every time it is composed
     // would throw the keyboard back up each time it scrolled into view.
     var focusSearch by remember(page.browseId) { mutableStateOf(false) }
-    var showArtistLibrary by rememberSaveable(page.browseId) { mutableStateOf(false) }
-    BackHandler(enabled = showArtistLibrary) { showArtistLibrary = false }
+    BackHandler(enabled = artistLibraryOpen) { onArtistLibraryOpenChange(false) }
 
     val closeSearch = {
         searching = false
@@ -478,7 +479,7 @@ fun DetailScreen(
     }
 
         AnimatedContent(
-        targetState = showArtistLibrary,
+        targetState = artistLibraryOpen,
         transitionSpec = {
             fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
         },
@@ -489,7 +490,7 @@ fun DetailScreen(
                 artistName = page.title,
                 songs = libraryArtistSongs,
                 albums = libraryArtistAlbums,
-                onBack = { showArtistLibrary = false },
+                onBack = { onArtistLibraryOpenChange(false) },
                 onSongClick = onSongClick,
                 onShuffle = onShuffle,
                 onAlbumClick = onSectionItemClick,
@@ -601,7 +602,7 @@ fun DetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
-                    .clickable { showArtistLibrary = true },
+                    .clickable { onArtistLibraryOpenChange(true) },
                 shape = CircleShape,
                 color = palette.elevated,
                 border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
