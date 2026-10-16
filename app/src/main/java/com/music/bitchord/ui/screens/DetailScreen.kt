@@ -2194,18 +2194,29 @@ private fun SectionCard(
     modifier: Modifier = Modifier.width(SHELF_CARD_WIDTH),
     onLongPress: (() -> Unit)? = null,
 ) {
+    val isArtist = (item.browseId?.startsWith("UC") == true) ||
+        item.subtitle.contains("ouvintes mensais", ignoreCase = true) ||
+        item.subtitle.contains("monthly listeners", ignoreCase = true) ||
+        item.subtitle.contains("inscritos", ignoreCase = true) ||
+        item.subtitle.contains("subscribers", ignoreCase = true) ||
+        item.subtitle.equals("Artist", ignoreCase = true) ||
+        item.subtitle.equals("Artista", ignoreCase = true)
+    val cardShape = if (isArtist) CircleShape else RoundedCornerShape(10.dp)
+
     Column(
         modifier = modifier
             .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress),
+        horizontalAlignment = if (isArtist) Alignment.CenterHorizontally else Alignment.Start,
     ) {
         AsyncImage(
             model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
             contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(10.dp))
-                .thumbnailBorder(RoundedCornerShape(10.dp))
+                .clip(cardShape)
+                .thumbnailBorder(cardShape)
                 .background(palette.elevated),
         )
         Spacer(Modifier.height(8.dp))
@@ -2215,6 +2226,7 @@ private fun SectionCard(
             color = palette.onBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            textAlign = if (isArtist) TextAlign.Center else TextAlign.Start,
         )
         Text(
             text = item.subtitle,
@@ -2222,6 +2234,7 @@ private fun SectionCard(
             color = palette.onBackgroundVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            textAlign = if (isArtist) TextAlign.Center else TextAlign.Start,
         )
     }
 }
