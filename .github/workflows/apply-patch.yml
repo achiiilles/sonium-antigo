@@ -30,24 +30,24 @@ jobs:
               print("ERROR: showArtistLibrary block not found in DetailScreen.kt")
               sys.exit(1)
 
-          replacement_start = """AnimatedContent(
-        targetState = showArtistLibrary,
-        transitionSpec = {
-            fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
-        },
-        label = "artist_library_screen_transition",
-    ) { inLibrary ->
-        if (inLibrary) {
-            ArtistLibraryScreen(
-                artistName = page.title,
-                songs = libraryArtistSongs,
-                albums = libraryArtistAlbums,
-                onBack = { showArtistLibrary = false },
-                onSongClick = onSongClick,
-                onShuffle = onShuffle,
-                onAlbumClick = onSectionItemClick,
-            )
-        } else {"""
+          replacement_start = """    AnimatedContent(
+                  targetState = showArtistLibrary,
+                  transitionSpec = {
+                      fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+                  },
+                  label = "artist_library_screen_transition",
+              ) { inLibrary ->
+                  if (inLibrary) {
+                      ArtistLibraryScreen(
+                          artistName = page.title,
+                          songs = libraryArtistSongs,
+                          albums = libraryArtistAlbums,
+                          onBack = { showArtistLibrary = false },
+                          onSongClick = onSongClick,
+                          onShuffle = onShuffle,
+                          onAlbumClick = onSectionItemClick,
+                      )
+                  } else {"""
 
           code = code[:m.start()] + replacement_start + code[m.end():]
 
