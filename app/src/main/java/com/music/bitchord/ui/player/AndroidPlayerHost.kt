@@ -133,13 +133,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
         lines: List<LyricLine>,
         targetLanguageTag: String,
     ): LyricsTranslationResult {
-        val apiKey = AppSettings.aiLyricsApiKey.value.trim().ifEmpty {
-            try {
-                val field = AppSettings::class.java.getDeclaredField("authStore")
-                field.isAccessible = true
-                (field.get(AppSettings) as? com.music.bitchord.auth.AuthStore)?.aiLyricsApiKey.orEmpty().trim()
-            } catch (_: Exception) { "" }
-        }
+        val apiKey = AppSettings.aiLyricsApiKey.value.trim()
         val targetName = translationLanguageName(
             targetLanguageTag,
             Locale.forLanguageTag(targetLanguageTag),
