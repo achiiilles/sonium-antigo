@@ -1444,25 +1444,24 @@ fun SettingsScreen(
                     onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
                 )
             }
-            val hideSongStatusTitle = stringResource(R.string.hide_song_status)
-            row(hideSongStatusTitle, "player", "playing from", "played by") {
-                SettingsRow(
-                    icon = Icons.Rounded.VisibilityOff,
-                    title = hideSongStatusTitle,
-                    subtitle = stringResource(R.string.hide_song_status_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = hideSongStatus,
-                            onCheckedChange = AppSettings::setHideSongStatus,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setHideSongStatus(!hideSongStatus) },
+            row("Status da música", "player", "playing from", "indicador") {
+        SettingsRow(
+            icon = Icons.Rounded.Tune,
+            title = "Mostrar status da música",
+            subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
+            trailing = {
+                IosSwitch(
+                    checked = !hideSongStatus,
+                    onCheckedChange = { AppSettings.setHideSongStatus(!it) },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        checkedBorderColor = MaterialTheme.colorScheme.primary,
+                    ),
                 )
-            }
+            },
+            onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
+        )
+    }
         }
 
         SearchableSettingsGroup(search, header = stringResource(R.string.language)) {
