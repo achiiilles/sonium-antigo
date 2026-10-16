@@ -2,7 +2,7 @@ name: Apply Patch
 on:
   workflow_dispatch:
 
-iobs:
+jobs:
   apply:
     runs-on: ubuntu-latest
     permissions:
