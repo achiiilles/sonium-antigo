@@ -2333,6 +2333,12 @@ fun NowPlayingScreen(
                 // the top of the strip. As lyrics or the queue replace the
                 // album-cover player, it glides into the now-empty strip's
                 // vertical centre alongside the caption's fade.
+                // [p] is the shared album-to-panel transition. Keeping this in
+                // composition until its final frame gives the caption a real
+                // fade on both entry and exit, but removes its click target
+                // entirely once lyrics or the queue owns the player.
+                if (!hideSongStatus) {
+
                 Box(
                     Modifier
                         .align(Alignment.TopCenter)
@@ -2353,11 +2359,6 @@ fun NowPlayingScreen(
                         .clip(RoundedCornerShape(3.dp))
                         .background(Color.White.copy(alpha = 0.70f)),
                 )
-                // [p] is the shared album-to-panel transition. Keeping this in
-                // composition until its final frame gives the caption a real
-                // fade on both entry and exit, but removes its click target
-                // entirely once lyrics or the queue owns the player.
-                if (!hideSongStatus) {
                     WhileShown({ !collapseAlmostDone }) {
                         PlaybackOriginCaption(
                             text = playbackOriginText(song, playedBy),
