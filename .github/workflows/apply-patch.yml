@@ -36,19 +36,30 @@ jobs:
                        '\n        aiLyricsApiKey.value = prefs.getString(KEY_AI_LYRICS_API_KEY, "") ?: ""')
               c = c[:i + len(good)] + reads + c[i + len(good):]
 
+          d1 = 'private const val KEY_AI_LYRICS_ENABLED = "ai_lyrics_enabled"'
+          d2 = 'private const val KEY_AI_LYRICS_API_KEY = "ai_lyrics_api_key"'
           if "const val KEY_AI_LYRICS_ENABLED" not in c:
               out = []
               placed = False
               for ln in c.split("\n"):
                   s = ln.strip()
-                  if (not placed) and s.startswith("const val KEY_HIDE_SONG_STATUS"):
+                  if (not placed) and ("const val KEY_HIDE_SONG_STATUS" in s):
                       ind = ln[:len(ln) - len(ln.lstrip())]
-                      out.append(ind + 'private const val KEY_AI_LYRICS_ENABLED = "ai_lyrics_enabled"')
-                      out.append(ind + 'private const val KEY_AI_LYRICS_API_KEY = "ai_lyrics_api_key"')
+                      out.append(ind + d1)
+                      out.append(ind + d2)
                       placed = True
                   out.append(ln)
               if not placed:
-                  sys.exit("KEY_HIDE_SONG_STATUS declaration not found")
+                  out = []
+                  for ln in c.split("\n"):
+                      out.append(ln)
+                      if (not placed) and ln.strip().startswith("object AppSettings"):
+                          ind = ln[:len(ln) - len(ln.lstrip())] + "    "
+                          out.append(ind + d1)
+                          out.append(ind + d2)
+                          placed = True
+              if not placed:
+                  sys.exit("no anchor for constants")
               c = "\n".join(out)
 
           if "getBoolean(KEY_AI_LYRICS_ENABLED = " in c:
