@@ -1,0 +1,89 @@
+name: Apply Patch
+on:
+  workflow_dispatch:
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply NowPlayingScreen patch
+        run: |
+          python3 -c '
+          path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/NowPlayingScreen.kt"
+          with open(path, "r", encoding="utf-8") as f:
+              content = f.read()
+
+          old_target = """                Box(
+                      Modifier
+                          .align(Alignment.TopCenter)
+                          .offset {
+                              IntOffset(
+                                  x = 0,
+                                  y = lerp(
+                                      6.dp,
+                                      (topStrip - 5.dp).coerceAtLeast(0.dp) / 2,
+                                      p(),
+                                  ).roundToPx(),
+                              )
+                          }
+                          .width(38.dp)
+                          .height(5.dp)
+                          .graphicsLayer { alpha = spotifyChromeAlpha }
+                          .shadow(2.dp, RoundedCornerShape(3.dp), clip = false)
+                          .clip(RoundedCornerShape(3.dp))
+                          .background(Color.White.copy(alpha = 0.70f)),
+                  )
+                  // [p] is the shared album-to-panel transition. Keeping this in
+                  // composition until its final frame gives the caption a real
+                  // fade on both entry and exit, but removes its click target
+                  // entirely once lyrics or the queue owns the player.
+                  if (!hideSongStatus) {
+                      WhileShown({ !collapseAlmostDone }) {
+                          PlaybackOriginCaption("""
+
+          new_target = """                // [p] is the shared album-to-panel transition. Keeping this in
+                  // composition until its final frame gives the caption a real
+                  // fade on both entry and exit, but removes its click target
+                  // entirely once lyrics or the queue owns the player.
+                  if (!hideSongStatus) {
+                      Box(
+                          Modifier
+                              .align(Alignment.TopCenter)
+                              .offset {
+                                  IntOffset(
+                                      x = 0,
+                                      y = lerp(
+                                          6.dp,
+                                          (topStrip - 5.dp).coerceAtLeast(0.dp) / 2,
+                                          p(),
+                                  ).roundToPx(),
+                              )
+                          }
+                          .width(38.dp)
+                          .height(5.dp)
+                          .graphicsLayer { alpha = spotifyChromeAlpha }
+                          .shadow(2.dp, RoundedCornerShape(3.dp), clip = false)
+                          .clip(RoundedCornerShape(3.dp))
+                          .background(Color.White.copy(alpha = 0.70f)),
+                      )
+                      WhileShown({ !collapseAlmostDone }) {
+                          PlaybackOriginCaption("""
+
+          assert old_target in content, "Target block not found"
+          content = content.replace(old_target, new_target, 1)
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(content)
+          '
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/NowPlayingScreen.kt
+          git commit -m "feat: ocultar barra de arrastar junto com o status da música no player"
+          git push
