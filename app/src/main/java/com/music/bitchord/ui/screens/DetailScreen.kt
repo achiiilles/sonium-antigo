@@ -588,22 +588,63 @@ fun DetailScreen(
                     )
                 }
             }
-
-            if (isArtist && libraryArtistSongs.isNotEmpty()) {
-                item(key = "artist-library-card") {
-                    ArtistLibraryCard(
-                        artistName = page.title,
-                        songs = libraryArtistSongs,
-                        palette = palette,
-                        downloadedTint = downloadedTint,
-                        currentSong = currentSong,
-                        isPlaying = isPlaying,
-                        onSongClick = onSongClick,
-                        onSongLongPress = onSongLongPress,
-                        onShuffle = onShuffle,
+            if (isArtist && (libraryArtistSongs.isNotEmpty() || libraryArtistAlbums.isNotEmpty())) {
+        item(key = "artist_library_card") {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
+                    .clickable { showArtistLibrary = true },
+                shape = CircleShape,
+                color = palette.elevated,
+                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        tint = palette.onBackground,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Na sua biblioteca",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = palette.onBackground,
+                        )
+                        val countText = buildString {
+                            if (libraryArtistSongs.isNotEmpty()) {
+                                append("${libraryArtistSongs.size} ${if (libraryArtistSongs.size == 1) "música" else "músicas"}")
+                            }
+                            if (libraryArtistAlbums.isNotEmpty()) {
+                                if (isNotEmpty()) append(" • ")
+                                append("${libraryArtistAlbums.size} ${if (libraryArtistAlbums.size == 1) "álbum" else "álbuns"}")
+                            }
+                        }
+                        if (countText.isNotEmpty()) {
+                            Text(
+                                text = countText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = palette.onBackgroundVariant,
+                            )
+                        }
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = palette.onBackgroundVariant,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
+        }
+    }
 
             // The first release on the shelves below, pulled out as a card of its own.
             val topRelease = if (isArtist) page.sections.topRelease() else null
@@ -781,42 +822,6 @@ fun DetailScreen(
                 }
             }
 
-            if (isArtist) {
-                item(key = "artist_library_pill") {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
-                            .clickable { showArtistLibrary = true },
-                        shape = CircleShape,
-                        color = palette.elevated,
-                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.LibraryMusic,
-                                contentDescription = null,
-                                tint = palette.onBackground,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = "Na sua biblioteca",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = palette.onBackground,
-                            )
-                            Spacer(Modifier.weight(1f))
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = palette.onBackgroundVariant,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
                 }
             }
 
@@ -2032,240 +2037,7 @@ private fun isSongByArtist(song: Song, artistBrowseId: String, artistName: Strin
     return parts.any { it.equals(cleanArtistName, ignoreCase = true) }
 }
 
-/**
- * Translucent Apple Music / iOS style card displaying how many songs the user
- * has in their library by this artist, with inline expandable track list and quick playback.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun ArtistLibraryCard(
-    artistName: String,
-    songs: List<Song>,
-    palette: ArtworkPalette,
-    downloadedTint: Color?,
-    currentSong: Song?,
-    isPlaying: Boolean,
-    onSongClick: (List<Song>, Int) -> Unit,
-    onSongLongPress: (Song) -> Unit,
-    onShuffle: (List<Song>) -> Unit,
-) {
-    if (songs.isEmpty()) return
-    var expanded by rememberSaveable(artistName) { mutableStateOf(false) }
-    val shape = RoundedCornerShape(22.dp)
-    val haptics = rememberHaptics()
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = ARTIST_CONTENT_GUTTER)
-            .padding(bottom = 20.dp)
-            .clip(shape)
-            .background(Color.White.copy(alpha = LIGHT_FILL_ALPHA), shape)
-            .border(1.dp, Color.White.copy(alpha = TOP_RELEASE_EDGE_ALPHA), shape)
-            .animateContentSize(),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    haptics.play(Haptic.Select)
-                    expanded = !expanded
-                }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val firstArt = songs.firstOrNull { !it.thumbnailUrl.isNullOrBlank() }?.thumbnailUrl
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(palette.elevated),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (firstArt != null) {
-                    AsyncImage(
-                        model = firstArt.artworkAt(ROW_ART_PX),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .thumbnailBorder(RoundedCornerShape(10.dp)),
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        tint = palette.accent,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-            }
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(Modifier.weight(1f)) {
-                val count = songs.size
-                Text(
-                    text = if (count == 1) {
-                        "Você tem 1 música na sua biblioteca"
-                    } else {
-                        "Você tem $count músicas na sua biblioteca"
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = palette.onBackground,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = if (expanded) "Músicas salvas deste artista" else "Toque para ver e reproduzir",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = palette.onBackgroundVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            Spacer(Modifier.width(8.dp))
-
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.12f), CircleShape)
-                    .clickable {
-                        haptics.play(Haptic.Resume)
-                        onSongClick(songs, 0)
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = BitChordIcons.Play,
-                    contentDescription = stringResource(R.string.play),
-                    tint = palette.onBackground,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-
-            Spacer(Modifier.width(6.dp))
-
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        haptics.play(Haptic.Select)
-                        expanded = !expanded
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Recolher" else "Expandir",
-                    tint = palette.onBackgroundVariant,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-        }
-
-        if (expanded) {
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                thickness = 0.5.dp,
-                color = palette.divider.copy(alpha = 0.5f),
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.10f))
-                        .clickable {
-                            haptics.play(Haptic.Resume)
-                            onSongClick(songs, 0)
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = BitChordIcons.Play,
-                        contentDescription = null,
-                        tint = palette.onBackground,
-                        modifier = Modifier.size(15.dp),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.play),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = palette.onBackground,
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.10f))
-                        .clickable {
-                            haptics.play(Haptic.Resume)
-                            onShuffle(songs)
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = BitChordIcons.Shuffle,
-                        contentDescription = null,
-                        tint = palette.onBackground,
-                        modifier = Modifier.size(15.dp),
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.shuffle),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = palette.onBackground,
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .padding(bottom = 8.dp),
-            ) {
-                songs.forEachIndexed { index, song ->
-                    CompactSongRow(
-                        song = song,
-                        palette = palette,
-                        onClick = { onSongClick(songs, index) },
-                        onLongPress = { onSongLongPress(song) },
-                        downloadedTint = downloadedTint,
-                        isCurrent = song.isSameTrackAs(currentSong),
-                        isPlaying = song.isSameTrackAs(currentSong) && isPlaying,
-                    )
-                    if (index < songs.lastIndex) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 60.dp),
-                            thickness = 0.5.dp,
-                            color = palette.divider.copy(alpha = 0.3f),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 /** The white veil under Apple-style containers and their buttons. */
 private const val LIGHT_FILL_ALPHA = 0.07f
