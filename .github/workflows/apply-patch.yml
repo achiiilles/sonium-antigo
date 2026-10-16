@@ -16,58 +16,66 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Update DetailScreen.kt
+      - name: Update MainActivity.kt
         run: |
           python3 - << 'PYEOF'
           import sys
-          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+          import re
+
+          path = "app/src/main/java/com/music/bitchord/MainActivity.kt"
           with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          # 1. Parameter list
-          old_param = "    onActiveShelfChange: (HomeShelf?) -> Unit = {},"
-          new_param = "    onActiveShelfChange: (HomeShelf?) -> Unit = {},\n    artistLibraryOpen: Boolean = false,\n    onArtistLibraryOpenChange: (Boolean) -> Unit = {},"
-          if old_param not in code:
-              print("ERROR: old_param not found")
-              sys.exit(1)
-          code = code.replace(old_param, new_param, 1)
+          code = code.replace("\r\n", "\n")
 
-          # 2. State & BackHandler
-          old_state = "    var focusSearch by remember(page.browseId) { mutableStateOf(false) }\n    var showArtistLibrary by rememberSaveable(page.browseId) { mutableStateOf(false) }\n    BackHandler(enabled = showArtistLibrary) { showArtistLibrary = false }"
-          new_state = "    var focusSearch by remember(page.browseId) { mutableStateOf(false) }\n    BackHandler(enabled = artistLibraryOpen) { onArtistLibraryOpenChange(false) }"
-          if old_state not in code:
-              print("ERROR: old_state not found")
-              sys.exit(1)
-          code = code.replace(old_state, new_state, 1)
+          # 1. State: tabHistory & LaunchedEffect
+          target_state = "var selectedTab by rememberSaveable { mutableIntStateOf(0) }"
+          replacement_state = """var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var tabHistory by rememberSaveable { mutableStateOf(listOf(0)) }
 
-          # 3. AnimatedContent & ArtistLibraryScreen
-          old_anim = "        AnimatedContent(\n        targetState = showArtistLibrary,"
-          new_anim = "        AnimatedContent(\n        targetState = artistLibraryOpen,"
-          if old_anim not in code:
-              print("ERROR: old_anim not found")
+    LaunchedEffect(selectedTab) {
+        if (tabHistory.lastOrNull() != selectedTab) {
+            tabHistory = tabHistory + selectedTab
+        }
+    }"""
+          if target_state not in code:
+              print("ERROR: target_state not found")
               sys.exit(1)
-          code = code.replace(old_anim, new_anim, 1)
+          code = code.replace(target_state, replacement_state, 1)
 
-          old_back = "                onBack = { showArtistLibrary = false },"
-          new_back = "                onBack = { onArtistLibraryOpenChange(false) },"
-          if old_back not in code:
-              print("ERROR: old_back not found")
-              sys.exit(1)
-          code = code.replace(old_back, new_back, 1)
-
-          # 4. Pill clickable
-          old_click = "                    .clickable { showArtistLibrary = true },"
-          new_click = "                    .clickable { onArtistLibraryOpenChange(true) },"
-          if old_click not in code:
-              print("ERROR: old_click not found")
-              sys.exit(1)
-          code = code.replace(old_click, new_click, 1)
+          # 2. BackHandler
+          old_back = """BackHandler(
+            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&
+                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&
+                selectedTab != TAB_HOME,
+        ) {
+            selectedTab = TAB_HOME
+        }"""
+          new_back = """BackHandler(
+            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&
+                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&
+                tabHistory.size > 1,
+        ) {
+            val previous = tabHistory.dropLast(1)
+            tabHistory = previous
+            selectedTab = previous.last()
+        }"""
+          if old_back in code:
+              code = code.replace(old_back, new_back, 1)
+          else:
+              print("Trying regex for BackHandler...")
+              pattern = r"(selectedMoodGenre == null &&\s+)selectedTab != TAB_HOME,(\s*\)\s*\{\s*)selectedTab = TAB_HOME(\s*\})"
+              replacement = r"\1tabHistory.size > 1,\2val previous = tabHistory.dropLast(1)\n            tabHistory = previous\n            selectedTab = previous.last()\3"
+              code, count = re.subn(pattern, replacement, code, count=1)
+              if count == 0:
+                  print("ERROR: BackHandler not found")
+                  sys.exit(1)
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: DetailScreen.kt updated successfully")
+          print("SUCCESS: MainActivity.kt updated successfully")
           PYEOF
       - name: Commit and push
         run: |
-          git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || (git commit -m "feat: conectar navegacao de volta da biblioteca do artista no DetailScreen" && git push)
+          git add app/src/main/java/com/music/bitchord/MainActivity.kt
+          git diff --staged --quiet || (git commit -m "feat: implementar historico de navegacao de abas (tabHistory) no MainActivity" && git push)
