@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.music.bitchord.data.model.ROW_ART_PX
+import com.music.bitchord.data.model.ShelfItem
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.model.artworkAt
 import com.music.bitchord.ui.icons.BitChordIcons
@@ -52,9 +56,11 @@ import com.music.bitchord.ui.icons.BitChordIcons
 fun ArtistLibraryScreen(
     artistName: String,
     songs: List<Song>,
+    albums: List<ShelfItem> = emptyList(),
     onBack: () -> Unit,
     onSongClick: (List<Song>, Int) -> Unit,
     onShuffle: (List<Song>) -> Unit,
+    onAlbumClick: (ShelfItem) -> Unit = {},
 ) {
     var showAllSongs by rememberSaveable { mutableStateOf(false) }
     val displayedSongs = if (showAllSongs) songs else songs.take(5)
@@ -193,6 +199,59 @@ fun ArtistLibraryScreen(
                     color = Color.White,
                     modifier = Modifier.padding(top = 24.dp, bottom = 4.dp),
                 )
+            }
+
+            if (albums.isEmpty()) {
+                item {
+                    Text(
+                        text = "Nenhum álbum deste artista na sua biblioteca.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.6f),
+                    )
+                }
+            } else {
+                item {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp),
+                    ) {
+                        items(albums, key = { it.browseId ?: it.title }) { album ->
+                            Column(
+                                modifier = Modifier
+                                    .width(140.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { onAlbumClick(album) },
+                            ) {
+                                AsyncImage(
+                                    model = album.thumbnailUrl.artworkAt(ROW_ART_PX),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color.DarkGray),
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = album.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = album.subtitle,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.6f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
