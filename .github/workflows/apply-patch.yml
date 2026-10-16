@@ -1,1 +1,68 @@
-bmFtZTogQXBwbHkgUGF0Y2gKb246CiAgd29ya2Zsb3dfZGlzcGF0Y2g6CiAgcHVzaDoKICAgIHBhdGhzOgogICAgICAtICcuZ2l0aHViL3dvcmtmbG93cy9hcHBseS1wYXRjaC55bWwnCgppb2JzOgogIGFwcGx5OgogICAgcnVucy1vbjogdWJ1bnR1LWxhdGVzdAogICAgcGVybWlzc2lvbnM6CiAgICAgIGNvbnRlbnRzOiB3cml0ZQogICAgc3RlcHM6CiAgICAgIC0gdXNlczoKYWN0aW9ucy9jaGVja291dEA2NAogICAgICAtIG5hbWU6IFNldHVwIGdpdAogICAgICAgIHJ1bjogfAogICAgICAgICAgZ2l0IGNvbmZpZyB1c2VyLm5hbWUgImFjaGlsbGVzNzUiCiAgICAgICAgICBnaXQgY29uZmlnIHVzZXIuZW1haWwgImFjaGlsbGVzaDc0QGdtYWlsLmNvbSIKICAgICAgLSBuYW1lOiBNb3ZlciBwdWJsaWNTZWN0aW9ucyBwYXJhIGZvcmEgZG8gTGF6eUNvbHVtbgogICAgICAgIHJ1bjogfAogICAgICAgICAgcHl0aG9uMyAtYyAnCiAgICAgICAgICBwYXRoID0gImFwcC9zcmMvbWFpbi9qYXZhL2NvbS9tdXNpYy9iaXRjaG9yZC91aS9zY3JlZW5zL0RldGFpbFNjcmVlbi5rdCIKICAgICAgICAgIHdpdGggb3BlbihwYXRoLCAiciIpIGFzIGY6CiAgICAgICAgICAgICAgY29udGVudCA9IGYucmVhZCgpCiAgICAgICAgICBsYXp5X3BhdHRlcm4gPSAiTGF6eUNvbHVtbiggIiArIGNocigxMCkgKyAiICAgICAgICAgICAgICAgICAgICAgIHN0YXRlID0gbGlzdFN0YXRlLAiCiAgICAgICAgICB0YXJnZXRfYmxvY2sgPSAiIiIgICAgICAgICAgICAgIC8vIEFsYnVtcyAvIFNpbmdsZXMgJiBFUHMgY2Fyb3VzZWxzIChhcnRpc3QgcGFnZXMpLgogICAgICAgICAgICAgIHZhbCBwdWJsaWNTZWN0aW9ucyA9IHJlbWVtYmVyKHBhZ2Uuc2VjdGlvbnMpIHsKICAgICAgICAgICAgICAgICAgcGFnZS5zZWN0aW9ucy5maWx0ZXJOb3QgewogICAgICAgICAgICAgICAgICAgICAgaXQudGl0bGUuY29udGFpbnMoInN1YSBiaWJsaW90ZWNhIiwgaWdub3JlQ2FzZSA9IHRydWUpIHx8CiAgICAgICAgICAgICAgICAgICAgICBpdC50aXRsZS5jb250YWlucygieW91ciBsaWJyYXJ5IiwgaWdub3JlQ2FzZSA9IHRydWUpCiAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICB9IiIiCiAgICAgICAgICBpZiB0YXJnZXRfYmxvY2sgaW4gY29udGVudDoKICAgICAgICAgICAgICBjb250ZW50ID0gY29udGVudC5yZXBsYWNlKHRhcmdldF9ibG9jaywgIiAgICAgICAgICAgICAgLy8gQWxidW1zIC8gU2luZ2xlcyAmIEVQcyBjYXJvdXNlbHMgKGFydGlzdCBwYWdlcykuIikKICAgICAgICAgICAgICBpbnNlcnRfc2VjdGlvbiA9ICIiInZhbCBwdWJsaWNTZWN0aW9ucyA9IHJlbWVtYmVyKHBhZ2Uuc2VjdGlvbnMpIHsKICAgICAgICAgIHBhZ2Uuc2VjdGlvbnMuZmlsdGVyTm90IHsKICAgICAgICAgICAgICBpdC50aXRsZS5jb250YWlucygic3VhIGJpYmxpb3RlY2EiLCBpZ25vcmVDYXNlID0gdHJ1ZSkgfHwKICAgICAgICAgICAgICBpdC50aXRsZS5jb250YWlucygieW91ciBsaWJyYXJ5IiwgaWdub3JlQ2FzZSA9IHRydWUpCiAgICAgICAgICB9CiAgICAgIH0KICAgICAgIiIiCiAgICAgICAgICAgICAgaWYgbGF6eV9wYXR0ZXJuIGluIGNvbnRlbnQ6CiAgICAgICAgICAgICAgICAgIGNvbnRlbnQgPSBjb250ZW50LnJlcGxhY2UobGF6eV9wYXR0ZXJuLCBpbnNlcnRfc2VjdGlvbiArIGxhenlfcGF0dGVybikKICAgICAgICAgICAgICAgICAgd2l0aCBvcGVuKHBhdGgsICJ3IikgYXMgZjoKICAgICAgICAgICAgICAgICAgICAgIGYud3JpdGUoY29udGVudCkKICAgICAgICAgICAgICAgICAgcHJpbnQoIlNVQ0NFU1MiKQogICAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICAgIHByaW50KCJGQUlMIGxhenlfcGF0dGVybiBub3QgZm91bmQiKQogICAgICAgICAgZWxzZToKICAgICAgICAgICAgICBwcmludCgiRkFJTCB0YXJnZXRfYmxvY2sgbm90IGZvdW5kIikKICAgICAgICAgICcKICAgICAgLSBuYW1lOiBDb21taXQgZml4CiAgICAgICAgcnVuOiB8CiAgICAgICAgICBnaXQgYWRkIGFwcC9zcmMvbWFpbi9qYXZhL2NvbS9tdXNpYy9iaXRjaG9yZC91aS9zY3JlZW5zL0RldGFpbFNjcmVlbi5rdAogICAgICAgICAgZ2l0IGRpZmYgLS1zdGFnZWQgLS1xdWlldCB8fCAoZ2l0IGNvbW1pdCAtbSAiZml4OiBtb3ZlciBwdWJsaWNTZWN0aW9ucyBwYXJhIGZvcmEgZG8gTGF6eUNvbHVtbiBlbSBEZXRhaWxTY3JlZW4ua3QiICYmIGdpdCBwdXNoIG9yaWdpbiBtYWluKQo=
+name: Apply Patch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-patch.yml'
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update DetailScreen.kt
+        run: |
+          python3 - << 'PYEOF'
+          import io, re, sys
+
+          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+          with io.open(path, "r", encoding="utf-8") as f:
+              code = f.read()
+
+          albums_pat = r'(val\s+libraryArtistAlbums\s*=\s*remember\(page\.sections\)\s*\{[\s\S]*?\}\.flatMap\s*\{\s*it\.items\s*\}\s*\n\s*\})'
+          m = re.search(albums_pat, code)
+          if not m:
+              print("ERROR: libraryArtistAlbums pattern not found")
+              sys.exit(1)
+
+          public_sections_code = (
+              "\n\n"
+              "    val publicSections = remember(page.sections) {\n"
+              "        page.sections.filterNot {\n"
+              "            it.title.contains(\"sua biblioteca\", ignoreCase = true) ||\n"
+              "            it.title.contains(\"your library\", ignoreCase = true)\n"
+              "        }\n"
+              "    }"
+          )
+
+          if "val publicSections" not in code[m.start():m.end() + 250]:
+              code = code[:m.end()] + public_sections_code + code[m.end():]
+              print("SUCCESS: Added publicSections after libraryArtistAlbums")
+          else:
+              print("INFO: publicSections already present after libraryArtistAlbums")
+
+          lazy_pat = r'(// Albums / Singles & EPs carousels \(artist pages\)\.\s*\n)\s*val\s+publicSections\s*=\s*remember\(page\.sections\)\s*\{[\s\S]*?\}\s*\n(\s*items\(publicSections\)\s*\{\s*shelf\s*->)'
+          if re.search(lazy_pat, code):
+              code = re.sub(lazy_pat, r'\1\2', code, count=1)
+              print("SUCCESS: Removed publicSections inside LazyColumn")
+          else:
+              print("ERROR: lazy_pat pattern not found")
+              sys.exit(1)
+
+          with io.open(path, "w", encoding="utf-8") as f:
+              f.write(code)
+          print("SUCCESS: DetailScreen.kt patched successfully")
+          PYEOF
+
+      - name: Commit and push
+        run: |
+          git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
+          git diff --staged --quiet || (git commit -m "fix: mover publicSections para fora de LazyColumn em DetailScreen.kt" && git push)
