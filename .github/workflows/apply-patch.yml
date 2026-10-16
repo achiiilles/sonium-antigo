@@ -11,38 +11,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply SettingsSheet patch
+      - name: Apply AppSettings patch
         run: |
           python3 -c '
           import re
-          path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
-          with open(path, "r", encoding="utf-8") as f:
+          path = "app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt"
+          with open(path, "r", encoding="utf-8") as f\:
               c = f.read()
 
-          pattern = r"val hideSongStatusTitle = stringResource\(R\.string\.hide_song_status\)[\s\S]*?onClick = \{ AppSettings\.setHideSongStatus\(!hideSongStatus\) \},\s*\)\s*\}"
-          assert re.search(pattern, c), "Pattern not found in SettingsSheet.kt"
+          pattern1 = r\"val hideSongStatus = MutableStateFlow\(false\)\"
+          assert re.search(pattern1, c), "pattern1 not found"
+          c = re.sub(pattern1, "val hideSongStatus = MutableStateFlow(true)", c, count=1)
 
-          replacement = """row("Status da música", "player", "playing from", "indicador") {
-                  SettingsRow(
-                      icon = Icons.Rounded.Tune,
-                      title = "Mostrar status da música",
-                      subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
-                      trailing = {
-                          IosSwitch(
-                              checked = !hideSongStatus,
-                              onCheckedChange = { AppSettings.setHideSongStatus(!it) },
-                              colors = SwitchDefaults.colors(
-                                  checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                  checkedBorderColor = MaterialTheme.colorScheme.primary,
-                              ),
-                          )
-                      },
-                      onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
-                  )
-              }"""
+          pattern2 = r\"hideSongStatus\.value = prefs\.getBoolean\(KEY_HIDE_SONG_STATUS, false\)\"
+          assert re.search(pattern2, c), "pattern2 not found"
+          c = re.sub(pattern2, "hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, true)", c, count=1)
 
-          c = re.sub(pattern, replacement, c, count=1)
-          with open(path, "w", encoding="utf-8") as f:
+          with open(path, "w", encoding="utf-8") as f\:
               f.write(c)
           '
 
@@ -50,6 +35,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git commit -m "feat: atualizar switch para mostrar status da música nas configurações"
+          git add app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt
+          git commit -m "feat: definir status da música como oculto por padrão no AppSettings"
           git push
