@@ -470,6 +470,13 @@ fun DetailScreen(
         }.flatMap { it.items }
     }
 
+    val publicSections = remember(page.sections) {
+        page.sections.filterNot {
+            it.title.contains("sua biblioteca", ignoreCase = true) ||
+            it.title.contains("your library", ignoreCase = true)
+        }
+    }
+
     if (showArtistLibrary) {
         ArtistLibraryScreen(
             artistName = page.title,
@@ -814,12 +821,6 @@ fun DetailScreen(
             }
 
             // Albums / Singles & EPs carousels (artist pages).
-            val publicSections = remember(page.sections) {
-                page.sections.filterNot {
-                    it.title.contains("sua biblioteca", ignoreCase = true) ||
-                    it.title.contains("your library", ignoreCase = true)
-                }
-            }
             items(publicSections) { shelf ->
                 val canShowAll = shelf.items.size > ARTIST_ROW_MAX_ITEMS
                 val displayItems = remember(shelf.items) {
