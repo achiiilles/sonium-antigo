@@ -14,41 +14,44 @@ jobs:
       - name: Apply MiniPlayer patch
         run: |
           python3 -c '
+          import re
+
           path = "app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt"
           with open(path, "r", encoding="utf-8") as f:
               c = f.read()
 
           if "import android.os.Build" not in c:
-              assert "import com.music.bitchord.R" in c, "import com.music.bitchord.R not found"
-              c = c.replace("import com.music.bitchord.R\n", "import com.music.bitchord.R\nimport android.os.Build\n", 1)
+              assert "package com.music.bitchord.ui.components" in c, "package header not found"
+              c = c.replace("package com.music.bitchord.ui.components\n", "package com.music.bitchord.ui.components\n\nimport android.os.Build\n", 1)
 
-          old_target = (
-              "                  if (reduceDynamicBlur) {\n"
-              "                      Modifier.background(MaterialTheme.colorScheme.surface)\n"
-              "                  } else {\n"
-              "                      Modifier.optimizedHazeEffect(\n"
-              "                          state = hazeState,\n"
-              "                          style = HazeMaterials.thin(MaterialTheme.colorScheme.surface),\n"
-              "                      )\n"
-              "                  },"
+          pattern = re.compile(
+              r"(?P<indent>[ \t]*)if\s*\(reduceDynamicBlur\)\s*\{\s*"
+              r"Modifier\.background\(MaterialTheme\.colorScheme\.surface\)\s*"
+              r"\}\s*else\s*\{\s*"
+              r"Modifier\.optimizedHazeEffect\(\s*"
+              r"state\s*=\s*hazeState,\s*"
+              r"style\s*=\s*HazeMaterials\.thin\(MaterialTheme\.colorScheme\.surface\),?\s*"
+              r"\)\s*"
+              r"\},"
           )
 
-          new_target = (
-              "                  if (reduceDynamicBlur) {\n"
-              "                      Modifier.background(MaterialTheme.colorScheme.surface)\n"
-              "                  } else if (Build.VERSION.SDK_INT < 31) {\n"
-              "                      Modifier.background(Color(0xF2161618))\n"
-              "                  } else {\n"
-              "                      Modifier.optimizedHazeEffect(\n"
-              "                          state = hazeState,\n"
-              "                          style = HazeMaterials.thin(MaterialTheme.colorScheme.surface),\n"
-              "                      )\n"
-              "                  },"
-          )
+          def repl(m):
+              indent = m.group("indent")
+              return (
+                  f"{indent}if (reduceDynamicBlur) {{\n"
+                  f"{indent}    Modifier.background(MaterialTheme.colorScheme.surface)\n"
+                  f"{indent}}} else if (Build.VERSION.SDK_INT < 31) {{\n"
+                  f"{indent}    Modifier.background(Color(0xF2161618))\n"
+                  f"{indent}}} else {{\n"
+                  f"{indent}    Modifier.optimizedHazeEffect(\n"
+                  f"{indent}        state = hazeState,\n"
+                  f"{indent}        style = HazeMaterials.thin(MaterialTheme.colorScheme.surface),\n"
+                  f"{indent}    )\n"
+                  f"{indent}}},"
+              )
 
-          assert old_target in c, "old_target not found in MiniPlayer.kt"
-          c_new = c.replace(old_target, new_target, 1)
-
+          c_new, n = pattern.subn(repl, c, count=1)
+          assert n == 1, f"Expected 1 replacement, got {n}"
           assert "Color(0xF2161618)" in c_new, "Color(0xF2161618) missing"
           assert "import android.os.Build" in c_new, "import android.os.Build missing"
 
