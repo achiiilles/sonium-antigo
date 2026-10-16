@@ -24,39 +24,40 @@ jobs:
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          old_target = """enum class SettingsCategory(
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector,
-) {
-    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),
-    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
-    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),
-    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
-    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
-    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
-}"""
+          old_part = (
+              '    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),\n'
+              '    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),\n'
+              '    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),\n'
+              '    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),\n'
+              '    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),\n'
+              '    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),'
+          )
 
-          new_target = """enum class SettingsCategory(
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector,
-) {
-    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),
-    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
-    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
-    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),
-    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
-    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
-}"""
+          new_part = (
+              '    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),\n'
+              '    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),\n'
+              '    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),\n'
+              '    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),\n'
+              '    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),\n'
+              '    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),'
+          )
 
-          if old_target in code:
-              code = code.replace(old_target, new_target, 1)
+          target = None
+          replacement = None
+          if old_part in code:
+              target = old_part
+              replacement = new_part
+          elif old_part.replace('\n', '\r\n') in code:
+              target = old_part.replace('\n', '\r\n')
+              replacement = new_part.replace('\n', '\r\n')
+
+          if target:
+              code = code.replace(target, replacement, 1)
               with io.open(path, "w", encoding="utf-8") as f:
                   f.write(code)
               print("SUCCESS: SettingsCategory reordered successfully")
           else:
-              print("ERROR: old_target not found in SettingsSheet.kt")
+              print("ERROR: old_part not found in SettingsSheet.kt")
               sys.exit(1)
           PYEOF
       - name: Commit and push
