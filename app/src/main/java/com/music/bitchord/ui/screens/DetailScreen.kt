@@ -733,7 +733,13 @@ fun DetailScreen(
             }
 
             // Albums / Singles & EPs carousels (artist pages).
-            items(page.sections) { shelf ->
+            val publicSections = remember(page.sections) {
+                page.sections.filterNot {
+                    it.title.contains("sua biblioteca", ignoreCase = true) ||
+                    it.title.contains("your library", ignoreCase = true)
+                }
+            }
+            items(publicSections) { shelf ->
                 val canShowAll = shelf.items.size > ARTIST_ROW_MAX_ITEMS
                 val displayItems = remember(shelf.items) {
                     if (canShowAll) shelf.items.take(ARTIST_ROW_MAX_ITEMS) else shelf.items
