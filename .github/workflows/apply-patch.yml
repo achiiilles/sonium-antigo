@@ -16,79 +16,77 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Update MainActivity.kt for unified subpage back navigation
+      - name: Update MainActivity.kt
         run: |
           python3 - << 'PYEOF'
           import sys
-
           path = "app/src/main/java/com/music/bitchord/MainActivity.kt"
           with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          # 1. Import SettingsCategory if not present
-          if "import com.music.bitchord.ui.screens.SettingsCategory" not in code:
-              if "import com.music.bitchord.ui.screens.SettingsScreen" in code:
-                  code = code.replace(
-                      "import com.music.bitchord.ui.screens.SettingsScreen",
-                      "import com.music.bitchord.ui.screens.SettingsCategory\nimport com.music.bitchord.ui.screens.SettingsScreen",
-                      1
-                  )
-
-          # 2. State declaration
-          old_state = "var showSettings by rememberSaveable { mutableStateOf(false) }"
-          new_state = "var showSettings by rememberSaveable { mutableStateOf(false) }\n    var settingsCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }"
+          # 1. State declaration
+          old_state = "var detailActiveShelf by remember { mutableStateOf<HomeShelf?>(null) }"
+          new_state = "var detailActiveShelf by remember { mutableStateOf<HomeShelf?>(null) }\n    var artistLibraryOpen by rememberSaveable { mutableStateOf(false) }"
           if old_state not in code:
-              print("ERROR: old_state not found in MainActivity.kt")
+              print("ERROR: old_state not found")
               sys.exit(1)
           code = code.replace(old_state, new_state, 1)
 
-          # 3. FrostedTopBar title
-          old_title = "showSettings -> stringResource(R.string.settings)"
-          new_title = "showSettings && settingsCategory != null -> settingsCategory!!.title\n                        showSettings -> stringResource(R.string.settings)"
-          if old_title not in code:
-              print("ERROR: old_title not found in MainActivity.kt")
+          # 2. Reset on detail change
+          old_reset = "LaunchedEffect(detail?.browseId) { detailActiveShelf = null }"
+          new_reset = "LaunchedEffect(detail?.browseId) { detailActiveShelf = null; artistLibraryOpen = false }"
+          if old_reset not in code:
+              print("ERROR: old_reset not found")
               sys.exit(1)
-          code = code.replace(old_title, new_title, 1)
+          code = code.replace(old_reset, new_reset, 1)
 
-          # 4. FrostedTopBar onBack
-          old_back = "                        settingsSubScreen != null -> ({ settingsSubScreen = null })\n                        showSettings -> ({ showSettings = false })"
-          new_back = "                        settingsSubScreen != null -> ({ settingsSubScreen = null })\n                        showSettings && settingsCategory != null -> ({ settingsCategory = null })\n                        showSettings -> ({ showSettings = false })"
-          if old_back in code:
-              code = code.replace(old_back, new_back, 1)
-          elif "showSettings -> ({ showSettings = false })" in code:
-              code = code.replace(
-                  "showSettings -> ({ showSettings = false })",
-                  "showSettings && settingsCategory != null -> ({ settingsCategory = null })\n                        showSettings -> ({ showSettings = false })",
-                  1
-              )
-
-          # 5. BackHandler for settingsCategory
-          old_bh = "BackHandler(enabled = showSettings && !showSpotify &&"
-          new_bh = "BackHandler(enabled = showSettings && settingsCategory != null) {\n            settingsCategory = null\n        }\n        BackHandler(enabled = showSettings && !showSpotify &&"
+          # 3. BackHandler
+          old_bh = "BackHandler(enabled = detailActiveShelf != null) { detailActiveShelf = null }"
+          new_bh = "BackHandler(enabled = detail != null && artistLibraryOpen) { artistLibraryOpen = false }\n        BackHandler(enabled = detailActiveShelf != null) { detailActiveShelf = null }"
           if old_bh not in code:
-              print("ERROR: old_bh not found in MainActivity.kt")
+              print("ERROR: old_bh not found")
               sys.exit(1)
           code = code.replace(old_bh, new_bh, 1)
 
-          # 6. SettingsScreen call
-          old_screen = "                        SettingsScreen(\n                            windowWidth = windowWidth,\n                            signedIn = signedIn,\n                            account = account,\n                            onSignIn = {"
-          new_screen = "                        SettingsScreen(\n                            windowWidth = windowWidth,\n                            signedIn = signedIn,\n                            account = account,\n                            externalCategory = settingsCategory,\n                            onSelectCategory = { settingsCategory = it },\n                            onSignIn = {"
-          if old_screen not in code:
-              print("ERROR: old_screen not found in MainActivity.kt")
+          # 4. FrostedTopBar title
+          old_title = "detail != null && detailActiveShelf != null -> detailActiveShelf?.title.orEmpty()"
+          new_title = 'detail != null && artistLibraryOpen -> "Na sua biblioteca"\n                        detail != null && detailActiveShelf != null -> detailActiveShelf?.title.orEmpty()'
+          if old_title not in code:
+              print("ERROR: old_title not found")
               sys.exit(1)
-          code = code.replace(old_screen, new_screen, 1)
+          code = code.replace(old_title, new_title, 1)
 
-          # 7. Reset settingsCategory when leaving settings
-          old_le = "if (!showSettings) {\n            showAccountScrobbling = false\n            showSpotify = false"
-          new_le = "if (!showSettings) {\n            showAccountScrobbling = false\n            showSpotify = false\n            settingsCategory = null"
-          if old_le in code:
-              code = code.replace(old_le, new_le, 1)
+          # 5. FrostedTopBar onBack
+          old_back = "detailActiveShelf != null -> ({ detailActiveShelf = null })"
+          new_back = "detail != null && artistLibraryOpen -> ({ artistLibraryOpen = false })\n                        detailActiveShelf != null -> ({ detailActiveShelf = null })"
+          if old_back not in code:
+              print("ERROR: old_back not found")
+              sys.exit(1)
+          code = code.replace(old_back, new_back, 1)
+
+          # 6. FrostedTopBar trailingTitle
+          old_trailing = "trailingTitle = if (detail != null && detailActiveShelf != null) detail.title else null,"
+          new_trailing = "trailingTitle = if (detail != null && (detailActiveShelf != null || artistLibraryOpen)) detail.title else null,"
+          if old_trailing in code:
+              code = code.replace(old_trailing, new_trailing, 1)
+
+          # 7. FrostedTopBar scrolled
+          old_scrolled = "(detail != null && detailActiveShelf != null) ||"
+          new_scrolled = "(detail != null && detailActiveShelf != null) ||\n                            (detail != null && artistLibraryOpen) ||"
+          if old_scrolled in code:
+              code = code.replace(old_scrolled, new_scrolled, 1)
+
+          # 8. DetailScreen call
+          old_detail = "DetailScreen(\n                            page = page,\n                            currentSong = player.song,\n                            isPlaying = player.isPlaying,\n                            listState = pageDetailListState,\n                            activeShelf = detailActiveShelf,\n                            onActiveShelfChange = { detailActiveShelf = it },"
+          new_detail = "DetailScreen(\n                            page = page,\n                            artistLibraryOpen = artistLibraryOpen,\n                            onArtistLibraryOpenChange = { artistLibraryOpen = it },\n                            currentSong = player.song,\n                            isPlaying = player.isPlaying,\n                            listState = pageDetailListState,\n                            activeShelf = detailActiveShelf,\n                            onActiveShelfChange = { detailActiveShelf = it },"
+          if old_detail in code:
+              code = code.replace(old_detail, new_detail, 1)
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: MainActivity.kt updated for unified back navigation")
+          print("SUCCESS: MainActivity.kt updated for artist library navigation")
           PYEOF
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/MainActivity.kt
-          git diff --staged --quiet || (git commit -m "feat: conectar botao voltar superior as subpastas de configuracoes no MainActivity" && git push)
+          git diff --staged --quiet || (git commit -m "feat: conectar navegacao de volta da biblioteca do artista no MainActivity" && git push)
