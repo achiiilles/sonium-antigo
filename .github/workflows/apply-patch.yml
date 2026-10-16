@@ -2,7 +2,7 @@ name: Apply Patch
 on:
   workflow_dispatch:
 
-jobs:
+iobs:
   apply:
     runs-on: ubuntu-latest
     permissions:
@@ -11,51 +11,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply HomeScreen patch
+      - name: Apply ArtworkMeshBackdrop patch
         run: |
           python3 -c '
-          path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt"
+          path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/ArtworkMeshBackdrop.kt"
           with open(path, "r", encoding="utf-8") as f:
               c = f.read()
 
-          lines = c.splitlines()
-          idx = -1
-          for i, line in enumerate(lines):
-              if ".thumbnailBorder(RoundedCornerShape(12.dp))" in line:
-                  idx = i
-                  break
-          assert idx != -1, "thumbnailBorder line not found"
+          assert "filterQuality = FilterQuality.Low" in c, "FilterQuality.Low not found in ArtworkMeshBackdrop.kt"
+          c_new = c.replace("filterQuality = FilterQuality.Low", "filterQuality = FilterQuality.Medium")
 
-          else_idx = -1
-          for j in range(idx, -1, -1):
-              if lines[j].strip() == "else -> {":
-                  else_idx = j
-                  break
-          assert else_idx != -1, "else -> { not found before thumbnailBorder"
-
-          indent = " " * 16
-          artist_calc = [
-              indent + "val isArtist = (item.browseId?.startsWith(\"UC\") == true) || item.subtitle.contains(\"inscritos\", ignoreCase = true) || item.subtitle.contains(\"subscribers\", ignoreCase = true) || item.subtitle.equals(\"Artist\", ignoreCase = true) || item.subtitle.equals(\"Artista\", ignoreCase = true)",
-              indent + "val cardShape = if (isArtist) CircleShape else RoundedCornerShape(12.dp)"
-          ]
-          lines[else_idx + 1:else_idx + 1] = artist_calc
-
-          clip_idx = idx + 1
-          border_idx = idx + 2
-          assert ".clip(RoundedCornerShape(12.dp))" in lines[clip_idx], "clip line mismatch: " + lines[clip_idx]
-          assert ".thumbnailBorder(RoundedCornerShape(12.dp))" in lines[border_idx], "border line mismatch: " + lines[border_idx]
-
-          lines[clip_idx] = lines[clip_idx].replace("RoundedCornerShape(12.dp)", "cardShape")
-          lines[border_idx] = lines[border_idx].replace("RoundedCornerShape(12.dp)", "cardShape")
-
-          with open(path, "w", encoding="utf-8") as f:
-              f.write("\n".join(lines) + "\n")
+          with open(path, "w", encoding="utf-8") as fz
+              f.write(c_new)
           '
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
-          git commit -m "feat: definir fotos de artistas como redondas com CircleShape no ShelfCard"
+          git add sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/ArtworkMeshBackdrop.kt
+          git commit -m "feat: usar FilterQuality.Medium no ArtworkMeshBackdrop para suavizar o desfoque do player"
           git push
