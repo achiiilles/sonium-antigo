@@ -11,25 +11,52 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Bump version in app/build.gradle.kts
+      - name: Patch AppSettings.kt
         run: |
           python3 -c '
-          path = "app/build.gradle.kts"
+          path = "app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt"
           with open(path, "r", encoding="utf-8") as f:
               c = f.read()
-          assert "versionCode = 35" in c, "versionCode 35 not found"
-          assert "versionName = \"0.5.2\"" in c, "versionName 0.5.2 not found"
-          c = c.replace("versionCode = 35", "versionCode = 36", 1)
-          c = c.replace("versionName = \"0.5.2\"", "versionName = \"0.5.3\"", 1)
+
+          if "val aiLyricsEnabled" not in c:
+              p_target = "val hideSongStatus = MutableStateFlow(true)"
+              if p_target in c:
+                  c = c.replace(p_target, p_target + "\n    val aiLyricsEnabled = MutableStateFlow(true)\n    val aiLyricsApiKey = MutableStateFlow(\"\")", 1)
+              else:
+                  c = c.replace("object AppSettings {", "object AppSettings {\n    val aiLyricsEnabled = MutableStateFlow(true)\n    val aiLyricsApiKey = MutableStateFlow(\"\")", 1)
+
+          if "KEY_AI_LYRICS_ENABLED" not in c:
+              if "KEY_HIDE_SONG_STATUS" in c:
+                  c = c.replace("KEY_HIDE_SONG_STATUS", "KEY_AI_LYRICS_ENABLED = \"ai_lyrics_enabled\"\n    private const val KEY_AI_LYRICS_API_KEY = \"ai_lyrics_api_key\"\n    private const val KEY_HIDE_SONG_STATUS", 1)
+              else:
+                  c = c.replace("object AppSettings {", "object AppSettings {\n    private const val KEY_AI_LYRICS_ENABLED = \"ai_lyrics_enabled\"\n    private const val KEY_AI_LYRICS_API_KEY = \"ai_lyrics_api_key\"", 1)
+
+          if "aiLyricsEnabled.value =" not in c:
+              init_target = "hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, true)"
+              if init_target in c:
+                  c = c.replace(init_target, init_target + "\n        aiLyricsEnabled.value = prefs.getBoolean(KEY_AI_LYRICS_ENABLED, true)\n        aiLyricsApiKey.value = prefs.getString(KEY_AI_LYRICS_API_KEY, \"\") ?: \"\"", 1)
+
+          if "fun setAiLyricsEnabled" not in c:
+              idx = c.find("fun setHideSongStatus")
+              if idx != -1:
+                  brace_idx = c.find("}", idx)
+                  setter_block = c[idx:brace_idx+1]
+                  new_setters = setter_block + "\n\n    fun setAiLyricsEnabled(value: Boolean) {\n        aiLyricsEnabled.value = value\n        prefs.edit().putBoolean(KEY_AI_LYRICS_ENABLED, value).apply()\n    }\n\n    fun setAiLyricsApiKey(value: String) {\n        aiLyricsApiKey.value = value\n        prefs.edit().putString(KEY_AI_LYRICS_API_KEY, value).apply()\n    }"
+                  c = c.replace(setter_block, new_setters, 1)
+              else:
+                  last_brace = c.rfind("}")
+                  setters = "\n    fun setAiLyricsEnabled(value: Boolean) {\n        aiLyricsEnabled.value = value\n        prefs.edit().putBoolean(KEY_AI_LYRICS_ENABLED, value).apply()\n    }\n\n    fun setAiLyricsApiKey(value: String) {\n        aiLyricsApiKey.value = value\n        prefs.edit().putString(KEY_AI_LYRICS_API_KEY, value).apply()\n    }\n"
+                  c = c[:last_brace] + setters + c[last_brace:]
+
           with open(path, "w", encoding="utf-8") as f:
               f.write(c)
-          print("version bumped to 0.5.3 (36)")
+          print("AppSettings.kt patched successfully")
           '
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/build.gradle.kts
-          git commit -m "chore: bump version to 0.5.3 (build 36)"
+          git add app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt
+          git commit -m "feat: adicionar variaveis aiLyrics ao AppSettings"
           git push
