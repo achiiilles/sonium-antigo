@@ -1,5 +1,6 @@
 name: Apply Patch
 on:
+  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/apply-patch.yml'
@@ -18,34 +19,7 @@ jobs:
       - name: Restore and patch strings.xml
         run: |
           git checkout a59cb68bdb93b3ac50b95d47c8f1db72f02e2d4f -- app/src/main/res/values/strings.xml
-          python3 -c '
-import io
-
-path = "app/src/main/res/values/strings.xml"
-with io.open(path, "r", encoding="utf-8") as f:
-    c = f.read()
-
-if "portuguese_br" not in c:
-    block = """    <!-- Idiomas -->
-    <string name="portuguese_pt">Portuguese (Portugal)</string>
-    <string name="portuguese_br">Portuguese (Brazil)</string>
-
-    <!-- Áudio Espacial -->
-    <string name="spatial_audio_bluetooth_only">Enable only with Bluetooth headphones</string>
-    <string name="spatial_audio_bluetooth_only_subtitle">Turns on spatial audio automatically when wireless headphones connect and turns off when disconnected</string>
-
-    <!-- Tradução de Letras por IA -->
-    <string name="ai_lyrics_translation">AI lyrics translation</string>
-    <string name="ai_lyrics_translation_subtitle">Translates and adapts while maintaining poetic rhythm and natural rhymes for the app language</string>
-    <string name="ai_lyrics_api_key">Google AI Studio API key (Gemini)</string>
-    <string name="ai_lyrics_api_key_hint">Paste your Google AI Studio API key</string>
-    <string name="lyrics_offset_description">Positive values display lyrics later</string>
-</resources>"""
-    c = c.replace("</resources>", block)
-    with io.open(path, "w", encoding="utf-8") as f:
-        f.write(c)
-    print("strings.xml updated successfully")
-'
+          python3 -c "import io; p='app/src/main/res/values/strings.xml'; c=io.open(p,encoding='utf-8').read(); b='''    <!-- Idiomas -->\n    <string name=\"portuguese_pt\">Portuguese (Portugal)</string>\n    <string name=\"portuguese_br\">Portuguese (Brazil)</string>\n\n    <!-- Áudio Espacial -->\n    <string name=\"spatial_audio_bluetooth_only\">Enable only with Bluetooth headphones</string>\n    <string name=\"spatial_audio_bluetooth_only_subtitle\">Turns on spatial audio automatically when wireless headphones connect and turns off when disconnected</string>\n\n    <!-- Tradução de Letras por IA -->\n    <string name=\"ai_lyrics_translation\">AI lyrics translation</string>\n    <string name=\"ai_lyrics_translation_subtitle\">Translates and adapts while maintaining poetic rhythm and natural rhymes for the app language</string>\n    <string name=\"ai_lyrics_api_key\">Google AI Studio API key (Gemini)</string>\n    <string name=\"ai_lyrics_api_key_hint\">Paste your Google AI Studio API key</string>\n    <string name=\"lyrics_offset_description\">Positive values display lyrics later</string>\n</resources>'''; (io.open(p,'w',encoding='utf-8').write(c.replace('</resources>', b)), print('OK')) if 'portuguese_br' not in c else print('ALREADY_PRESENT')"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/src/main/res/values/strings.xml
