@@ -370,6 +370,8 @@ object AppSettings {
 
     /** Hides the "Playing from" / "Played by" caption at the top of the main player. */
     val hideSongStatus = MutableStateFlow(true)
+    val aiLyricsEnabled = MutableStateFlow(true)
+    val aiLyricsApiKey = MutableStateFlow("")
 
     /** Swiping a song row plays it next instead of adding it to the end of the queue. */
     val swipeToPlayNext = MutableStateFlow(false)
@@ -827,7 +829,9 @@ object AppSettings {
         )
         stopOnTaskRemoved.value = prefs.getBoolean(KEY_STOP_ON_TASK_REMOVED, false)
         hideVolumeBar.value = prefs.getBoolean(KEY_HIDE_VOLUME_BAR, false)
-        hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, true)
+        hideSongStatus.value = prefs.getBoolean(KEY_AI_LYRICS_ENABLED = "ai_lyrics_enabled"
+    private const val KEY_AI_LYRICS_API_KEY = "ai_lyrics_api_key"
+    private const val KEY_HIDE_SONG_STATUS, true)
         swipeToPlayNext.value = prefs.getBoolean(KEY_SWIPE_TO_PLAY_NEXT, false)
         dontRepeatSuggestions.value = prefs.getBoolean(KEY_DONT_REPEAT_SUGGESTIONS, false)
         preferMusicOnly.value = prefs.getBoolean(KEY_PREFER_MUSIC_ONLY, false)
@@ -1198,6 +1202,16 @@ object AppSettings {
     fun setHideSongStatus(value: Boolean) {
         hideSongStatus.value = value
         prefs.edit().putBoolean(KEY_HIDE_SONG_STATUS, value).apply()
+    }
+
+    fun setAiLyricsEnabled(value: Boolean) {
+        aiLyricsEnabled.value = value
+        prefs.edit().putBoolean(KEY_AI_LYRICS_ENABLED, value).apply()
+    }
+
+    fun setAiLyricsApiKey(value: String) {
+        aiLyricsApiKey.value = value
+        prefs.edit().putString(KEY_AI_LYRICS_API_KEY, value).apply()
     }
 
     fun setSwipeToPlayNext(value: Boolean) {
