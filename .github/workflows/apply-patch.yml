@@ -18,9 +18,23 @@ jobs:
 
       - name: Run Patch Script
         run: |
-          python3 .github/scripts/patch_detail.py
+          python3 -c '
+          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+          with open(path, "r", encoding="utf-8") as f:
+              content = f.read()
+
+          target = "            // Albums / Singles & EPs carousels (artist pages).\n            items(page.sections) { shelf ->"
+          replacement = "            // Albums / Singles & EPs carousels (artist pages).\n            val publicSections = remember(page.sections) {\n                page.sections.filterNot {\n                    it.title.contains(\"sua biblioteca\", ignoreCase = true) ||\n                    it.title.contains(\"your library\", ignoreCase = true)\n                }\n            }\n            items(publicSections) { shelf ->"
+
+          if target not in content:
+              raise ValueError("Target not found in DetailScreen.kt")
+
+          new_content = content.replace(target, replacement, 1)
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(new_content)
+          '
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git commit -m "feat: cards circulares para artistas recomendados em DetailScreen.kt"
+          git commit -m "feat: ocultar seção Da sua biblioteca das seções públicas do artista"
           git push
