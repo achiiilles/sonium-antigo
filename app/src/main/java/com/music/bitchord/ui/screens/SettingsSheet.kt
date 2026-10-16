@@ -169,9 +169,9 @@ enum class SettingsCategory(
     val icon: ImageVector,
 ) {
     ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),
+    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
     PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
     LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),
-    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
     STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
     SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
 }
