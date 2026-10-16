@@ -378,6 +378,9 @@ fun DetailScreen(
     // is disposed, and a field that asks for focus every time it is composed
     // would throw the keyboard back up each time it scrolled into view.
     var focusSearch by remember(page.browseId) { mutableStateOf(false) }
+    var showArtistLibrary by rememberSaveable(page.browseId) { mutableStateOf(false) }
+    BackHandler(enabled = showArtistLibrary) { showArtistLibrary = false }
+
     val closeSearch = {
         searching = false
         query = ""
@@ -442,6 +445,15 @@ fun DetailScreen(
         if (searching) listState.animateScrollToItem(SEARCH_ITEM_INDEX, -searchStop)
     }
 
+    if (showArtistLibrary) {
+        ArtistLibraryScreen(
+            artistName = page.title,
+            songs = libraryArtistSongs,
+            onBack = { showArtistLibrary = false },
+            onSongClick = onSongClick,
+            onShuffle = onShuffle,
+        )
+    } else {
     AnimatedContent(
         targetState = activeShelf,
         transitionSpec = {
@@ -741,7 +753,7 @@ fun DetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
-                            .clickable { /* abrir tela dedicada da biblioteca */ },
+                            .clickable { showArtistLibrary = true },
                         shape = CircleShape,
                         color = palette.elevated,
                         border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
@@ -822,6 +834,7 @@ fun DetailScreen(
     )
 }
 }
+  }
 }
 
 /**
