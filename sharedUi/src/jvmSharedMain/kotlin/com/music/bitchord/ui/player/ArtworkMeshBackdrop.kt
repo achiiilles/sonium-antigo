@@ -411,7 +411,7 @@ private fun DrawScope.drawMesh(mesh: ArtworkMesh, seamY: Float, alpha: Float) {
             dstOffset = IntOffset.Zero,
             dstSize = IntSize(width, seamY.roundToInt()),
             alpha = alpha,
-            filterQuality = FilterQuality.Low,
+            filterQuality = FilterQuality.Medium,
         )
     }
 
@@ -423,7 +423,7 @@ private fun DrawScope.drawMesh(mesh: ArtworkMesh, seamY: Float, alpha: Float) {
         dstOffset = IntOffset(0, seamY.roundToInt()),
         dstSize = IntSize(width, (size.height - seamY).roundToInt()),
         alpha = alpha,
-        filterQuality = FilterQuality.Low,
+        filterQuality = FilterQuality.Medium,
     )
 }
 
