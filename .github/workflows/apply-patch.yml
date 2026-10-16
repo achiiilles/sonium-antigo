@@ -8,6 +8,8 @@ on:
 jobs:
   apply:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Setup git
@@ -21,32 +23,32 @@ jobs:
           with open(path, "r", encoding="utf-8") as f:
               content = f.read()
 
-          target = """if (showArtistLibrary) {
-ArtistLibraryScreen(
-artistName = page.title,
-songs = libraryArtistSongs,
-onBack = { showArtistLibrary = false },
-onSongClick = onSongClick,
-onShuffle = onShuffle,
-)"""
+          target = """    if (showArtistLibrary) {
+        ArtistLibraryScreen(
+            artistName = page.title,
+            songs = libraryArtistSongs,
+            onBack = { showArtistLibrary = false },
+            onSongClick = onSongClick,
+            onShuffle = onShuffle,
+        )"""
 
-          replacement = """val libraryArtistAlbums = remember(page.sections) {
-    page.sections.filter {
-        it.title.contains("sua biblioteca", ignoreCase = true) ||
-        it.title.contains("your library", ignoreCase = true)
-    }.flatMap { it.items }
-}
+          replacement = """    val libraryArtistAlbums = remember(page.sections) {
+        page.sections.filter {
+            it.title.contains("sua biblioteca", ignoreCase = true) ||
+            it.title.contains("your library", ignoreCase = true)
+        }.flatMap { it.items }
+    }
 
-if (showArtistLibrary) {
-ArtistLibraryScreen(
-artistName = page.title,
-songs = libraryArtistSongs,
-albums = libraryArtistAlbums,
-onBack = { showArtistLibrary = false },
-onSongClick = onSongClick,
-onShuffle = onShuffle,
-onAlbumClick = onSectionItemClick,
-)"""
+    if (showArtistLibrary) {
+        ArtistLibraryScreen(
+            artistName = page.title,
+            songs = libraryArtistSongs,
+            albums = libraryArtistAlbums,
+            onBack = { showArtistLibrary = false },
+            onSongClick = onSongClick,
+            onShuffle = onShuffle,
+            onAlbumClick = onSectionItemClick,
+        )"""
 
           if target in content:
               content = content.replace(target, replacement, 1)
