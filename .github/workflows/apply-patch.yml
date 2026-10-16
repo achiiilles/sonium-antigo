@@ -18,13 +18,16 @@ jobs:
 
       - name: Run Patch Script
         run: |
-          python3 -c '
+          cat << 'EOF' > patch.py
           path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
           with open(path, "r", encoding="utf-8") as f:
               content = f.read()
 
           imp_target = "import androidx.compose.material.icons.rounded.LibraryMusic\n"
-          imp_replacement = "import androidx.compose.material.icons.rounded.LibraryMusic\nimport androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight\nimport androidx.compose.material3.Surface\nimport androidx.compose.foundation.BorderStroke\n"
+          imp_replacement = ("import androidx.compose.material.icons.rounded.LibraryMusic\n"
+                             "import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight\n"
+                             "import androidx.compose.material3.Surface\n"
+                             "import androidx.compose.foundation.BorderStroke\n")
 
           if imp_target in content and imp_replacement not in content:
               content = content.replace(imp_target, imp_replacement, 1)
@@ -33,46 +36,48 @@ jobs:
           if marker not in content:
               raise ValueError("Marker not found in DetailScreen.kt")
 
-          pill_block = """            if (isArtist) {
-                  item(key = "artist_library_pill") {
-                      Surface(
-                          modifier = Modifier
-                              .fillMaxWidth()
-                              .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
-                              .clickable { /* abrir tela dedicada da biblioteca */ },
-                          shape = CircleShape,
-                          color = palette.elevated,
-                          border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
-                      ) {
-                          Row(
-                              modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                              verticalAlignment = Alignment.CenterVertically,
-                          ) {
-                              Icon(
-                                  imageVector = Icons.Rounded.LibraryMusic,
-                                  contentDescription = null,
-                                  tint = palette.onBackground,
-                                  modifier = Modifier.size(18.dp),
-                              )
-                              Spacer(Modifier.width(8.dp))
-                              Text(
-                                  text = "Na sua biblioteca",
-                                  style = MaterialTheme.typography.labelLarge,
-                                  color = palette.onBackground,
-                              )
-                              Spacer(Modifier.weight(1f))
-                              Icon(
-                                  imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                  contentDescription = null,
-                                  tint = palette.onBackgroundVariant,
-                                  modifier = Modifier.size(18.dp),
-                              )
-                          }
-                      }
-                  }
-              }
-
-  """
+          pill_lines = [
+              "            if (isArtist) {\n",
+              "                item(key = \"artist_library_pill\") {\n",
+              "                    Surface(\n",
+              "                        modifier = Modifier\n",
+              "                            .fillMaxWidth()\n",
+              "                            .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)\n",
+              "                            .clickable { /* abrir tela dedicada da biblioteca */ },\n",
+              "                        shape = CircleShape,\n",
+              "                        color = palette.elevated,\n",
+              "                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),\n",
+              "                    ) {\n",
+              "                        Row(\n",
+              "                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),\n",
+              "                            verticalAlignment = Alignment.CenterVertically,\n",
+              "                        ) {\n",
+              "                            Icon(\n",
+              "                                imageVector = Icons.Rounded.LibraryMusic,\n",
+              "                                contentDescription = null,\n",
+              "                                tint = palette.onBackground,\n",
+              "                                modifier = Modifier.size(18.dp),\n",
+              "                            )\n",
+              "                            Spacer(Modifier.width(8.dp))\n",
+              "                            Text(\n",
+              "                                text = \"Na sua biblioteca\",\n",
+              "                                style = MaterialTheme.typography.labelLarge,\n",
+              "                                color = palette.onBackground,\n",
+              "                            )\n",
+              "                            Spacer(Modifier.weight(1f))\n",
+              "                            Icon(\n",
+              "                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,\n",
+              "                                contentDescription = null,\n",
+              "                                tint = palette.onBackgroundVariant,\n",
+              "                                modifier = Modifier.size(18.dp),\n",
+              "                            )\n",
+              "                        }\n",
+              "                    }\n",
+              "                }\n",
+              "            }\n",
+              "\n"
+          ]
+          pill_block = "".join(pill_lines)
 
           lines = content.splitlines(keepends=True)
           new_lines = []
@@ -89,7 +94,9 @@ jobs:
           content = "".join(new_lines)
           with open(path, "w", encoding="utf-8") as f:
               f.write(content)
-          '
+          print("Patch successfully applied!")
+          EOF
+          python3 patch.py
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
