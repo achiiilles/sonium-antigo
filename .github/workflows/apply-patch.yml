@@ -23,82 +23,72 @@ jobs:
           with open(path, "r", encoding="utf-8") as f:
               content = f.read()
 
-          imp_target = "import androidx.compose.material.icons.rounded.LibraryMusic\n"
-          imp_replacement = ("import androidx.compose.material.icons.rounded.LibraryMusic\n"
-                             "import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight\n"
-                             "import androidx.compose.material3.Surface\n"
-                             "import androidx.compose.foundation.BorderStroke\n")
+          # 1. State & BackHandler
+          target_search = "val closeSearch = {"
+          replacement_search = "var showArtistLibrary by rememberSaveable(page.browseId) { mutableStateOf(false) }\n    BackHandler(enabled = showArtistLibrary) { showArtistLibrary = false }\n\n    val closeSearch = {"
+          if target_search in content and "showArtistLibrary" not in content:
+              content = content.replace(target_search, replacement_search, 1)
 
-          if imp_target in content and imp_replacement not in content:
-              content = content.replace(imp_target, imp_replacement, 1)
+          # 2. Pill clickable & condition
+          target_pill = ".clickable { /* abrir tela dedicada da biblioteca */ }"
+          replacement_pill = ".clickable { showArtistLibrary = true }"
+          if target_pill in content:
+              content = content.replace(target_pill, replacement_pill, 1)
 
-          marker = "// Albums / Singles & EPs carousels (artist pages)."
-          if marker not in content:
-              raise ValueError("Marker not found in DetailScreen.kt")
+          target_cond = 'if (isArtist) {\n            item(key = "artist_library_pill") {'
+          replacement_cond = 'if (isArtist && libraryArtistSongs.isNotEmpty()) {\n            item(key = "artist_library_pill") {'
+          if target_cond in content:
+              content = content.replace(target_cond, replacement_cond, 1)
 
-          pill_lines = [
-              "            if (isArtist) {\n",
-              "                item(key = \"artist_library_pill\") {\n",
-              "                    Surface(\n",
-              "                        modifier = Modifier\n",
-              "                            .fillMaxWidth()\n",
-              "                            .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)\n",
-              "                            .clickable { /* abrir tela dedicada da biblioteca */ },\n",
-              "                        shape = CircleShape,\n",
-              "                        color = palette.elevated,\n",
-              "                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),\n",
-              "                    ) {\n",
-              "                        Row(\n",
-              "                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),\n",
-              "                            verticalAlignment = Alignment.CenterVertically,\n",
-              "                        ) {\n",
-              "                            Icon(\n",
-              "                                imageVector = Icons.Rounded.LibraryMusic,\n",
-              "                                contentDescription = null,\n",
-              "                                tint = palette.onBackground,\n",
-              "                                modifier = Modifier.size(18.dp),\n",
-              "                            )\n",
-              "                            Spacer(Modifier.width(8.dp))\n",
-              "                            Text(\n",
-              "                                text = \"Na sua biblioteca\",\n",
-              "                                style = MaterialTheme.typography.labelLarge,\n",
-              "                                color = palette.onBackground,\n",
-              "                            )\n",
-              "                            Spacer(Modifier.weight(1f))\n",
-              "                            Icon(\n",
-              "                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,\n",
-              "                                contentDescription = null,\n",
-              "                                tint = palette.onBackgroundVariant,\n",
-              "                                modifier = Modifier.size(18.dp),\n",
-              "                            )\n",
-              "                        }\n",
-              "                    }\n",
-              "                }\n",
-              "            }\n",
-              "\n"
-          ]
-          pill_block = "".join(pill_lines)
+          # 3. Overlay ArtistLibraryScreen when showArtistLibrary is true
+          anim_prefix = "    AnimatedContent(\n        targetState = activeShelf,"
+          box_prefix = "    Box(modifier = modifier.fillMaxSize()) {\n        AnimatedContent(\n            targetState = activeShelf,"
+          if anim_prefix in content and "ArtistLibraryScreen(" not in content:
+              content = content.replace(anim_prefix, box_prefix, 1)
+              # Also change modifier in AnimatedContent to Modifier.fillMaxSize()
+              content = content.replace('label = "artist_shelf_transition",\n        modifier = modifier.fillMaxSize(),', 'label = "artist_shelf_transition",\n            modifier = Modifier.fillMaxSize(),', 1)
+              
+              # Find end of AnimatedContent block by locating closing of activeShelf transition
+              # Inside AnimatedContent: } else {\n            ArtistShelfDetail(
+              # After ArtistShelfDetail: onArtistClick = onArtistClick,\n            )\n        }\n    }
+              # We append the ArtistLibraryScreen overlay inside the Box:
+              marker = "onArtistClick = onArtistClick,\n            )\n        }\n    }"
+              overlay = (
+                  "onArtistClick = onArtistClick,\n"
+                  "            )\n"
+                  "        }\n"
+                  "    }\n\n"
+                  "    if (showArtistLibrary) {\n"
+                  "        ArtistLibraryScreen(\n"
+                  "            artistName = page.title,\n"
+                  "            songs = libraryArtistSongs,\n"
+                  "            onBack = { showArtistLibrary = false },\n"
+                  "            onSongClick = { songs, index -> onSongClick(songs, index) },\n"
+                  "            onShuffle = onShuffle,\n"
+                  "        )\n"
+                  "    }\n"
+                  "    }"
+              )
+              if marker in content:
+                  content = content.replace(marker, overlay, 1)
+              else:
+                  # Alternative pattern if indent varies
+                  import re
+                  pattern = r"(onArtistClick\s*=\s*onArtistClick,\s*\)\s*\}\s*\})"
+                  match = re.search(pattern, content)
+                  if match:
+                      overlay_alt = match.group(1) + "\n\n        if (showArtistLibrary) {\n            ArtistLibraryScreen(\n                artistName = page.title,\n                songs = libraryArtistSongs,\n                onBack = { showArtistLibrary = false },\n                onSongClick = { songs, index -> onSongClick(songs, index) },\n                onShuffle = onShuffle,\n            )\n        }\n    }"
+                      content = content[:match.start()] + overlay_alt + content[match.end():]
+                  else:
+                      raise ValueError("Marker for end of AnimatedContent not found!")
 
-          lines = content.splitlines(keepends=True)
-          new_lines = []
-          inserted = False
-          for line in lines:
-              if not inserted and marker in line:
-                  new_lines.append(pill_block)
-                  inserted = True
-              new_lines.append(line)
-
-          if not inserted:
-              raise ValueError("Could not insert pill block before marker")
-
-          content = "".join(new_lines)
           with open(path, "w", encoding="utf-8") as f:
               f.write(content)
-          print("Patch successfully applied!")
+          print("DetailScreen.kt patch successfully applied!")
           EOF
           python3 patch.py
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git commit -m "feat: adicionar pilula Na sua biblioteca no DetailScreen.kt"
+          git commit -m "feat: ligar toque da pilula para abrir ArtistLibraryScreen no DetailScreen.kt"
           git push
