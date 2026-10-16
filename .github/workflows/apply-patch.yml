@@ -11,62 +11,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply AccountProfileSelector patch
+      - name: Bump version in app/build.gradle.kts
         run: |
           python3 -c '
-          import re
-
-          path = "app/src/main/java/com/music/bitchord/ui/components/AccountProfileSelector.kt"
+          path = "app/build.gradle.kts"
           with open(path, "r", encoding="utf-8") as f:
               c = f.read()
-
-          if "import android.os.Build" not in c:
-              assert "package com.music.bitchord.ui.components" in c, "package header not found"
-              c = c.replace("package com.music.bitchord.ui.components\n", "package com.music.bitchord.ui.components\n\nimport android.os.Build\n", 1)
-
-          if "import androidx.compose.ui.graphics.Color" not in c:
-              c = c.replace("package com.music.bitchord.ui.components\n", "package com.music.bitchord.ui.components\n\nimport androidx.compose.ui.graphics.Color\n", 1)
-
-          pattern = re.compile(
-              r"(?P<indent>[ \t]*)if\s*\(reduceDynamicBlur\)\s*\{\s*"
-              r"Modifier\.background\(MaterialTheme\.colorScheme\.surface\)\s*"
-              r"\}\s*else\s*\{\s*"
-              r"Modifier\.optimizedHazeEffect\(\s*"
-              r"state\s*=\s*hazeState,\s*"
-              r"style\s*=\s*HazeMaterials\.thin\(MaterialTheme\.colorScheme\.surface\),?\s*"
-              r"\)\s*"
-              r"\},"
-          )
-
-          def repl(m):
-              indent = m.group("indent")
-              return (
-                  f"{indent}if (reduceDynamicBlur) {{\n"
-                  f"{indent}    Modifier.background(MaterialTheme.colorScheme.surface)\n"
-                  f"{indent}}} else if (Build.VERSION.SDK_INT < 31) {{\n"
-                  f"{indent}    Modifier.background(Color(0xF2161618))\n"
-                  f"{indent}}} else {{\n"
-                  f"{indent}    Modifier.optimizedHazeEffect(\n"
-                  f"{indent}        state = hazeState,\n"
-                  f"{indent}        style = HazeMaterials.thin(MaterialTheme.colorScheme.surface),\n"
-                  f"{indent}    )\n"
-                  f"{indent}}},"
-              )
-
-          c_new, n = pattern.subn(repl, c, count=1)
-          assert n == 1, f"Expected 1 replacement, got {n}"
-          assert "Color(0xF2161618)" in c_new, "Color(0xF2161618) missing"
-          assert "import android.os.Build" in c_new, "import android.os.Build missing"
-
+          assert "versionCode = 35" in c, "versionCode 35 not found"
+          assert "versionName = \"0.5.2\"" in c, "versionName 0.5.2 not found"
+          c = c.replace("versionCode = 35", "versionCode = 36", 1)
+          c = c.replace("versionName = \"0.5.2\"", "versionName = \"0.5.3\"", 1)
           with open(path, "w", encoding="utf-8") as f:
-              f.write(c_new)
-          print("AccountProfileSelector.kt patched successfully")
+              f.write(c)
+          print("version bumped to 0.5.3 (36)")
           '
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/music/bitchord/ui/components/AccountProfileSelector.kt
-          git commit -m "feat: usar vidro escuro estático no AccountProfileSelector para Android < 12"
+          git add app/build.gradle.kts
+          git commit -m "chore: bump version to 0.5.3 (build 36)"
           git push
