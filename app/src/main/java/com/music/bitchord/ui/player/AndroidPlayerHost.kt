@@ -22,7 +22,6 @@ import com.music.bitchord.data.lyrics.translationLanguageName
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.LastPlayerScreen
-import com.music.bitchord.playback.AudioOutputDevice
 import com.music.bitchord.playback.AudioOutputStatus
 import com.music.bitchord.playback.AudioRouting
 import com.music.bitchord.playback.cast.CastController
