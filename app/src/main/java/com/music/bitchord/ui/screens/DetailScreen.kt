@@ -872,7 +872,8 @@ fun DetailScreen(
     )
 }
 }
-  }
+    }
+}
 }
 
 /**
@@ -1261,7 +1262,6 @@ private fun ArtistHeader(
                 // name sits under the artwork.
                 .padding(start = HEADER_GUTTER, end = HEADER_GUTTER, top = 14.dp, bottom = 7.dp),
         )
-    }
     }
 }
 
