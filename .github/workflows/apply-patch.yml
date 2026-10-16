@@ -11,24 +11,56 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply ArtworkMeshBackdrop patch
+      - name: Apply MiniPlayer patch
         run: |
           python3 -c '
-          path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/ArtworkMeshBackdrop.kt"
+          path = "app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt"
           with open(path, "r", encoding="utf-8") as f:
               c = f.read()
 
-          assert "filterQuality = FilterQuality.Low" in c, "FilterQuality.Low not found in ArtworkMeshBackdrop.kt"
-          c_new = c.replace("filterQuality = FilterQuality.Low", "filterQuality = FilterQuality.Medium")
+          if "import android.os.Build" not in c:
+              assert "import com.music.bitchord.R" in c, "import com.music.bitchord.R not found"
+              c = c.replace("import com.music.bitchord.R\n", "import com.music.bitchord.R\nimport android.os.Build\n", 1)
+
+          old_target = (
+              "                  if (reduceDynamicBlur) {\n"
+              "                      Modifier.background(MaterialTheme.colorScheme.surface)\n"
+              "                  } else {\n"
+              "                      Modifier.optimizedHazeEffect(\n"
+              "                          state = hazeState,\n"
+              "                          style = HazeMaterials.thin(MaterialTheme.colorScheme.surface),\n"
+              "                      )\n"
+              "                  },"
+          )
+
+          new_target = (
+              "                  if (reduceDynamicBlur) {\n"
+              "                      Modifier.background(MaterialTheme.colorScheme.surface)\n"
+              "                  } else if (Build.VERSION.SDK_INT < 31) {\n"
+              "                      Modifier.background(Color(0xF2161618))\n"
+              "                  } else {\n"
+              "                      Modifier.optimizedHazeEffect(\n"
+              "                          state = hazeState,\n"
+              "                          style = HazeMaterials.thin(MaterialTheme.colorScheme.surface),\n"
+              "                      )\n"
+              "                  },"
+          )
+
+          assert old_target in c, "old_target not found in MiniPlayer.kt"
+          c_new = c.replace(old_target, new_target, 1)
+
+          assert "Color(0xF2161618)" in c_new, "Color(0xF2161618) missing"
+          assert "import android.os.Build" in c_new, "import android.os.Build missing"
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(c_new)
+          print("MiniPlayer.kt patched successfully")
           '
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/ArtworkMeshBackdrop.kt
-          git commit -m "feat: usar FilterQuality.Medium no ArtworkMeshBackdrop para suavizar o desfoque do player"
+          git add app/src/main/java/com/music/bitchord/ui/components/MiniPlayer.kt
+          git commit -m "feat: usar vidro escuro estático no MiniPlayer para Android < 12"
           git push
