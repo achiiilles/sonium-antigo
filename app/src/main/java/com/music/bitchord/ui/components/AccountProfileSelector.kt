@@ -1,5 +1,7 @@
 package com.music.bitchord.ui.components
 
+import android.os.Build
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -81,6 +83,8 @@ fun AccountProfileSelector(
                 .then(
                     if (reduceDynamicBlur) {
                         Modifier.background(MaterialTheme.colorScheme.surface)
+                    } else if (Build.VERSION.SDK_INT < 31) {
+                        Modifier.background(Color(0xF2161618))
                     } else {
                         Modifier.optimizedHazeEffect(
                             state = hazeState,
