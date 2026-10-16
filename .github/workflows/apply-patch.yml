@@ -20,6 +20,7 @@ jobs:
         run: |
           python3 - << 'PYEOF'
           import sys
+          import re
 
           path = "app/src/main/java/com/music/bitchord/MainActivity.kt"
           with open(path, "r", encoding="utf-8") as f:
@@ -33,66 +34,113 @@ jobs:
                       "import com.music.bitchord.ui.screens.SettingsCategory\nimport com.music.bitchord.ui.screens.SettingsScreen",
                       1
                   )
+              else:
+                  print("ERROR: SettingsScreen import not found")
+                  sys.exit(1)
 
           # 2. State declaration
           old_state = "var showSettings by rememberSaveable { mutableStateOf(false) }"
           new_state = "var showSettings by rememberSaveable { mutableStateOf(false) }\n    var settingsCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }"
-          if old_state not in code:
-              print("ERROR: old_state not found in MainActivity.kt")
-              sys.exit(1)
-          code = code.replace(old_state, new_state, 1)
+          if "var settingsCategory" not in code:
+              if old_state not in code:
+                  print("ERROR: old_state not found in MainActivity.kt")
+                  sys.exit(1)
+              code = code.replace(old_state, new_state, 1)
 
           # 3. FrostedTopBar title
           old_title = "showSettings -> stringResource(R.string.settings)"
-          new_title = "showSettings && settingsCategory != null -> settingsCategory!!.title\n                        showSettings -> stringResource(R.string.settings)"
-          if old_title not in code:
-              print("ERROR: old_title not found in MainActivity.kt")
-              sys.exit(1)
-          code = code.replace(old_title, new_title, 1)
+          new_title = "showSettings && settingsCategory != null -> settingsCategory!!.title\n                            showSettings -> stringResource(R.string.settings)"
+          if "showSettings && settingsCategory != null -> settingsCategory!!.title" not in code:
+              if old_title not in code:
+                  print("ERROR: old_title not found in MainActivity.kt")
+                  sys.exit(1)
+              code = code.replace(old_title, new_title, 1)
 
           # 4. FrostedTopBar onBack
-          old_back = """                        settingsSubScreen != null -> ({ settingsSubScreen = null })
-                        showSettings -> ({ showSettings = false })"""
-          new_back = """                        settingsSubScreen != null -> ({ settingsSubScreen = null })
-                        showSettings && settingsCategory != null -> ({ settingsCategory = null })
-                        showSettings -> ({ showSettings = false })"""
-          if old_back in code:
-              code = code.replace(old_back, new_back, 1)
-          elif "showSettings -> ({ showSettings = false })" in code:
-              code = code.replace(
-                  "showSettings -> ({ showSettings = false })",
-                  "showSettings && settingsCategory != null -> ({ settingsCategory = null })\n                        showSettings -> ({ showSettings = false })",
-                  1
-              )
+          if "settingsCategory != null -> ({ settingsCategory = null })" not in code:
+              old_back = """                            settingsSubScreen != null -> ({ settingsSubScreen = null })
+                            showSettings -> ({ showSettings = false })"""
+              new_back = """                            settingsSubScreen != null -> ({ settingsSubScreen = null })
+                            showSettings && settingsCategory != null -> ({ settingsCategory = null })
+                            showSettings -> ({ showSettings = false })"""
+              if old_back in code:
+                  code = code.replace(old_back, new_back, 1)
+              elif "showSettings -> ({ showSettings = false })" in code:
+                  code = code.replace(
+                      "showSettings -> ({ showSettings = false })",
+                      "showSettings && settingsCategory != null -> ({ settingsCategory = null })\n                            showSettings -> ({ showSettings = false })",
+                      1
+                  )
+              else:
+                  print("ERROR: onBack target not found")
+                  sys.exit(1)
 
           # 5. BackHandler for settingsCategory
-          old_bh = "BackHandler(enabled = showSettings && !showSpotify &&"
-          new_bh = """BackHandler(enabled = showSettings && settingsCategory != null) {
+          if "BackHandler(enabled = showSettings && settingsCategory != null)" not in code:
+              old_bh = "        BackHandler(enabled = showSettings && !showSpotify &&"
+              new_bh = """        BackHandler(enabled = showSettings && settingsCategory != null) {
               settingsCategory = null
           }
           BackHandler(enabled = showSettings && !showSpotify &&"""
-          if old_bh not in code:
-              print("ERROR: old_bh not found in MainActivity.kt")
-              sys.exit(1)
-          code = code.replace(old_bh, new_bh, 1)
+              if old_bh in code:
+                  code = code.replace(old_bh, new_bh, 1)
+              elif "BackHandler(enabled = showSettings && !showSpotify &&" in code:
+                  code = code.replace(
+                      "BackHandler(enabled = showSettings && !showSpotify &&",
+                      "BackHandler(enabled = showSettings && settingsCategory != null) {\n            settingsCategory = null\n        }\n        BackHandler(enabled = showSettings && !showSpotify &&",
+                      1
+                  )
+              else:
+                  print("ERROR: BackHandler not found in MainActivity.kt")
+                  sys.exit(1)
 
           # 6. SettingsScreen call
-          old_screen = """                        SettingsScreen(
+          if "externalCategory = settingsCategory" not in code:
+              old_screen = """                        SettingsScreen(
                               windowWidth = windowWidth,
                               signedIn = signedIn,
                               account = account,
                               onSignIn = {"""
-          new_screen = """                        SettingsScreen(
+              new_screen = """                        SettingsScreen(
                               windowWidth = windowWidth,
                               signedIn = signedIn,
                               account = account,
                               externalCategory = settingsCategory,
                               onSelectCategory = { settingsCategory = it },
                               onSignIn = {"""
-          if old_screen not in code:
-              print("ERROR: old_screen not found in MainActivity.kt")
-              sys.exit(1)
-          code = code.replace(old_screen, new_screen, 1)
+              if old_screen in code:
+                  code = code.replace(old_screen, new_screen, 1)
+              else:
+                  pattern = r'(SettingsScreen\s*\(\s*windowWidth\s*=\s*windowWidth,\s*signedIn\s*=\s*signedIn,\s*account\s*=\s*account,)'
+                  replacement = r'\1\n                            externalCategory = settingsCategory,\n                            onSelectCategory = { settingsCategory = it },'
+                  new_code, count = re.subn(pattern, replacement, code, count=1)
+                  if count == 0:
+                      print("ERROR: SettingsScreen call pattern not matched")
+                      sys.exit(1)
+                  code = new_code
+
+          # 7. Reset settingsCategory when leaving settings
+          old_reset = """    LaunchedEffect(showSettings) {
+          if (!showSettings) {
+              showAccountScrobbling = false
+              showSpotify = false
+          }
+      }"""
+          new_reset = """    LaunchedEffect(showSettings) {
+          if (!showSettings) {
+              showAccountScrobbling = false
+              showSpotify = false
+              settingsCategory = null
+          }
+      }"""
+          if old_reset in code:
+              code = code.replace(old_reset, new_reset, 1)
+          elif "showSpotify = false" in code and "settingsCategory = null" not in code:
+              code = code.replace(
+                  "showSpotify = false",
+                  "showSpotify = false\n            settingsCategory = null",
+                  1
+              )
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(code)
