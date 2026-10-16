@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BitChord"
+rootProject.name = "Sonium"
 include(":shared")
 include(":sharedUi")
 include(":desktopApp")
