@@ -16,51 +16,69 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Reorder SettingsCategory in SettingsSheet.kt
+      - name: Remove duplicate back button in SettingsSheet.kt
         run: |
           python3 - << 'PYEOF'
-          import io, sys
+          import io, re, sys
           path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          old_part = (
-              '    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),\n'
-              '    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),\n'
-              '    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),\n'
-              '    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),\n'
-              '    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),\n'
-              '    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),'
-          )
-
-          new_part = (
-              '    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),\n'
-              '    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),\n'
-              '    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),\n'
-              '    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),\n'
-              '    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),\n'
-              '    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),'
-          )
-
           target = None
-          replacement = None
-          if old_part in code:
-              target = old_part
-              replacement = new_part
-          elif old_part.replace('\n', '\r\n') in code:
-              target = old_part.replace('\n', '\r\n')
-              replacement = new_part.replace('\n', '\r\n')
+          replacement = """        Row(
+              modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
+              verticalAlignment = Alignment.CenterVertically,
+          ) {
+              Text(
+                  text = selectedCategory!!.title,
+                  style = MaterialTheme.typography.headlineMedium,
+                  color = MaterialTheme.colorScheme.onBackground,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis,
+              )
+          }"""
 
-          if target:
-              code = code.replace(target, replacement, 1)
-              with io.open(path, "w", encoding="utf-8") as f:
-                  f.write(code)
-              print("SUCCESS: SettingsCategory reordered successfully")
+          old_block = """        Row(
+              modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(start = 8.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
+              verticalAlignment = Alignment.CenterVertically,
+          ) {
+              IconButton(onClick = { selectedCategory = null }) {
+                  Icon(
+                      imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                      contentDescription = stringResource(R.string.back),
+                      tint = MaterialTheme.colorScheme.onBackground,
+                  )
+              }
+              Spacer(Modifier.width(4.dp))
+              Text(
+                  text = selectedCategory!!.title,
+                  style = MaterialTheme.typography.headlineMedium,
+                  color = MaterialTheme.colorScheme.onBackground,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis,
+              )
+          }"""
+
+          if old_block in code:
+              code = code.replace(old_block, replacement, 1)
+          elif old_block.replace('\n', '\r\n') in code:
+              code = code.replace(old_block.replace('\n', '\r\n'), replacement.replace('\n', '\r\n'), 1)
           else:
-              print("ERROR: old_part not found in SettingsSheet.kt")
-              sys.exit(1)
+              pattern = r'Row\(\s*modifier\s*=\s*Modifier\s*\.fillMaxWidth\(\)\s*\.padding\(\s*start\s*=\s*8\.dp,\s*end\s*=\s*20\.dp,\s*top\s*=\s*8\.dp,\s*bottom\s*=\s*12\.dp\s*\),\s*verticalAlignment\s*=\s*Alignment\.CenterVertically,\s*\)\s*\{\s*IconButton\s*\(\s*onClick\s*=\s*\{\s*selectedCategory\s*=\s*null\s*\}\s*\)\s*\{[\s\S]*?\}\s*Spacer\s*\([^)]*\)\s*Text\(\s*text\s*=\s*selectedCategory!!\.title,\s*style\s*=\s*MaterialTheme\.typography\.headlineMedium,\s*color\s*=\s*MaterialTheme\.colorScheme\.onBackground,\s*maxLines\s*=\s*1,\s*overflow\s*=\s*TextOverflow\.Ellipsis,\s*\)\s*\}'
+              code, count = re.subn(pattern, replacement, code, count=1)
+              if count != 1:
+                  print("ERROR: could not find old Row with back button in SettingsSheet.kt")
+                  sys.exit(1)
+
+          with io.open(path, "w", encoding="utf-8") as f:
+              f.write(code)
+          print("SUCCESS: Back button removed from subpage in SettingsSheet.kt")
           PYEOF
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git diff --staged --quiet || (git commit -m "refactor: reordenar categorias de configuracoes colocando Aparencia em segundo" && git push)
+          git diff --staged --quiet || (git commit -m "refactor: remover botao de voltar da subpasta em SettingsSheet.kt" && git push)
