@@ -27,95 +27,32 @@ jobs:
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          old_card_pat = r'(\s*if\s*\(\s*isArtist\s*&&\s*libraryArtistSongs\.isNotEmpty\(\)\s*\)\s*\{\s*\n\s*item\(key\s*=\s*"artist-library-card"\)\s*\{[\s\S]*?\}\s*\n\s*\})'
-          m1 = re.search(old_card_pat, code)
-          if not m1:
-              print("ERROR: old_card_pat not found")
+          pat = r'val parts = song\.artist\.split\(ARTIST_SPLIT_REGEX\)\.map\s*\{\s*it\.trim\(\)\s*\}\s*\r?\n\s*return parts\.any\s*\{\s*it\.equals\(cleanArtistName,\s*ignoreCase\s*=\s*true\)\s*\}'
+          m = re.search(pat, code)
+          if not m:
+              print("ERROR: target snippet not found in DetailScreen.kt")
               sys.exit(1)
 
-          new_card = """            if (isArtist && (libraryArtistSongs.isNotEmpty() || libraryArtistAlbums.isNotEmpty())) {
-                  item(key = "artist_library_card") {
-                      Surface(
-                          modifier = Modifier
-                              .fillMaxWidth()
-                              .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
-                              .clickable { showArtistLibrary = true },
-                          shape = CircleShape,
-                          color = palette.elevated,
-                          border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
-                      ) {
-                          Row(
-                              modifier = Modifier
-                                  .fillMaxWidth()
-                                  .padding(horizontal = 20.dp, vertical = 14.dp),
-                              verticalAlignment = Alignment.CenterVertically,
-                          ) {
-                              Icon(
-                                  imageVector = Icons.Rounded.LibraryMusic,
-                                  contentDescription = null,
-                                  tint = palette.onBackground,
-                                  modifier = Modifier.size(20.dp),
-                              )
-                              Spacer(Modifier.width(12.dp))
-                              Column(modifier = Modifier.weight(1f)) {
-                                  Text(
-                                      text = "Na sua biblioteca",
-                                      style = MaterialTheme.typography.titleSmall,
-                                      color = palette.onBackground,
-                                  )
-                                  val countText = buildString {
-                                      if (libraryArtistSongs.isNotEmpty()) {
-                                          append("${libraryArtistSongs.size} ${if (libraryArtistSongs.size == 1) "música" else "músicas"}")
-                                      }
-                                      if (libraryArtistAlbums.isNotEmpty()) {
-                                          if (isNotEmpty()) append(" • ")
-                                          append("${libraryArtistAlbums.size} ${if (libraryArtistAlbums.size == 1) "álbum" else "álbuns"}")
-                                      }
-                                  }
-                                  if (countText.isNotEmpty()) {
-                                      Text(
-                                          text = countText,
-                                          style = MaterialTheme.typography.bodySmall,
-                                          color = palette.onBackgroundVariant,
-                                      )
-                                  }
-                              }
-                              Icon(
-                                  imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                  contentDescription = null,
-                                  tint = palette.onBackgroundVariant,
-                                  modifier = Modifier.size(20.dp),
-                              )
-                          }
-                      }
-                  }
-              }"""
+          replacement = """val parts = song.artist.split(ARTIST_SPLIT_REGEX).map { it.trim() }
+              if (parts.any { it.equals(cleanArtistName, ignoreCase = true) }) return true
 
-          code = code[:m1.start()] + "\n" + new_card + code[m1.end():]
-          print("SUCCESS: Replaced old card with new library card")
+              val titleLower = song.title.lowercase()
+              val nameLower = cleanArtistName.lowercase()
+              return titleLower.contains("feat. $nameLower") ||
+                     titleLower.contains("ft. $nameLower") ||
+                     titleLower.contains("with $nameLower") ||
+                     titleLower.contains("featuring $nameLower") ||
+                     titleLower.contains("e $nameLower") ||
+                     titleLower.contains("& $nameLower")"""
 
-          old_pill_pat = r'\s*if\s*\(\s*isArtist\s*\)\s*\{\s*\n\s*item\(key\s*=\s*"artist_library_pill"\)\s*\{[\s\S]*?\}\s*\n\s*\}\s*\n'
-          m2 = re.search(old_pill_pat, code)
-          if m2:
-              code = code[:m2.start()] + "\n\n" + code[m2.end():]
-              print("SUCCESS: Removed lower duplicate pill")
-          else:
-              print("WARNING: lower pill not found")
-
-          func_pat = r'/\*\*\s*\n\s*\* Translucent Apple Music / iOS style card displaying[\s\S]*?private fun ArtistLibraryCard\([\s\S]*?\n\}\n'
-          m3 = re.search(func_pat, code)
-          if m3:
-              code = code[:m3.start()] + "\n" + code[m3.end():]
-              print("SUCCESS: Removed unused ArtistLibraryCard function")
-          else:
-              print("WARNING: ArtistLibraryCard function not found")
+          code = code[:m.start()] + replacement + code[m.end():]
 
           with io.open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: DetailScreen.kt updated successfully")
+          print("SUCCESS: DetailScreen.kt updated successfully with title feat detection")
           PYEOF
 
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || (git commit -m "feat: substituir card antigo pelo card Na sua biblioteca no topo e remover duplicidade em DetailScreen.kt" && git push)
+          git diff --staged --quiet || (git commit -m "feat: detectar feats e colaboracoes no titulo em DetailScreen.kt" && git push)
