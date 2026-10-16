@@ -60,6 +60,9 @@ import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -728,6 +731,45 @@ fun DetailScreen(
                             thickness = 0.5.dp,
                             color = palette.divider,
                         )
+                    }
+                }
+            }
+
+            if (isArtist) {
+                item(key = "artist_library_pill") {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
+                            .clickable { /* abrir tela dedicada da biblioteca */ },
+                        shape = CircleShape,
+                        color = palette.elevated,
+                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.LibraryMusic,
+                                contentDescription = null,
+                                tint = palette.onBackground,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Na sua biblioteca",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = palette.onBackground,
+                            )
+                            Spacer(Modifier.weight(1f))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = palette.onBackgroundVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
             }
