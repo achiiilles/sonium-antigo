@@ -13,15 +13,15 @@ jobs:
 
       - name: Update values/strings.xml
         run: |
-          cat > /tmp/add_strings.py <<'PYEOF'
-          import io
+          python3 -c '
+import io
 
-          path = "app/src/main/res/values/strings.xml"
-          c = io.open(path, encoding="utf-8").read()
+path = "app/src/main/res/values/strings.xml"
+with io.open(path, "r", encoding="utf-8") as f:
+    c = f.read()
 
-          if 'name="portuguese_br"' not in c:
-              block = """
-    <!-- Idiomas -->
+if "portuguese_br" not in c:
+    block = """    <!-- Idiomas -->
     <string name="portuguese_pt">Portuguese (Portugal)</string>
     <string name="portuguese_br">Portuguese (Brazil)</string>
 
@@ -36,13 +36,13 @@ jobs:
     <string name="ai_lyrics_api_key_hint">Paste your Google AI Studio API key</string>
     <string name="lyrics_offset_description">Positive values display lyrics later</string>
 </resources>"""
-              c = c.replace("</resources>", block)
-              io.open(path, "w", encoding="utf-8").write(c)
-              print("values/strings.xml updated successfully")
-          else:
-              print("strings already present")
-          PYEOF
-          python3 /tmp/add_strings.py
+    c = c.replace("</resources>", block)
+    with io.open(path, "w", encoding="utf-8") as f:
+        f.write(c)
+    print("strings.xml updated successfully")
+else:
+    print("strings already present")
+'
 
       - name: Commit and push changes
         run: |
