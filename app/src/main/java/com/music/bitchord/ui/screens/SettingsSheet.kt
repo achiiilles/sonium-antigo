@@ -192,6 +192,8 @@ fun SettingsScreen(
     windowWidth: Dp,
     signedIn: Boolean,
     account: Account?,
+    externalCategory: SettingsCategory? = null,
+    onSelectCategory: (SettingsCategory?) -> Unit = {},
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
     onAccountScrobbling: () -> Unit,
@@ -395,9 +397,11 @@ fun SettingsScreen(
         }
     }
 
-    var selectedCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
+    var internalCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
+    val selectedCategory = externalCategory ?: internalCategory
     BackHandler(enabled = selectedCategory != null) {
-        selectedCategory = null
+        internalCategory = null
+        onSelectCategory(null)
     }
 
     LaunchedEffect(selectedCategory) {
@@ -439,7 +443,10 @@ fun SettingsScreen(
                     icon = category.icon,
                     title = category.title,
                     subtitle = category.subtitle,
-                    onClick = { selectedCategory = category },
+                    onClick = {
+                    internalCategory = category
+                    onSelectCategory(category)
+                },
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
                 )
             }
