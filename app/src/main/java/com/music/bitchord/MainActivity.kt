@@ -477,6 +477,13 @@ private fun BitChordApp(
     // and the page is a sibling of the bar rather than a child.
     val navBarScroll = rememberFloatingTabBarScrollConnection()
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var tabHistory by rememberSaveable { mutableStateOf(listOf(0)) }
+
+    LaunchedEffect(selectedTab) {
+        if (tabHistory.lastOrNull() != selectedTab) {
+            tabHistory = tabHistory + selectedTab
+        }
+    }
     /**
      * Whether the player's sheet is up. The player is always a full-screen
      * take-over raised over the page, on every window size — the library
@@ -2497,9 +2504,11 @@ private fun BitChordApp(
         BackHandler(
             enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&
                 !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&
-                selectedTab != TAB_HOME,
+                tabHistory.size > 1,
         ) {
-            selectedTab = TAB_HOME
+            val previous = tabHistory.dropLast(1)
+            tabHistory = previous
+            selectedTab = previous.last()
         }
         BackHandler(enabled = showUpdateDialog) { showUpdateDialog = false }
         BackHandler(enabled = showListenBrainzLogin) { showListenBrainzLogin = false }
