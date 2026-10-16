@@ -1,6 +1,8 @@
 name: Apply Patch
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-patch.yml'
 
 jobs:
   apply:
@@ -10,9 +12,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Update values/strings.xml
+      - name: Restore and patch strings.xml
         run: |
+          git checkout a59cb68bdb93b3ac50b95d47c8f1db72f02e2d4f -- app/src/main/res/values/strings.xml
           python3 -c '
 import io
 
@@ -40,12 +45,7 @@ if "portuguese_br" not in c:
     with io.open(path, "w", encoding="utf-8") as f:
         f.write(c)
     print("strings.xml updated successfully")
-else:
-    print("strings already present")
 '
-
-      - name: Commit and push changes
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/src/main/res/values/strings.xml
