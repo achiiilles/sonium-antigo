@@ -16,45 +16,147 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Update DetailScreen.kt
+      - name: Update SettingsSheet.kt
         run: |
           python3 - << 'PYEOF'
           import sys
-          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+
+          path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
           with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          target1 = "contentPadding = contentPadding,\n    )\n}\n}\n  }\n}"
-          replacement1 = "contentPadding = contentPadding,\n    )\n}\n}\n    }\n}\n}"
+          target_remove = """            val hideVolumeBarTitle = stringResource(R.string.hide_volume_bar)
+              row(hideVolumeBarTitle, "volume", "player") {
+                  SettingsRow(
+                      icon = Icons.Rounded.VolumeOff,
+                      title = hideVolumeBarTitle,
+                      subtitle = stringResource(R.string.hide_volume_bar_subtitle),
+                      trailing = {
+                          IosSwitch(
+                              checked = hideVolumeBar,
+                              onCheckedChange = AppSettings::setHideVolumeBar,
+                              colors = SwitchDefaults.colors(
+                                  checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                  checkedBorderColor = MaterialTheme.colorScheme.primary,
+                              ),
+                          )
+                      },
+                      onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
+                  )
+              }
+              row("Status da música", "player", "playing from", "indicador") {
+          SettingsRow(
+              icon = Icons.Rounded.Tune,
+              title = "Mostrar status da música",
+              subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
+              trailing = {
+                  IosSwitch(
+                      checked = !hideSongStatus,
+                      onCheckedChange = { AppSettings.setHideSongStatus(!it) },
+                      colors = SwitchDefaults.colors(
+                          checkedTrackColor = MaterialTheme.colorScheme.primary,
+                          checkedBorderColor = MaterialTheme.colorScheme.primary,
+                      ),
+                  )
+              },
+              onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
+          )
+      }"""
 
-          if target1 not in code:
-              target1 = target1.replace("\n", "\r\n")
-              replacement1 = replacement1.replace("\n", "\r\n")
+          if target_remove not in code:
+              target_remove = target_remove.replace("\n", "\r\n")
 
-          if target1 not in code:
-              print("ERROR: target1 not found in DetailScreen.kt")
-              sys.exit(1)
+          # If exact match fails, let's also try with flexible indentation
+          if target_remove not in code:
+              print("Target remove block not found directly, trying pattern matching...")
+              import re
+              pattern = r'(\s*val hideVolumeBarTitle = stringResource\(R\.string\.hide_volume_bar\)[\s\S]*?onClick = \{ AppSettings\.setHideSongStatus\(hideSongStatus\) \},\s*\)\s*\}\s*)'
+              match = re.search(pattern, code)
+              if not match:
+                  print("ERROR: could not find hideVolumeBar / hideSongStatus block to remove")
+                  sys.exit(1)
+              target_remove = match.group(1)
 
-          code = code.replace(target1, replacement1, 1)
+          code = code.replace(target_remove, "\n")
 
-          target2 = "bottom = 7.dp),\n        )\n    }\n    }\n}"
-          replacement2 = "bottom = 7.dp),\n        )\n    }\n}"
+          insert_anchor = """            val legacyMeshGradientTitle = stringResource(R.string.legacy_mesh_gradient)
+              row(legacyMeshGradientTitle, "background", "player") {
+                  SettingsRow(
+                      icon = Icons.Rounded.Gradient,
+                      title = legacyMeshGradientTitle,
+                      subtitle = stringResource(R.string.legacy_mesh_gradient_subtitle),
+                      trailing = {
+                          IosSwitch(
+                              checked = legacyMeshGradient,
+                              onCheckedChange = AppSettings::setLegacyMeshGradient,
+                              colors = SwitchDefaults.colors(
+                                  checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                  checkedBorderColor = MaterialTheme.colorScheme.primary,
+                              ),
+                          )
+                      },
+                      onClick = { AppSettings.setLegacyMeshGradient(!legacyMeshGradient) },
+                  )
+              }"""
 
-          if target2 not in code:
-              target2 = target2.replace("\n", "\r\n")
-              replacement2 = replacement2.replace("\n", "\r\n")
+          if insert_anchor not in code:
+              insert_anchor = insert_anchor.replace("\n", "\r\n")
 
-          if target2 not in code:
-              print("ERROR: target2 not found in DetailScreen.kt")
-              sys.exit(1)
+          if insert_anchor not in code:
+              import re
+              pattern2 = r'(\s*val legacyMeshGradientTitle = stringResource\(R\.string\.legacy_mesh_gradient\)[\s\S]*?onClick = \{ AppSettings\.setLegacyMeshGradient\(!legacyMeshGradient\) \},\s*\)\s*\}\s*)'
+              match2 = re.search(pattern2, code)
+              if not match2:
+                  print("ERROR: could not find legacyMeshGradient anchor to insert")
+                  sys.exit(1)
+              insert_anchor = match2.group(1)
 
-          code = code.replace(target2, replacement2, 1)
+          new_rows = """
+              val hideVolumeBarTitle = stringResource(R.string.hide_volume_bar)
+              row(hideVolumeBarTitle, "volume", "player") {
+                  SettingsRow(
+                      icon = Icons.Rounded.VolumeOff,
+                      title = hideVolumeBarTitle,
+                      subtitle = stringResource(R.string.hide_volume_bar_subtitle),
+                      trailing = {
+                          IosSwitch(
+                              checked = hideVolumeBar,
+                              onCheckedChange = AppSettings::setHideVolumeBar,
+                              colors = SwitchDefaults.colors(
+                                  checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                  checkedBorderColor = MaterialTheme.colorScheme.primary,
+                              ),
+                          )
+                      },
+                      onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
+                  )
+              }
+              row("Status da música", "player", "playing from", "indicador") {
+                  SettingsRow(
+                      icon = Icons.Rounded.Tune,
+                      title = "Mostrar status da música",
+                      subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
+                      trailing = {
+                          IosSwitch(
+                              checked = !hideSongStatus,
+                              onCheckedChange = { AppSettings.setHideSongStatus(!it) },
+                              colors = SwitchDefaults.colors(
+                                  checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                  checkedBorderColor = MaterialTheme.colorScheme.primary,
+                              ),
+                          )
+                      },
+                      onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
+                  )
+              }"""
+
+          code = code.replace(insert_anchor, insert_anchor + new_rows, 1)
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: DetailScreen.kt updated successfully")
+          print("SUCCESS: SettingsSheet.kt updated successfully")
           PYEOF
       - name: Commit and push
         run: |
-          git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || (git commit -m "fix(ui): balance braces and close DetailScreen properly" && git push)
+          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
+          git diff --staged --quiet || (git commit -m "refactor(settings): move volume bar and song status options to appearance category" && git push)
