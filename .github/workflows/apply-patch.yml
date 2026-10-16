@@ -16,35 +16,32 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Update MainActivity.kt
+      - name: Update DetailScreen.kt
         run: |
           python3 - << 'PYEOF'
           import sys
-          path = "app/src/main/java/com/music/bitchord/MainActivity.kt"
+          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
           with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          # 1. State: tabHistory & LaunchedEffect
-          old_tab = "    var selectedTab by rememberSaveable { mutableIntStateOf(0) }"
-          new_tab = "    var selectedTab by rememberSaveable { mutableIntStateOf(0) }\n    var tabHistory by rememberSaveable { mutableStateOf(listOf(0)) }\n\n    LaunchedEffect(selectedTab) {\n        if (tabHistory.lastOrNull() != selectedTab) {\n            tabHistory = tabHistory + selectedTab\n        }\n    }"
-          if old_tab not in code:
-              print("ERROR: old_tab not found")
-              sys.exit(1)
-          code = code.replace(old_tab, new_tab, 1)
+          target = "                }\n            }\n\n            // Albums / Singles & EPs carousels (artist pages).\n            items(publicSections) { shelf ->"
+          replacement = "            // Albums / Singles & EPs carousels (artist pages).\n            items(publicSections) { shelf ->"
 
-          # 2. BackHandler
-          old_back = "        BackHandler(\n            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&\n                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&\n                selectedTab != TAB_HOME,\n        ) {\n            selectedTab = TAB_HOME\n        }"
-          new_back = "        BackHandler(\n            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&\n                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&\n                tabHistory.size > 1,\n        ) {\n            val previous = tabHistory.dropLast(1)\n            tabHistory = previous\n            selectedTab = previous.last()\n        }"
-          if old_back not in code:
-              print("ERROR: old_back not found")
+          if target not in code:
+              target = target.replace("\n", "\r\n")
+              replacement = replacement.replace("\n", "\r\n")
+
+          if target not in code:
+              print("ERROR: target not found in DetailScreen.kt")
               sys.exit(1)
-          code = code.replace(old_back, new_back, 1)
+
+          code = code.replace(target, replacement, 1)
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: MainActivity.kt updated successfully")
+          print("SUCCESS: DetailScreen.kt updated successfully")
           PYEOF
       - name: Commit and push
         run: |
-          git add app/src/main/java/com/music/bitchord/MainActivity.kt
-          git diff --staged --quiet || (git commit -m "feat: implementar historico de navegacao de abas (tabHistory) no MainActivity" && git push)
+          git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
+          git diff --staged --quiet || (git commit -m "fix(ui): remove dangling closing braces in DetailScreen.kt" && git push)
