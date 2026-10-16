@@ -830,9 +830,6 @@ fun DetailScreen(
                 }
             }
 
-                }
-            }
-
             // Albums / Singles & EPs carousels (artist pages).
             items(publicSections) { shelf ->
                 val canShowAll = shelf.items.size > ARTIST_ROW_MAX_ITEMS
