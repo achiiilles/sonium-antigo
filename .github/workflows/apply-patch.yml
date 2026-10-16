@@ -16,64 +16,50 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Update DetailScreen.kt with animated transition
+      - name: Reorder SettingsCategory in SettingsSheet.kt
         run: |
           python3 - << 'PYEOF'
-          import io, re, sys
-          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+          import io, sys
+          path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          pat_start = r'if\s*\(\s*showArtistLibrary\s*\)\s*\{\s*ArtistLibraryScreen\([\s\S]*?\)\s*\}\s*else\s*\{'
-          m = re.search(pat_start, code)
-          if not m:
-              print("ERROR: showArtistLibrary block not found in DetailScreen.kt")
-              sys.exit(1)
+          old_target = """enum class SettingsCategory(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+) {
+    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),
+    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
+    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),
+    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
+    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
+    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
+}"""
 
-          replacement_start = """    AnimatedContent(
-                  targetState = showArtistLibrary,
-                  transitionSpec = {
-                      fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
-                  },
-                  label = "artist_library_screen_transition",
-              ) { inLibrary ->
-                  if (inLibrary) {
-                      ArtistLibraryScreen(
-                          artistName = page.title,
-                          songs = libraryArtistSongs,
-                          albums = libraryArtistAlbums,
-                          onBack = { showArtistLibrary = false },
-                          onSongClick = onSongClick,
-                          onShuffle = onShuffle,
-                          onAlbumClick = onSectionItemClick,
-                      )
-                  } else {"""
+          new_target = """enum class SettingsCategory(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+) {
+    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),
+    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
+    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
+    LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),
+    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
+    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
+}"""
 
-          code = code[:m.start()] + replacement_start + code[m.end():]
-
-          m_next = re.search(r'\n/\*\*\s*\n\s*\* The artwork, blurred and tinted', code)
-          if not m_next:
-              m_next = re.search(r'\n@Composable\s*\nprivate fun PageBackground', code)
-          if not m_next:
-              m_next = re.search(r'\nprivate fun PageBackground', code)
-
-          if m_next:
-              pos = m_next.start()
-              last_brace_pos = code.rfind('}', 0, pos)
-              if last_brace_pos != -1:
-                  code = code[:last_brace_pos] + "    }\n" + code[last_brace_pos:]
-              else:
-                  print("ERROR: Could not find last brace before PageBackground")
-                  sys.exit(1)
+          if old_target in code:
+              code = code.replace(old_target, new_target, 1)
+              with io.open(path, "w", encoding="utf-8") as f:
+                  f.write(code)
+              print("SUCCESS: SettingsCategory reordered successfully")
           else:
-              print("ERROR: PageBackground marker not found")
+              print("ERROR: old_target not found in SettingsSheet.kt")
               sys.exit(1)
-
-          with io.open(path, "w", encoding="utf-8") as f:
-              f.write(code)
-          print("SUCCESS: DetailScreen.kt updated successfully with AnimatedContent")
           PYEOF
       - name: Commit and push
         run: |
-          git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || (git commit -m "feat: adicionar transicao animada suave na tela de biblioteca do artista" && git push)
+          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
+          git diff --staged --quiet || (git commit -m "refactor: reordenar categorias de configuracoes colocando Aparencia em segundo" && git push)
