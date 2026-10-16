@@ -1,86 +1,68 @@
 name: Apply Patch
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/apply-patch.yml'
 
 jobs:
   apply:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run Patch Script
+      - uses: actions/checkout@v4
+      - name: Setup git
         run: |
-          cat << 'EOF' > patch.py
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Pass albums to ArtistLibraryScreen in DetailScreen.kt
+        run: |
+          python3 -c '
           path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
           with open(path, "r", encoding="utf-8") as f:
               content = f.read()
 
-          # 1. State & BackHandler
-          target_search = "val closeSearch = {"
-          replacement_search = "var showArtistLibrary by rememberSaveable(page.browseId) { mutableStateOf(false) }\n    BackHandler(enabled = showArtistLibrary) { showArtistLibrary = false }\n\n    val closeSearch = {"
-          if target_search in content and "showArtistLibrary" not in content:
-              content = content.replace(target_search, replacement_search, 1)
+          target = """if (showArtistLibrary) {
+ArtistLibraryScreen(
+artistName = page.title,
+songs = libraryArtistSongs,
+onBack = { showArtistLibrary = false },
+onSongClick = onSongClick,
+onShuffle = onShuffle,
+)"""
 
-          # 2. Pill clickable & condition
-          target_pill = ".clickable { /* abrir tela dedicada da biblioteca */ }"
-          replacement_pill = ".clickable { showArtistLibrary = true }"
-          if target_pill in content:
-              content = content.replace(target_pill, replacement_pill, 1)
+          replacement = """val libraryArtistAlbums = remember(page.sections) {
+    page.sections.filter {
+        it.title.contains("sua biblioteca", ignoreCase = true) ||
+        it.title.contains("your library", ignoreCase = true)
+    }.flatMap { it.items }
+}
 
-          target_cond = 'if (isArtist) {\n            item(key = "artist_library_pill") {'
-          replacement_cond = 'if (isArtist && libraryArtistSongs.isNotEmpty()) {\n            item(key = "artist_library_pill") {'
-          if target_cond in content:
-              content = content.replace(target_cond, replacement_cond, 1)
+if (showArtistLibrary) {
+ArtistLibraryScreen(
+artistName = page.title,
+songs = libraryArtistSongs,
+albums = libraryArtistAlbums,
+onBack = { showArtistLibrary = false },
+onSongClick = onSongClick,
+onShuffle = onShuffle,
+onAlbumClick = onSectionItemClick,
+)"""
 
-          # 3. Wrap AnimatedContent with if (showArtistLibrary) ... else
-          anim_prefix = "    AnimatedContent(\n        targetState = activeShelf,"
-          anim_replacement = (
-              "    if (showArtistLibrary) {\n"
-              "        ArtistLibraryScreen(\n"
-              "            artistName = page.title,\n"
-              "            songs = libraryArtistSongs,\n"
-              "            onBack = { showArtistLibrary = false },\n"
-              "            onSongClick = onSongClick,\n"
-              "            onShuffle = onShuffle,\n"
-              "        )\n"
-              "    } else {\n"
-              "    AnimatedContent(\n"
-              "        targetState = activeShelf,"
-          )
-          if anim_prefix in content and "ArtistLibraryScreen(" not in content:
-              content = content.replace(anim_prefix, anim_replacement, 1)
-
-          # 4. Closing brace for else block at end of DetailScreen function
-          old_end = "      ArtistShelfGridPage(\n          shelf = targetShelf,\n          palette = palette,\n          onItemClick = onSectionItemClick,\n          onItemLongPress = onSectionItemLongPress,\n          contentPadding = contentPadding,\n      )\n  }\n  }\n  }"
-          new_end = "      ArtistShelfGridPage(\n          shelf = targetShelf,\n          palette = palette,\n          onItemClick = onSectionItemClick,\n          onItemLongPress = onSectionItemLongPress,\n          contentPadding = contentPadding,\n      )\n  }\n  }\n  }\n  }"
-          if old_end in content:
-              content = content.replace(old_end, new_end, 1)
+          if target in content:
+              content = content.replace(target, replacement, 1)
+              with open(path, "w", encoding="utf-8") as f:
+                  f.write(content)
+              print("SUCCESS: DetailScreen updated")
           else:
+              # Fallback tolerante a espacos
               import re
-              match = re.search(r"(ArtistShelfGridPage\([\s\S]*?contentPadding\s*=\s*contentPadding,\s*\)\s*\}\s*\})(\s*\n\s*\})", content)
-              if match:
-                  content = content[:match.start(2)] + "\n  }" + content[match.start(2):]
+              pat = r"if\s*\(\s*showArtistLibrary\s*\)\s*\{\s*ArtistLibraryScreen\s*\(\s*artistName\s*=\s*page\.title\s*,\s*songs\s*=\s*libraryArtistSongs\s*,\s*onBack\s*=\s*\{\s*showArtistLibrary\s*=\s*false\s*\}\s*,\s*onSongClick\s*=\s*onSongClick\s*,\s*onShuffle\s*=\s*onShuffle\s*,\s*\)"
+              if re.search(pat, content):
+                  content = re.sub(pat, replacement, content, count=1)
+                  with open(path, "w", encoding="utf-8") as f:
+                      f.write(content)
+                  print("SUCCESS: DetailScreen updated via regex")
               else:
-                  raise ValueError("Marker for end of AnimatedContent not found!")
-
-          if "showArtistLibrary" not in content or "ArtistLibraryScreen(" not in content:
-              raise ValueError("DetailScreen.kt was not properly patched!")
-
-          with open(path, "w", encoding="utf-8") as f:
-              f.write(content)
-          print("DetailScreen.kt patch successfully applied!")
-          EOF
-          python3 patch.py
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+                  print("TARGET NOT FOUND")
+                  exit(1)
+          '
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git commit -m "feat: ligar toque da pilula para abrir ArtistLibraryScreen no DetailScreen.kt"
+          git diff --staged --quiet || git commit -m "feat: passar álbuns da biblioteca para ArtistLibraryScreen em DetailScreen.kt"
           git push
