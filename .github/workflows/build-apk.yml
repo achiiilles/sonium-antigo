@@ -10,6 +10,8 @@ jobs:
   build:
     name: Build Dev Debug APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +56,14 @@ jobs:
 
       - name: Apply Sonium v0.4.0 patch
         run: python3 .github/scripts/patch_v040.py
+
+      - name: Persist assembled SettingsSheet.kt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
+          git commit -m "chore: persist assembled SettingsSheet.kt from runner" || true
+          git push origin HEAD:feat/unificar-artistas || git push origin feat/unificar-artistas || true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
