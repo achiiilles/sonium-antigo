@@ -21,7 +21,7 @@ jobs:
           assert "filterQuality = FilterQuality.Low" in c, "FilterQuality.Low not found in ArtworkMeshBackdrop.kt"
           c_new = c.replace("filterQuality = FilterQuality.Low", "filterQuality = FilterQuality.Medium")
 
-          with open(path, "w", encoding="utf-8") as fz
+          with open(path, "w", encoding="utf-8") as f:
               f.write(c_new)
           '
 
