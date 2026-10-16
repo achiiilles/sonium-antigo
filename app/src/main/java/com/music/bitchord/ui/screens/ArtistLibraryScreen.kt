@@ -1,5 +1,6 @@
 package com.music.bitchord.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -29,8 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,26 +66,23 @@ fun ArtistLibraryScreen(
     val displayedSongs = if (showAllSongs) songs else songs.take(5)
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = artistName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = "Na sua biblioteca",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.6f),
-                        )
-                    }
-                },
-                navigationIcon = {
+        containerColor = Color.Black,
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(top = 8.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -93,8 +90,22 @@ fun ArtistLibraryScreen(
                             tint = Color.White,
                         )
                     }
-                },
-                actions = {
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = artistName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "Na sua biblioteca",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.6f),
+                        )
+                    }
                     if (songs.isNotEmpty()) {
                         IconButton(onClick = { onShuffle(songs) }) {
                             Icon(
@@ -104,19 +115,9 @@ fun ArtistLibraryScreen(
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black),
-            )
-        },
-        containerColor = Color.Black,
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+                }
+            }
+
             item {
                 Row(
                     modifier = Modifier
@@ -127,7 +128,7 @@ fun ArtistLibraryScreen(
                 ) {
                     Text(
                         text = "Músicas",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                     )
@@ -135,12 +136,14 @@ fun ArtistLibraryScreen(
                         TextButton(onClick = { showAllSongs = !showAllSongs }) {
                             Text(
                                 text = if (showAllSongs) "Mostrar menos" else "Ver tudo",
+                                style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
                 }
             }
+
             if (songs.isEmpty()) {
                 item {
                     Text(
@@ -164,7 +167,7 @@ fun ArtistLibraryScreen(
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(52.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color.DarkGray),
                         )
@@ -172,7 +175,7 @@ fun ArtistLibraryScreen(
                         Column(Modifier.weight(1f)) {
                             Text(
                                 text = song.title,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = Color.White,
                                 maxLines = 1,
@@ -194,7 +197,7 @@ fun ArtistLibraryScreen(
             item {
                 Text(
                     text = "Álbuns",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     modifier = Modifier.padding(top = 24.dp, bottom = 4.dp),
@@ -218,7 +221,7 @@ fun ArtistLibraryScreen(
                         items(albums, key = { it.browseId ?: it.title }) { album ->
                             Column(
                                 modifier = Modifier
-                                    .width(140.dp)
+                                    .width(150.dp)
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { onAlbumClick(album) },
                             ) {
