@@ -1,6 +1,9 @@
 name: Apply Patch
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/apply-patch.yml'
 
 jobs:
   apply:
@@ -51,7 +54,6 @@ onAlbumClick = onSectionItemClick,
                   f.write(content)
               print("SUCCESS: DetailScreen updated")
           else:
-              # Fallback tolerante a espacos
               import re
               pat = r"if\s*\(\s*showArtistLibrary\s*\)\s*\{\s*ArtistLibraryScreen\s*\(\s*artistName\s*=\s*page\.title\s*,\s*songs\s*=\s*libraryArtistSongs\s*,\s*onBack\s*=\s*\{\s*showArtistLibrary\s*=\s*false\s*\}\s*,\s*onSongClick\s*=\s*onSongClick\s*,\s*onShuffle\s*=\s*onShuffle\s*,\s*\)"
               if re.search(pat, content):
