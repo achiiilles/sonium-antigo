@@ -19,57 +19,34 @@ jobs:
       - name: Expose selectedCategory in SettingsSheet.kt
         run: |
           python3 - << 'PYEOF'
-          import io, sys
+          import sys
+
           path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
-          with io.open(path, "r", encoding="utf-8") as f:
+          with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          target1 = """fun SettingsScreen(
-    /** The window's width, for the gates that depend on it. */
-    windowWidth: Dp,
-    signedIn: Boolean,
-    account: Account?,"""
-          replace1 = """fun SettingsScreen(
-    /** The window's width, for the gates that depend on it. */
-    windowWidth: Dp,
-    signedIn: Boolean,
-    account: Account?,
-    externalCategory: SettingsCategory? = null,
-    onSelectCategory: (SettingsCategory?) -> Unit = {},"""
-
-          if target1 not in code:
-              print("ERROR: target1 not found in SettingsSheet.kt")
+          old_sig = "account: Account?,\n    onSignIn: () -> Unit,"
+          new_sig = "account: Account?,\n    externalCategory: SettingsCategory? = null,\n    onSelectCategory: (SettingsCategory?) -> Unit = {},\n    onSignIn: () -> Unit,"
+          if old_sig not in code:
+              print("ERROR: old_sig not found in SettingsSheet.kt")
               sys.exit(1)
-          code = code.replace(target1, replace1, 1)
+          code = code.replace(old_sig, new_sig, 1)
 
-          target2 = """var selectedCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
-    BackHandler(enabled = selectedCategory != null) {
-        selectedCategory = null
-    }"""
-          replace2 = """var internalCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
-    val selectedCategory = externalCategory ?: internalCategory
-    BackHandler(enabled = selectedCategory != null) {
-        internalCategory = null
-        onSelectCategory(null)
-    }"""
-
-          if target2 not in code:
-              print("ERROR: target2 not found in SettingsSheet.kt")
+          old_state = "var selectedCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }\n    BackHandler(enabled = selectedCategory != null) {\n        selectedCategory = null\n    }"
+          new_state = "var internalCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }\n    val selectedCategory = externalCategory ?: internalCategory\n    BackHandler(enabled = selectedCategory != null) {\n        internalCategory = null\n        onSelectCategory(null)\n    }"
+          if old_state not in code:
+              print("ERROR: old_state not found in SettingsSheet.kt")
               sys.exit(1)
-          code = code.replace(target2, replace2, 1)
+          code = code.replace(old_state, new_state, 1)
 
-          target3 = "onClick = { selectedCategory = category },"
-          replace3 = """onClick = {
-                        internalCategory = category
-                        onSelectCategory(category)
-                    },"""
-
-          if target3 not in code:
-              print("ERROR: target3 not found in SettingsSheet.kt")
+          old_click = "onClick = { selectedCategory = category },"
+          new_click = "onClick = {\n                    internalCategory = category\n                    onSelectCategory(category)\n                },"
+          if old_click not in code:
+              print("ERROR: old_click not found in SettingsSheet.kt")
               sys.exit(1)
-          code = code.replace(target3, replace3, 1)
+          code = code.replace(old_click, new_click, 1)
 
-          with io.open(path, "w", encoding="utf-8") as f:
+          with open(path, "w", encoding="utf-8") as f:
               f.write(code)
           print("SUCCESS: SettingsSheet.kt updated with externalCategory and onSelectCategory")
           PYEOF
