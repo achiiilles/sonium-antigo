@@ -445,13 +445,22 @@ fun DetailScreen(
         if (searching) listState.animateScrollToItem(SEARCH_ITEM_INDEX, -searchStop)
     }
 
+    val libraryArtistAlbums = remember(page.sections) {
+        page.sections.filter {
+            it.title.contains("sua biblioteca", ignoreCase = true) ||
+            it.title.contains("your library", ignoreCase = true)
+        }.flatMap { it.items }
+    }
+
     if (showArtistLibrary) {
         ArtistLibraryScreen(
             artistName = page.title,
             songs = libraryArtistSongs,
+            albums = libraryArtistAlbums,
             onBack = { showArtistLibrary = false },
             onSongClick = onSongClick,
             onShuffle = onShuffle,
+            onAlbumClick = onSectionItemClick,
         )
     } else {
     AnimatedContent(
