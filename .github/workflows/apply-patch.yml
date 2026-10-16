@@ -26,63 +26,72 @@ jobs:
           imp_target = "import androidx.compose.material.icons.rounded.LibraryMusic\n"
           imp_replacement = "import androidx.compose.material.icons.rounded.LibraryMusic\nimport androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight\nimport androidx.compose.material3.Surface\nimport androidx.compose.foundation.BorderStroke\n"
 
-          target = """                    // Albums / Singles & EPs carousels (artist pages).
-                    val publicSections = remember(page.sections) {"""
-
-          pill_code = """                    if (isArtist) {
-                        item(key = "artist_library_pill") {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
-                                    .clickable { /* abrir tela dedicada da biblioteca */ },
-                                shape = CircleShape,
-                                color = palette.elevated,
-                                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.LibraryMusic,
-                                        contentDescription = null,
-                                        tint = palette.text,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        text = "Na sua biblioteca",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = palette.text,
-                                    )
-                                    Spacer(Modifier.weight(1f))
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                        contentDescription = null,
-                                        tint = palette.text.copy(alpha = 0.5f),
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    // Albums / Singles & EPs carousels (artist pages).
-                    val publicSections = remember(page.sections) {"""
-
           if imp_target in content and imp_replacement not in content:
               content = content.replace(imp_target, imp_replacement, 1)
 
-          if target not in content:
-              raise ValueError("Target not found in DetailScreen.kt")
+          marker = "// Albums / Singles & EPs carousels (artist pages)."
+          if marker not in content:
+              raise ValueError("Marker not found in DetailScreen.kt")
 
-          content = content.replace(target, pill_code, 1)
+          pill_block = """            if (isArtist) {
+                  item(key = "artist_library_pill") {
+                      Surface(
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
+                              .clickable { /* abrir tela dedicada da biblioteca */ },
+                          shape = CircleShape,
+                          color = palette.elevated,
+                          border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
+                      ) {
+                          Row(
+                              modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                              verticalAlignment = Alignment.CenterVertically,
+                          ) {
+                              Icon(
+                                  imageVector = Icons.Rounded.LibraryMusic,
+                                  contentDescription = null,
+                                  tint = palette.onBackground,
+                                  modifier = Modifier.size(18.dp),
+                              )
+                              Spacer(Modifier.width(8.dp))
+                              Text(
+                                  text = "Na sua biblioteca",
+                                  style = MaterialTheme.typography.labelLarge,
+                                  color = palette.onBackground,
+                              )
+                              Spacer(Modifier.weight(1f))
+                              Icon(
+                                  imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                  contentDescription = null,
+                                  tint = palette.onBackgroundVariant,
+                                  modifier = Modifier.size(18.dp),
+                              )
+                          }
+                      }
+                  }
+              }
 
+  """
+
+          lines = content.splitlines(keepends=True)
+          new_lines = []
+          inserted = False
+          for line in lines:
+              if not inserted and marker in line:
+                  new_lines.append(pill_block)
+                  inserted = True
+              new_lines.append(line)
+
+          if not inserted:
+              raise ValueError("Could not insert pill block before marker")
+
+          content = "".join(new_lines)
           with open(path, "w", encoding="utf-8") as f:
               f.write(content)
           '
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git commit -m "feat: adicionar pílula Na sua biblioteca no DetailScreen.kt"
+          git commit -m "feat: adicionar pilula Na sua biblioteca no DetailScreen.kt"
           git push
