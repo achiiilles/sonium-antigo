@@ -14,70 +14,21 @@ jobs:
       - name: Apply NowPlayingScreen patch
         run: |
           python3 -c '
+          import re
           path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/NowPlayingScreen.kt"
           with open(path, "r", encoding="utf-8") as f:
-              content = f.read()
+              c = f.read()
 
-          old_target = """                Box(
-                      Modifier
-                          .align(Alignment.TopCenter)
-                          .offset {
-                              IntOffset(
-                                  x = 0,
-                                  y = lerp(
-                                      6.dp,
-                                      (topStrip - 5.dp).coerceAtLeast(0.dp) / 2,
-                                      p(),
-                                  ).roundToPx(),
-                              )
-                          }
-                          .width(38.dp)
-                          .height(5.dp)
-                          .graphicsLayer { alpha = spotifyChromeAlpha }
-                          .shadow(2.dp, RoundedCornerShape(3.dp), clip = false)
-                          .clip(RoundedCornerShape(3.dp))
-                          .background(Color.White.copy(alpha = 0.70f)),
-                  )
-                  // [p] is the shared album-to-panel transition. Keeping this in
-                  // composition until its final frame gives the caption a real
-                  // fade on both entry and exit, but removes its click target
-                  // entirely once lyrics or the queue owns the player.
-                  if (!hideSongStatus) {
-                      WhileShown({ !collapseAlmostDone }) {
-                          PlaybackOriginCaption("""
+          pattern = r"(\s+Box\(\s+Modifier\s+\.align\(Alignment\.TopCenter\)[\s\S]*?\.background\(Color\.White\.copy\(alpha = 0\.70f\)\),\s+\))([\s\S]*?if \(!hideSongStatus\) \{)"
+          match = re.search(pattern, c)
+          assert match, "Pattern not found"
+          box_code = match.group(1)
+          if_block = match.group(2)
 
-          new_target = """                // [p] is the shared album-to-panel transition. Keeping this in
-                  // composition until its final frame gives the caption a real
-                  // fade on both entry and exit, but removes its click target
-                  // entirely once lyrics or the queue owns the player.
-                  if (!hideSongStatus) {
-                      Box(
-                          Modifier
-                              .align(Alignment.TopCenter)
-                              .offset {
-                                  IntOffset(
-                                      x = 0,
-                                      y = lerp(
-                                          6.dp,
-                                          (topStrip - 5.dp).coerceAtLeast(0.dp) / 2,
-                                          p(),
-                                  ).roundToPx(),
-                              )
-                          }
-                          .width(38.dp)
-                          .height(5.dp)
-                          .graphicsLayer { alpha = spotifyChromeAlpha }
-                          .shadow(2.dp, RoundedCornerShape(3.dp), clip = false)
-                          .clip(RoundedCornerShape(3.dp))
-                          .background(Color.White.copy(alpha = 0.70f)),
-                      )
-                      WhileShown({ !collapseAlmostDone }) {
-                          PlaybackOriginCaption("""
-
-          assert old_target in content, "Target block not found"
-          content = content.replace(old_target, new_target, 1)
+          new_block = if_block + "\n" + box_code
+          c = c[:match.start()] + new_block + c[match.end():]
           with open(path, "w", encoding="utf-8") as f:
-              f.write(content)
+              f.write(c)
           '
 
       - name: Commit and push changes
