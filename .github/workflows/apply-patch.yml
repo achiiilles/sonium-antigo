@@ -16,12 +16,111 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore and patch strings.xml
+      - name: Patch DetailScreen.kt SectionCard
         run: |
-          git checkout a59cb68bdb93b3ac50b95d47c8f1db72f02e2d4f -- app/src/main/res/values/strings.xml
-          python3 -c "import io; p='app/src/main/res/values/strings.xml'; c=io.open(p,encoding='utf-8').read(); b='''    <!-- Idiomas -->\n    <string name=\"portuguese_pt\">Portuguese (Portugal)</string>\n    <string name=\"portuguese_br\">Portuguese (Brazil)</string>\n\n    <!-- Áudio Espacial -->\n    <string name=\"spatial_audio_bluetooth_only\">Enable only with Bluetooth headphones</string>\n    <string name=\"spatial_audio_bluetooth_only_subtitle\">Turns on spatial audio automatically when wireless headphones connect and turns off when disconnected</string>\n\n    <!-- Tradução de Letras por IA -->\n    <string name=\"ai_lyrics_translation\">AI lyrics translation</string>\n    <string name=\"ai_lyrics_translation_subtitle\">Translates and adapts while maintaining poetic rhythm and natural rhymes for the app language</string>\n    <string name=\"ai_lyrics_api_key\">Google AI Studio API key (Gemini)</string>\n    <string name=\"ai_lyrics_api_key_hint\">Paste your Google AI Studio API key</string>\n    <string name=\"lyrics_offset_description\">Positive values display lyrics later</string>\n</resources>'''; (io.open(p,'w',encoding='utf-8').write(c.replace('</resources>', b)), print('OK')) if 'portuguese_br' not in c else print('ALREADY_PRESENT')"
+          python3 -c '
+          import io
+          p = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+          content = io.open(p, encoding="utf-8").read()
+
+          old_target = """private fun SectionCard(
+    item: ShelfItem,
+    palette: ArtworkPalette,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.width(SHELF_CARD_WIDTH),
+    onLongPress: (() -> Unit)? = null,
+) {
+    Column(
+        modifier = modifier
+            .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress),
+    ) {
+        AsyncImage(
+            model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(10.dp))
+                .thumbnailBorder(RoundedCornerShape(10.dp))
+                .background(palette.elevated),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = item.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = palette.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = item.subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = palette.onBackgroundVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}"""
+
+          new_target = """private fun SectionCard(
+    item: ShelfItem,
+    palette: ArtworkPalette,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.width(SHELF_CARD_WIDTH),
+    onLongPress: (() -> Unit)? = null,
+) {
+    val isArtist = (item.browseId?.startsWith("UC") == true) ||
+        item.subtitle.contains("ouvintes mensais", ignoreCase = true) ||
+        item.subtitle.contains("monthly listeners", ignoreCase = true) ||
+        item.subtitle.contains("inscritos", ignoreCase = true) ||
+        item.subtitle.contains("subscribers", ignoreCase = true) ||
+        item.subtitle.equals("Artist", ignoreCase = true) ||
+        item.subtitle.equals("Artista", ignoreCase = true)
+    val cardShape = if (isArtist) CircleShape else RoundedCornerShape(10.dp)
+
+    Column(
+        modifier = modifier
+            .longPressMenuClickable(onClick = onClick, onLongClick = onLongPress),
+        horizontalAlignment = if (isArtist) Alignment.CenterHorizontally else Alignment.Start,
+    ) {
+        AsyncImage(
+            model = item.thumbnailUrl.artworkAt(CARD_ART_PX),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(cardShape)
+                .thumbnailBorder(cardShape)
+                .background(palette.elevated),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = item.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = palette.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = if (isArtist) TextAlign.Center else TextAlign.Start,
+        )
+        Text(
+            text = item.subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = palette.onBackgroundVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = if (isArtist) TextAlign.Center else TextAlign.Start,
+        )
+    }
+}"""
+
+          assert old_target in content, "old_target not found in DetailScreen.kt"
+          content = content.replace(old_target, new_target, 1)
+          io.open(p, "w", encoding="utf-8").write(content)
+          print("DetailScreen.kt patched successfully")
+          '
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/res/values/strings.xml
-          git commit -m "feat: adicionar strings base em ingles para idiomas, audio espacial e IA"
+          git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
+          git commit -m "feat: cards circulares para artistas recomendados em DetailScreen.kt"
           git push
