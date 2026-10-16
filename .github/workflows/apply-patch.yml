@@ -16,41 +16,89 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Expose selectedCategory in SettingsSheet.kt
+      - name: Update MainActivity.kt for unified subpage back navigation
         run: |
           python3 - << 'PYEOF'
           import sys
 
-          path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
+          path = "app/src/main/java/com/music/bitchord/MainActivity.kt"
           with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          old_sig = "account: Account?,\n    onSignIn: () -> Unit,"
-          new_sig = "account: Account?,\n    externalCategory: SettingsCategory? = null,\n    onSelectCategory: (SettingsCategory?) -> Unit = {},\n    onSignIn: () -> Unit,"
-          if old_sig not in code:
-              print("ERROR: old_sig not found in SettingsSheet.kt")
-              sys.exit(1)
-          code = code.replace(old_sig, new_sig, 1)
+          # 1. Import SettingsCategory if not present
+          if "import com.music.bitchord.ui.screens.SettingsCategory" not in code:
+              if "import com.music.bitchord.ui.screens.SettingsScreen" in code:
+                  code = code.replace(
+                      "import com.music.bitchord.ui.screens.SettingsScreen",
+                      "import com.music.bitchord.ui.screens.SettingsCategory\nimport com.music.bitchord.ui.screens.SettingsScreen",
+                      1
+                  )
 
-          old_state = "var selectedCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }\n    BackHandler(enabled = selectedCategory != null) {\n        selectedCategory = null\n    }"
-          new_state = "var internalCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }\n    val selectedCategory = externalCategory ?: internalCategory\n    BackHandler(enabled = selectedCategory != null) {\n        internalCategory = null\n        onSelectCategory(null)\n    }"
+          # 2. State declaration
+          old_state = "var showSettings by rememberSaveable { mutableStateOf(false) }"
+          new_state = "var showSettings by rememberSaveable { mutableStateOf(false) }\n    var settingsCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }"
           if old_state not in code:
-              print("ERROR: old_state not found in SettingsSheet.kt")
+              print("ERROR: old_state not found in MainActivity.kt")
               sys.exit(1)
           code = code.replace(old_state, new_state, 1)
 
-          old_click = "onClick = { selectedCategory = category },"
-          new_click = "onClick = {\n                    internalCategory = category\n                    onSelectCategory(category)\n                },"
-          if old_click not in code:
-              print("ERROR: old_click not found in SettingsSheet.kt")
+          # 3. FrostedTopBar title
+          old_title = "showSettings -> stringResource(R.string.settings)"
+          new_title = "showSettings && settingsCategory != null -> settingsCategory!!.title\n                        showSettings -> stringResource(R.string.settings)"
+          if old_title not in code:
+              print("ERROR: old_title not found in MainActivity.kt")
               sys.exit(1)
-          code = code.replace(old_click, new_click, 1)
+          code = code.replace(old_title, new_title, 1)
+
+          # 4. FrostedTopBar onBack
+          old_back = """                        settingsSubScreen != null -> ({ settingsSubScreen = null })
+                        showSettings -> ({ showSettings = false })"""
+          new_back = """                        settingsSubScreen != null -> ({ settingsSubScreen = null })
+                        showSettings && settingsCategory != null -> ({ settingsCategory = null })
+                        showSettings -> ({ showSettings = false })"""
+          if old_back in code:
+              code = code.replace(old_back, new_back, 1)
+          elif "showSettings -> ({ showSettings = false })" in code:
+              code = code.replace(
+                  "showSettings -> ({ showSettings = false })",
+                  "showSettings && settingsCategory != null -> ({ settingsCategory = null })\n                        showSettings -> ({ showSettings = false })",
+                  1
+              )
+
+          # 5. BackHandler for settingsCategory
+          old_bh = "BackHandler(enabled = showSettings && !showSpotify &&"
+          new_bh = """BackHandler(enabled = showSettings && settingsCategory != null) {
+              settingsCategory = null
+          }
+          BackHandler(enabled = showSettings && !showSpotify &&"""
+          if old_bh not in code:
+              print("ERROR: old_bh not found in MainActivity.kt")
+              sys.exit(1)
+          code = code.replace(old_bh, new_bh, 1)
+
+          # 6. SettingsScreen call
+          old_screen = """                        SettingsScreen(
+                              windowWidth = windowWidth,
+                              signedIn = signedIn,
+                              account = account,
+                              onSignIn = {"""
+          new_screen = """                        SettingsScreen(
+                              windowWidth = windowWidth,
+                              signedIn = signedIn,
+                              account = account,
+                              externalCategory = settingsCategory,
+                              onSelectCategory = { settingsCategory = it },
+                              onSignIn = {"""
+          if old_screen not in code:
+              print("ERROR: old_screen not found in MainActivity.kt")
+              sys.exit(1)
+          code = code.replace(old_screen, new_screen, 1)
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: SettingsSheet.kt updated with externalCategory and onSelectCategory")
+          print("SUCCESS: MainActivity.kt updated for unified back navigation")
           PYEOF
       - name: Commit and push
         run: |
-          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git diff --staged --quiet || (git commit -m "feat: expor categoria selecionada em SettingsSheet para navegacao unificada" && git push)
+          git add app/src/main/java/com/music/bitchord/MainActivity.kt
+          git diff --staged --quiet || (git commit -m "feat: conectar botao voltar superior as subpastas de configuracoes no MainActivity" && git push)
