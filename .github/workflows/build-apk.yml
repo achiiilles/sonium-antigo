@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Dev Debug APK
+    name: Build Sonium APK
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -35,35 +35,6 @@ jobs:
 
       - name: Setup fixed debug keystore
         run: python3 .github/scripts/setup_fixed_keystore.py
-
-      - name: Apply DetailScreen patch
-        run: python3 .github/scripts/patch_detail_screen.py
-
-      - name: Apply MainActivity patch
-        run: python3 .github/scripts/patch_main_activity.py
-
-      - name: Apply Sonium Branding patch
-        run: python3 .github/scripts/patch_branding.py
-
-      - name: Apply Sonium v0.2.0 patch
-        run: python3 .github/scripts/patch_v020.py
-
-      - name: Apply Sonium v0.3.0 patch
-        run: python3 .github/scripts/patch_v030.py
-
-      - name: Apply AI Lyrics AppSettings patch
-        run: python3 .github/scripts/patch_ai_lyrics.py
-
-      - name: Apply Sonium v0.4.0 patch
-        run: python3 .github/scripts/patch_v040.py
-
-      - name: Persist assembled SettingsSheet.kt
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git commit -m "chore: persist assembled SettingsSheet.kt from runner" || true
-          git push origin HEAD:feat/unificar-artistas || git push origin feat/unificar-artistas || true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
