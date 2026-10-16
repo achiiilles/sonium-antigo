@@ -163,6 +163,7 @@ import com.music.bitchord.ui.screens.libraryLinks
 import com.music.bitchord.ui.screens.CACHE_FOLDER_BROWSE_ID
 import com.music.bitchord.ui.screens.ListenTogetherScreen
 import com.music.bitchord.ui.screens.PartyServerEditor
+import com.music.bitchord.ui.screens.SettingsCategory
 import com.music.bitchord.ui.screens.SettingsScreen
 import com.music.bitchord.ui.screens.SourceEditorAlert
 import com.music.bitchord.ui.screens.SourcesScreen
@@ -533,6 +534,7 @@ private fun BitChordApp(
      */
     var webSession by remember { mutableStateOf<WebSessionMode?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var settingsCategory by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
     // Replay: the page, the stories over it, and the share sheet over those.
     // Three states rather than one enum because they stack — the stories are
     // opened from the page and the share sheet from either, and closing one
@@ -798,6 +800,7 @@ private fun BitChordApp(
         if (!showSettings) {
             showAccountScrobbling = false
             showSpotify = false
+            settingsCategory = null
         }
     }
 
@@ -2480,6 +2483,9 @@ private fun BitChordApp(
         // One back step out of Settings, or out of any tab but Home, lands on
         // Home rather than exiting — only Home itself hands back to the system,
         // which is what actually closes/minimizes the app.
+        BackHandler(enabled = showSettings && settingsCategory != null) {
+            settingsCategory = null
+        }
         BackHandler(enabled = showSettings && !showSpotify && !showAccountScrobbling && !showSources && !showListenTogether && !showEqualizer && !showReplay) {
             showSettings = false
             // Only when Settings was the whole of what was on screen. Opened
@@ -2759,6 +2765,8 @@ private fun BitChordApp(
                             windowWidth = windowWidth,
                             signedIn = signedIn,
                             account = account,
+                            externalCategory = settingsCategory,
+                            onSelectCategory = { settingsCategory = it },
                             onSignIn = {
                                 showSettings = false
                                 webSession = WebSessionMode.SIGN_IN
@@ -3430,6 +3438,7 @@ private fun BitChordApp(
                         showSources -> stringResource(R.string.sources)
                         showListenTogether -> stringResource(R.string.listen_together)
                         showEqualizer -> stringResource(R.string.equalizer)
+                        showSettings && settingsCategory != null -> settingsCategory!!.title
                         showSettings -> stringResource(R.string.settings)
                         showReplay -> stringResource(R.string.replay)
                         detail != null && detailActiveShelf != null -> detailActiveShelf?.title.orEmpty()
@@ -3472,6 +3481,7 @@ private fun BitChordApp(
                         showListenTogether -> ({ showListenTogether = false })
                         showEqualizer -> ({ showEqualizer = false })
                         settingsSubScreen != null -> ({ settingsSubScreen = null })
+                        showSettings && settingsCategory != null -> ({ settingsCategory = null })
                         showSettings -> ({ showSettings = false })
                         showReplay -> ({ showReplay = false })
                         detailActiveShelf != null -> ({ detailActiveShelf = null })
