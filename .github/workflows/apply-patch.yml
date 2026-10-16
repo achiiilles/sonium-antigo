@@ -11,71 +11,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Repair AppSettings.kt
+      - name: Update values/strings.xml
         run: |
-          cat > /tmp/fix_appsettings.py <<'PYEOF'
+          cat > /tmp/add_strings.py <<'PYEOF'
           import io
-          import sys
 
-          path = "app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt"
+          path = "app/src/main/res/values/strings.xml"
           c = io.open(path, encoding="utf-8").read()
 
-          start = c.find('KEY_AI_LYRICS_ENABLED = "ai_lyrics_enabled"')
-          end = c.find("KEY_HIDE_SONG_STATUS, true)", start) if start != -1 else -1
-          if start == -1 or end == -1:
-              sys.exit("mangled block not found")
-          end = end + len("KEY_HIDE_SONG_STATUS, true)")
-          c = c[:start] + "KEY_HIDE_SONG_STATUS, true)" + c[end:]
+          if 'name="portuguese_br"' not in c:
+              block = """
+    <!-- Idiomas -->
+    <string name="portuguese_pt">Portuguese (Portugal)</string>
+    <string name="portuguese_br">Portuguese (Brazil)</string>
 
-          good = "hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, true)"
-          i = c.find(good)
-          if i == -1:
-              sys.exit("readAll line missing after repair")
-          if "aiLyricsEnabled.value = prefs.getBoolean" not in c:
-              reads = ('\n        aiLyricsEnabled.value = prefs.getBoolean(KEY_AI_LYRICS_ENABLED, true)'
-                       '\n        aiLyricsApiKey.value = prefs.getString(KEY_AI_LYRICS_API_KEY, "") ?: ""')
-              c = c[:i + len(good)] + reads + c[i + len(good):]
+    <!-- Áudio Espacial -->
+    <string name="spatial_audio_bluetooth_only">Enable only with Bluetooth headphones</string>
+    <string name="spatial_audio_bluetooth_only_subtitle">Turns on spatial audio automatically when wireless headphones connect and turns off when disconnected</string>
 
-          d1 = 'private const val KEY_AI_LYRICS_ENABLED = "ai_lyrics_enabled"'
-          d2 = 'private const val KEY_AI_LYRICS_API_KEY = "ai_lyrics_api_key"'
-          if "const val KEY_AI_LYRICS_ENABLED" not in c:
-              out = []
-              placed = False
-              for ln in c.split("\n"):
-                  s = ln.strip()
-                  if (not placed) and ("const val KEY_HIDE_SONG_STATUS" in s):
-                      ind = ln[:len(ln) - len(ln.lstrip())]
-                      out.append(ind + d1)
-                      out.append(ind + d2)
-                      placed = True
-                  out.append(ln)
-              if not placed:
-                  out = []
-                  for ln in c.split("\n"):
-                      out.append(ln)
-                      if (not placed) and ln.strip().startswith("object AppSettings"):
-                          ind = ln[:len(ln) - len(ln.lstrip())] + "    "
-                          out.append(ind + d1)
-                          out.append(ind + d2)
-                          placed = True
-              if not placed:
-                  sys.exit("no anchor for constants")
-              c = "\n".join(out)
-
-          if "getBoolean(KEY_AI_LYRICS_ENABLED = " in c:
-              sys.exit("mangled text still present")
-          if "const val KEY_AI_LYRICS_ENABLED" not in c or "const val KEY_AI_LYRICS_API_KEY" not in c:
-              sys.exit("constants missing")
-
-          io.open(path, "w", encoding="utf-8").write(c)
-          print("AppSettings.kt repaired")
+    <!-- Tradução de Letras por IA -->
+    <string name="ai_lyrics_translation">AI lyrics translation</string>
+    <string name="ai_lyrics_translation_subtitle">Translates and adapts while maintaining poetic rhythm and natural rhymes for the app language</string>
+    <string name="ai_lyrics_api_key">Google AI Studio API key (Gemini)</string>
+    <string name="ai_lyrics_api_key_hint">Paste your Google AI Studio API key</string>
+    <string name="lyrics_offset_description">Positive values display lyrics later</string>
+</resources>"""
+              c = c.replace("</resources>", block)
+              io.open(path, "w", encoding="utf-8").write(c)
+              print("values/strings.xml updated successfully")
+          else:
+              print("strings already present")
           PYEOF
-          python3 /tmp/fix_appsettings.py
+          python3 /tmp/add_strings.py
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt
-          git commit -m "fix: corrigir splice do readAll e declarar constantes aiLyrics em AppSettings.kt"
+          git add app/src/main/res/values/strings.xml
+          git commit -m "feat: adicionar strings base em ingles para idiomas, audio espacial e IA"
           git push
