@@ -477,17 +477,24 @@ fun DetailScreen(
         }
     }
 
-    if (showArtistLibrary) {
-        ArtistLibraryScreen(
-            artistName = page.title,
-            songs = libraryArtistSongs,
-            albums = libraryArtistAlbums,
-            onBack = { showArtistLibrary = false },
-            onSongClick = onSongClick,
-            onShuffle = onShuffle,
-            onAlbumClick = onSectionItemClick,
-        )
-    } else {
+        AnimatedContent(
+        targetState = showArtistLibrary,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+        },
+        label = "artist_library_screen_transition",
+    ) { inLibrary ->
+        if (inLibrary) {
+            ArtistLibraryScreen(
+                artistName = page.title,
+                songs = libraryArtistSongs,
+                albums = libraryArtistAlbums,
+                onBack = { showArtistLibrary = false },
+                onSongClick = onSongClick,
+                onShuffle = onShuffle,
+                onAlbumClick = onSectionItemClick,
+            )
+        } else {
     AnimatedContent(
         targetState = activeShelf,
         transitionSpec = {
@@ -1256,6 +1263,7 @@ private fun ArtistHeader(
                 // name sits under the artwork.
                 .padding(start = HEADER_GUTTER, end = HEADER_GUTTER, top = 14.dp, bottom = 7.dp),
         )
+    }
     }
 }
 
