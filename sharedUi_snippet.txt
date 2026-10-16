@@ -1,0 +1,18 @@
+        val status = when {
+            translationState is LyricsTranslationUiState.Loading ->
+                stringResource(Res.string.translating_lyrics)
+            romanizationState is LyricsTranslationUiState.Loading ->
+                stringResource(Res.string.romanizing_lyrics)
+            showingTranslation ->
+                stringResource(Res.string.lyrics_translated_to, translationLanguageName)
+            showingRomanization ->
+                stringResource(Res.string.lyrics_romanized)
+            translationState is LyricsTranslationUiState.SameLanguage ->
+                stringResource(Res.string.lyrics_already_in_language, translationLanguageName)
+            romanizationState is LyricsTranslationUiState.SameLanguage ->
+                stringResource(Res.string.lyrics_already_romanized)
+            lyricsSource != null -> stringResource(Res.string.lyrics_by, lyricsSource.label)
+            lyricsUnavailable -> stringResource(Res.string.no_lyrics_found)
+            lyrics.isNullOrEmpty() -> loadingText
+            else -> stringResource(Res.string.lyrics_saved_with_download)
+        }
