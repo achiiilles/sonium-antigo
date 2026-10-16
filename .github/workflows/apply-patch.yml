@@ -23,18 +23,66 @@ jobs:
           with open(path, "r", encoding="utf-8") as f:
               content = f.read()
 
-          target = "            // Albums / Singles & EPs carousels (artist pages).\n            items(page.sections) { shelf ->"
-          replacement = "            // Albums / Singles & EPs carousels (artist pages).\n            val publicSections = remember(page.sections) {\n                page.sections.filterNot {\n                    it.title.contains(\"sua biblioteca\", ignoreCase = true) ||\n                    it.title.contains(\"your library\", ignoreCase = true)\n                }\n            }\n            items(publicSections) { shelf ->"
+          imp_target = "import androidx.compose.material.icons.rounded.LibraryMusic\n"
+          imp_replacement = "import androidx.compose.material.icons.rounded.LibraryMusic\nimport androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight\nimport androidx.compose.material3.Surface\nimport androidx.compose.foundation.BorderStroke\n"
+
+          target = """                    // Albums / Singles & EPs carousels (artist pages).
+                    val publicSections = remember(page.sections) {"""
+
+          pill_code = """                    if (isArtist) {
+                        item(key = "artist_library_pill") {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
+                                    .clickable { /* abrir tela dedicada da biblioteca */ },
+                                shape = CircleShape,
+                                color = palette.elevated,
+                                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.LibraryMusic,
+                                        contentDescription = null,
+                                        tint = palette.text,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = "Na sua biblioteca",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = palette.text,
+                                    )
+                                    Spacer(Modifier.weight(1f))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = palette.text.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    // Albums / Singles & EPs carousels (artist pages).
+                    val publicSections = remember(page.sections) {"""
+
+          if imp_target in content and imp_replacement not in content:
+              content = content.replace(imp_target, imp_replacement, 1)
 
           if target not in content:
               raise ValueError("Target not found in DetailScreen.kt")
 
-          new_content = content.replace(target, replacement, 1)
+          content = content.replace(target, pill_code, 1)
+
           with open(path, "w", encoding="utf-8") as f:
-              f.write(new_content)
+              f.write(content)
           '
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git commit -m "feat: ocultar seção Da sua biblioteca das seções públicas do artista"
+          git commit -m "feat: adicionar pílula Na sua biblioteca no DetailScreen.kt"
           git push
