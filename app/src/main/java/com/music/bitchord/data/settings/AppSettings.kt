@@ -829,9 +829,9 @@ object AppSettings {
         )
         stopOnTaskRemoved.value = prefs.getBoolean(KEY_STOP_ON_TASK_REMOVED, false)
         hideVolumeBar.value = prefs.getBoolean(KEY_HIDE_VOLUME_BAR, false)
-        hideSongStatus.value = prefs.getBoolean(KEY_AI_LYRICS_ENABLED = "ai_lyrics_enabled"
-    private const val KEY_AI_LYRICS_API_KEY = "ai_lyrics_api_key"
-    private const val KEY_HIDE_SONG_STATUS, true)
+        hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, true)
+        aiLyricsEnabled.value = prefs.getBoolean(KEY_AI_LYRICS_ENABLED, true)
+        aiLyricsApiKey.value = prefs.getString(KEY_AI_LYRICS_API_KEY, "") ?: ""
         swipeToPlayNext.value = prefs.getBoolean(KEY_SWIPE_TO_PLAY_NEXT, false)
         dontRepeatSuggestions.value = prefs.getBoolean(KEY_DONT_REPEAT_SUGGESTIONS, false)
         preferMusicOnly.value = prefs.getBoolean(KEY_PREFER_MUSIC_ONLY, false)
@@ -1967,6 +1967,8 @@ object AppSettings {
     private const val KEY_PERFORMANCE_REFRESH_RATE = "performance_refresh_rate"
     private const val KEY_STOP_ON_TASK_REMOVED = "stop_on_task_removed"
     private const val KEY_HIDE_VOLUME_BAR = "hide_volume_bar"
+    private const val KEY_AI_LYRICS_ENABLED = "ai_lyrics_enabled"
+    private const val KEY_AI_LYRICS_API_KEY = "ai_lyrics_api_key"
     private const val KEY_HIDE_SONG_STATUS = "hide_song_status"
     private const val KEY_SWIPE_TO_PLAY_NEXT = "swipe_to_play_next"
     private const val KEY_DONT_REPEAT_SUGGESTIONS = "dont_repeat_suggestions"
