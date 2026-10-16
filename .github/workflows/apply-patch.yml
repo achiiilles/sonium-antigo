@@ -19,9 +19,102 @@ jobs:
 
       - name: Update DetailScreen.kt
         run: |
-          echo "aW1wb3J0IHJlLCBzeXMKCnBhdGggPSAiYXBwL3NyYy9tYWluL2phdmEvY29tL211c2ljL2JpdGNob3JkL3VpL3NjcmVlbnMvRGV0YWlsU2NyZWVuLmt0Igp3aXRoIG9wZW4ocGF0aCwgInIiLCBlbmNvZGluZz0idXRmLTgiKSBhcyBmOgogICAgY29kZSA9IGYucmVhZCgpCgpvbGRfdGFyZ2V0ID0gIiIiICAgIGlmIChzaG93QXJ0aXN0TGlicmFyeSkgewogICAgICAgIEFydGlzdExpYnJhcnlTY3JlZW4oCiAgICAgICAgICAgIGFydGlzdE5hbWUgPSBwYWdlLnRpdGxlLAogICAgICAgICAgICBzb25ncyA9IGxpYnJhcnlBcnRpc3RTb25ncywKICAgICAgICAgICAgb25CYWNrID0geyBzaG93QXJ0aXN0TGlicmFyeSA9IGZhbHNlIH0sCiAgICAgICAgICAgIG9uU29uZ0NsaWNrID0gb25Tb25nQ2xpY2ssCiAgICAgICAgICAgIG9uU2h1ZmZsZSA9IG9uU2h1ZmZsZSwKICAgICAgICApIiIiCgpuZXdfdGFyZ2V0ID0gIiIiICAgIHZhbCBsaWJyYXJ5QXJ0aXN0QWxidW1zID0gcmVtZW1iZXIocGFnZS5zZWN0aW9ucykgewogICAgICAgIHBhZ2Uuc2VjdGlvbnMuZmlsdGVyIHsKICAgICAgICAgICAgaXQudGl0bGUuY29udGFpbnMoInN1YSBiaWJsaW90ZWNhIiwgaWdub3JlQ2FzZSA9IHRydWUpIHx8CiAgICAgICAgICAgIGl0LnRpdGxlLmNvbnRhaW5zKCJ5b3VyIGxpYnJhcnkiLCBpZ25vcmVDYXNlID0gdHJ1ZSkKICAgICAgICB9LmZsYXRNYXAgeyBpdC5pdGVtcyB9CiAgICB9CgogICAgaWYgKHNob3dBcnRpc3RMaWJyYXJ5KSB7CiAgICAgICAgQXJ0aXN0TGlicmFyeVNjcmVlbigKICAgICAgICAgICAgYXJ0aXN0TmFtZSA9IHBhZ2UudGl0bGUsCiAgICAgICAgICAgIHNvbmdzID0gbGlicmFyeUFydGlzdFNvbmdzLAogICAgICAgICAgICBhbGJ1bXMgPSBsaWJyYXJ5QXJ0aXN0QWxidW1zLAogICAgICAgICAgICBvbkJhY2sgPSB7IHNob3dBcnRpc3RMaWJyYXJ5ID0gZmFsc2UgfSwKICAgICAgICAgICAgb25Tb25nQ2xpY2sgPSBvblNvbmdDbGljaywKICAgICAgICAgICAgb25TaHVmZmxlID0gb25TaHVmZmxlLAogICAgICAgICAgICBvbkFsYnVtQ2xpY2sgPSBvblNlY3Rpb25JdGVtQ2xpY2ssCiAgICAgICAgKSIiIgoKaWYgb2xkX3RhcmdldCBpbiBjb2RlOgogICAgY29kZSA9IGNvZGUucmVwbGFjZShvbGRfdGFyZ2V0LCBuZXdfdGFyZ2V0LCAxKQogICAgd2l0aCBvcGVuKHBhdGgsICJ3IiwgZW5jb2Rpbmc9InV0Zi04IikgYXMgZjoKICAgICAgICBmLndyaXRlKGNvZGUpCiAgICBwcmludCgiU1VDQ0VTUzogZXhhY3QgbWF0Y2ggcmVwbGFjZWQiKQplbHNlOgogICAgcGF0ID0gciJpZlxzKlxzKnNob3dBcnRpc3RMaWJyYXJ5XHMqXClccypce1xzKkFydGlzdExpYnJhcnlTY3JlZW5ccypcKFxzKmFydGlzdE5hbWVccyo9XHMrcGFnZVwudGl0bGVccyosXHMrc29uZ3Nccyo9XHMrbGlicmFyeUFydGlzdFNvbmdzXHMsKnNvbkJhY2tccyo9XHMrXHh7XHMrc2hvd0FydGlzdExpYnJhcnlccyo9XHMrZmFsc2VccypceFxzKixccypvblNvbmdDbGlja1xzKj1ccytvblNvbmdDbGlja1xzKixccypvblNodWZmbGVccyo9XHMrb25TaHVmZmxlXHMsKlxzKlwpIgogICAgaWYgcmUuc2VhcmNoKHBhdCwgY29kZSk6CiAgICAgICAgY29kZSA9IHJlLnN1YihwYXQsIG5ld190YXJnZXQsIGNvZGUsIGNvdW50PTEpCiAgICAgICAgd2l0aCBvcGVuKHBhdGgsICJ3IiwgZW5jb2Rpbmc9InV0Zi04IikgYXMgZjoKICAgICAgICAgICAgZi53cml0ZShjb2RlKQogICAgICAgIHByaW50KCJTVUNDRVNTOiByZWdleCByZXBsYWNlZCIpCiAgICBlbHNlOgogICAgICAgIHByaW50KCJFUlJPUjogcGF0dGVybiBub3QgZm91bmQiKQogICAgICAgIHN5cy5leGl0KDEpCg==" | base64 -d > patch.py
-          python3 patch.py
-          rm patch.py
+          python3 - << 'PYEOF'
+          import io, re, sys
+
+          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
+          with io.open(path, "r", encoding="utf-8") as f:
+              code = f.read()
+
+          import_target = "import com.music.bitchord.download.Downloads"
+          if import_target in code and "import com.music.bitchord.data.YtMusicRepository" not in code:
+              code = code.replace(import_target, f"{import_target}\nimport com.music.bitchord.data.YtMusicRepository", 1)
+
+          old_str = """    val context = LocalPlatformContext.current
+              var libraryArtistSongs by remember(page.browseId, page.title) {
+                  mutableStateOf<List<Song>>(emptyList())
+              }
+              LaunchedEffect(page.browseId, page.title, isArtist) {
+                  if (!isArtist) return@LaunchedEffect
+                  withContext(Dispatchers.IO) {
+                      val downloaded = runCatching { LocalMediaRepository.getDownloadedSongs(context) }.getOrDefault(emptyList())
+                      val local = if (LocalMediaRepository.hasStoragePermission(context)) {
+                          runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+                      } else {
+                          emptyList()
+                      }
+                      val likedIds = LikeState.overrides.value.filterValues { it == LikeStatus.LIKE }.keys
+                      val downloadedIds = Downloads.saved.value.keys
+                      val likedOrDownloadedFromRaw = rawSongs.filter { it.videoId in likedIds || it.videoId in downloadedIds }
+
+                      val allLibrary = (downloaded + local + likedOrDownloadedFromRaw)
+                          .distinctBy { it.videoId.ifBlank { it.localUri ?: it.title } }
+
+                      val matching = allLibrary.filter { song ->
+                          isSongByArtist(song, page.browseId, page.title)
+                      }
+                      withContext(Dispatchers.Main) {
+                          libraryArtistSongs = matching
+                      }
+                  }
+              }"""
+
+          new_str = """    val context = LocalPlatformContext.current
+              val likeOverrides by LikeState.overrides.collectAsStateWithLifecycle()
+              var libraryArtistSongs by remember(page.browseId, page.title) {
+                  mutableStateOf<List<Song>>(emptyList())
+              }
+              LaunchedEffect(page.browseId, page.title, isArtist, likeOverrides) {
+                  if (!isArtist) return@LaunchedEffect
+                  withContext(Dispatchers.IO) {
+                      val downloaded = runCatching { LocalMediaRepository.getDownloadedSongs(context) }.getOrDefault(emptyList())
+                      val local = if (LocalMediaRepository.hasStoragePermission(context)) {
+                          runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
+                      } else {
+                          emptyList()
+                      }
+                      val likedIds = likeOverrides.filterValues { it == LikeStatus.LIKE }.keys
+                      val dislikedIds = likeOverrides.filterValues { it == LikeStatus.DISLIKE }.keys
+                      val downloadedIds = Downloads.saved.value.keys
+                      val likedOrDownloadedFromRaw = rawSongs.filter {
+                          (it.videoId in likedIds || it.videoId in downloadedIds) && it.videoId !in dislikedIds
+                      }
+
+                      fun computeMatching(accountLiked: List<Song>): List<Song> {
+                          val validAccountLiked = accountLiked.filterNot { it.videoId in dislikedIds }
+                          val allLibrary = (validAccountLiked + likedOrDownloadedFromRaw + downloaded + local)
+                              .distinctBy { it.videoId.ifBlank { it.localUri ?: it.title } }
+                          return allLibrary.filter { song ->
+                              isSongByArtist(song, page.browseId, page.title)
+                          }
+                      }
+
+                      val initialCached = YtMusicRepository.cachedLikedMusic().orEmpty()
+                      val initialMatching = computeMatching(initialCached)
+                      if (initialMatching.isNotEmpty()) {
+                          withContext(Dispatchers.Main) {
+                              libraryArtistSongs = initialMatching
+                          }
+                      }
+
+                      val fetchedLiked = runCatching { YtMusicRepository.likedSongsList() }.getOrDefault(initialCached)
+                      val fullMatching = computeMatching(fetchedLiked)
+                      withContext(Dispatchers.Main) {
+                          libraryArtistSongs = fullMatching
+                      }
+                  }
+              }"""
+
+          pat = r"val\s+context\s*=\s*LocalPlatformContext\.current[\s\S]*?withContext\(Dispatchers\.Main\)\s*\{\s*libraryArtistSongs\s*=\s*matching\s*\}\s*\}\s*\}"
+          if re.search(pat, code):
+              code = re.sub(pat, new_str.strip(), code, count=1)
+              with io.open(path, "w", encoding="utf-8") as f:
+                  f.write(code)
+              print("SUCCESS: regex replaced")
+          else:
+              print("ERROR: pattern not found")
+              sys.exit(1)
+          PYEOF
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || git commit -m "feat: passar albuns da biblioteca para ArtistLibraryScreen em DetailScreen.kt"
+          git diff --staged --quiet || git commit -m "feat: incluir todas as musicas curtidas do artista em DetailScreen.kt"
           git push
