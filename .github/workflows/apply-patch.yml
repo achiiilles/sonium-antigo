@@ -20,28 +20,171 @@ jobs:
         run: |
           python3 - << 'PYEOF'
           import sys
+
           path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
           with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          target = "                }\n            }\n\n            // Albums / Singles & EPs carousels (artist pages).\n            items(publicSections) { shelf ->"
-          replacement = "            // Albums / Singles & EPs carousels (artist pages).\n            items(publicSections) { shelf ->"
+          code_lf = code.replace("\r\n", "\n")
 
-          if target not in code:
-              target = target.replace("\n", "\r\n")
-              replacement = replacement.replace("\n", "\r\n")
+          # 1. Close DetailScreen properly by adding the missing closing brace
+          target_end = """} else {
+    ArtistShelfGridPage(
+        shelf = targetShelf,
+        palette = palette,
+        onItemClick = onSectionItemClick,
+        onItemLongPress = onSectionItemLongPress,
+        contentPadding = contentPadding,
+    )
+}
+}
+  }
+}"""
 
-          if target not in code:
-              print("ERROR: target not found in DetailScreen.kt")
+          replacement_end = """} else {
+    ArtistShelfGridPage(
+        shelf = targetShelf,
+        palette = palette,
+        onItemClick = onSectionItemClick,
+        onItemLongPress = onSectionItemLongPress,
+        contentPadding = contentPadding,
+    )
+}
+}
+    }
+}
+}"""
+
+          # 2. Remove the extra closing brace inside ArtistHeader
+          target_header = """        if (!logoShown) Text(
+            text = page.title,
+            style = MaterialTheme.typography.displayLarge,
+            color = palette.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                // Bottom is half the top inset — the stats pills (or, absent
+                // those, the action row) sit closer under the name than the
+                // name sits under the artwork.
+                .padding(start = HEADER_GUTTER, end = HEADER_GUTTER, top = 14.dp, bottom = 7.dp),
+        )
+    }
+    }
+}"""
+
+          replacement_header = """        if (!logoShown) Text(
+            text = page.title,
+            style = MaterialTheme.typography.displayLarge,
+            color = palette.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                // Bottom is half the top inset — the stats pills (or, absent
+                // those, the action row) sit closer under the name than the
+                // name sits under the artwork.
+                .padding(start = HEADER_GUTTER, end = HEADER_GUTTER, top = 14.dp, bottom = 7.dp),
+        )
+    }
+}"""
+
+          if target_end not in code_lf:
+              print("ERROR: target_end not found!")
               sys.exit(1)
 
-          code = code.replace(target, replacement, 1)
+          if target_header not in code_lf:
+              print("ERROR: target_header not found!")
+              sys.exit(1)
+
+          code_lf = code_lf.replace(target_end, replacement_end, 1)
+          code_lf = code_lf.replace(target_header, replacement_header, 1)
+
+          # Verify brace balance
+          depth = 0
+          in_line_comment = False
+          in_block_comment = 0
+          in_str = False
+          in_multi_str = False
+          escape = False
+          i = 0
+          n = len(code_lf)
+          while i < n:
+              if not in_line_comment and in_block_comment == 0:
+                  if not in_str and not in_multi_str:
+                      if i + 2 < n and code_lf[i:i+3] == '"""':
+                          in_multi_str = True
+                          i += 3
+                          continue
+                      elif code_lf[i] == '"':
+                          in_str = True
+                          escape = False
+                          i += 1
+                          continue
+                      elif i + 1 < n and code_lf[i:i+2] == '//':
+                          in_line_comment = True
+                          i += 2
+                          continue
+                      elif i + 1 < n and code_lf[i:i+2] == '/*':
+                          in_block_comment += 1
+                          i += 2
+                          continue
+                  elif in_multi_str:
+                      if i + 2 < n and code_lf[i:i+3] == '"""':
+                          in_multi_str = False
+                          i += 3
+                          continue
+                      i += 1
+                      continue
+                  elif in_str:
+                      if escape:
+                          escape = False
+                      elif code_lf[i] == '\\':
+                          escape = True
+                      elif code_lf[i] == '"':
+                          in_str = False
+                      i += 1
+                      continue
+              if in_line_comment:
+                  if code_lf[i] == '\n':
+                      in_line_comment = False
+                  i += 1
+                  continue
+              if in_block_comment > 0:
+                  if i + 1 < n and code_lf[i:i+2] == '*/':
+                      in_block_comment -= 1
+                      i += 2
+                      continue
+                  elif i + 1 < n and code_lf[i:i+2] == '/*':
+                      in_block_comment += 1
+                      i += 2
+                      continue
+                  i += 1
+                  continue
+
+              if code_lf[i] == '{':
+                  depth += 1
+              elif code_lf[i] == '}':
+                  depth -= 1
+                  if depth < 0:
+                      print(f"ERROR: depth dropped below 0 at index {i}")
+                      sys.exit(1)
+              i += 1
+
+          print(f"SUCCESS: Final depth of DetailScreen.kt is {depth}")
+          if depth != 0:
+              print(f"ERROR: Final depth is not 0 (got {depth})!")
+              sys.exit(1)
+
+          final_code = code_lf.replace("\n", "\r\n") if "\r\n" in code else code_lf
 
           with open(path, "w", encoding="utf-8") as f:
-              f.write(code)
-          print("SUCCESS: DetailScreen.kt updated successfully")
+              f.write(final_code)
+          print("SUCCESS: DetailScreen.kt updated and verified")
           PYEOF
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || (git commit -m "fix(ui): remove dangling closing braces in DetailScreen.kt" && git push)
+          git diff --staged --quiet || (git commit -m "fix(ui): balance braces and close DetailScreen properly" && git push)
