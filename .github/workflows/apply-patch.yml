@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/apply-patch.yml'
   workflow_dispatch:
+
 jobs:
   apply:
     runs-on: ubuntu-latest
@@ -24,30 +25,40 @@ jobs:
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          pattern_lazy = r"[ \t]*val\s+publicSections\s*=\s*remember\(page\.sections\)\s+\{[\s\S]*?it\.title\.contains\("your library"[^\n]*\n[ \t]*\}\s*\n"
-          if re.search(pattern_lazy, code):
-              code = re.sub(pattern_lazy, "", code, count=1)
-              print("Removed publicSections from LazyColumn")
+          pattern_lazy = r'([ \t]*val\s+publicSections\s*=\s*remember\(page\.sections\)\s*\{[\s\S]*?it\.title\.contains\("your library"[^\n]*\n[ \t]*\}\s*\n)'
+          match_lazy = re.search(pattern_lazy, code)
+          if match_lazy:
+              code = code[:match_lazy.start()] + code[match_lazy.end():]
+              print("SUCCESS: Removed publicSections from LazyColumn")
           else:
-              print("Warning: pattern_lazy not found")
+              print("ERROR: pattern_lazy not found")
+              sys.exit(1)
 
-          if "val publicSections" not in code:
-              pattern_top = r"(val\s+libraryArtistAlbums\s*=\s*remember\(page\.sections\)\s*\{[\s\S]*?flatMap\s*\{\s*it\.items\s*\}\s*\})"
-              replacement = r"""\1
+          target_top = """    val libraryArtistAlbums = remember(page.sections) {
+        page.sections.filter {
+            it.title.contains("sua biblioteca", ignoreCase = true) ||
+            it.title.contains("your library", ignoreCase = true)
+        }.flatMap { it.items }
+    }"""
 
-
-    val publicSections = remember(page.sections) {
+          addition_top = """    val publicSections = remember(page.sections) {
         page.sections.filterNot {
             it.title.contains("sua biblioteca", ignoreCase = true) ||
             it.title.contains("your library", ignoreCase = true)
         }
     }"""
-              code = re.sub(pattern_top, replacement, code, count=1)
-              print("Added publicSections at top level")
+
+          if target_top in code:
+              code = code.replace(target_top, f"{target_top}\n\n{addition_top}", 1)
+              print("SUCCESS: Added publicSections below libraryArtistAlbums")
+          else:
+              print("ERROR: target_top not found")
+              sys.exit(1)
 
           with io.open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          PYEOF
+          print("File written successfully")
+PYEOF
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
           git diff --staged --quiet || git commit -m "fix: mover publicSections para fora de LazyColumn em DetailScreen.kt"
           git push
