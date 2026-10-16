@@ -120,6 +120,7 @@ import com.music.bitchord.data.LocalMediaRepository
 import com.music.bitchord.data.LikeState
 import com.music.bitchord.data.model.LikeStatus
 import com.music.bitchord.download.Downloads
+import com.music.bitchord.data.YtMusicRepository
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.unit.Constraints
 import com.music.bitchord.data.canvas.AppleArtistArt
@@ -321,10 +322,11 @@ fun DetailScreen(
     LaunchedEffect(topReleaseId) { topReleaseId?.let { onLoadReleaseLibrary?.invoke(it) } }
 
     val context = LocalPlatformContext.current
+    val likeOverrides by LikeState.overrides.collectAsStateWithLifecycle()
     var libraryArtistSongs by remember(page.browseId, page.title) {
         mutableStateOf<List<Song>>(emptyList())
     }
-    LaunchedEffect(page.browseId, page.title, isArtist) {
+    LaunchedEffect(page.browseId, page.title, isArtist, likeOverrides) {
         if (!isArtist) return@LaunchedEffect
         withContext(Dispatchers.IO) {
             val downloaded = runCatching { LocalMediaRepository.getDownloadedSongs(context) }.getOrDefault(emptyList())
@@ -333,18 +335,34 @@ fun DetailScreen(
             } else {
                 emptyList()
             }
-            val likedIds = LikeState.overrides.value.filterValues { it == LikeStatus.LIKE }.keys
+            val likedIds = likeOverrides.filterValues { it == LikeStatus.LIKE }.keys
+            val dislikedIds = likeOverrides.filterValues { it == LikeStatus.DISLIKE }.keys
             val downloadedIds = Downloads.saved.value.keys
-            val likedOrDownloadedFromRaw = rawSongs.filter { it.videoId in likedIds || it.videoId in downloadedIds }
-
-            val allLibrary = (downloaded + local + likedOrDownloadedFromRaw)
-                .distinctBy { it.videoId.ifBlank { it.localUri ?: it.title } }
-
-            val matching = allLibrary.filter { song ->
-                isSongByArtist(song, page.browseId, page.title)
+            val likedOrDownloadedFromRaw = rawSongs.filter {
+                (it.videoId in likedIds || it.videoId in downloadedIds) && it.videoId !in dislikedIds
             }
+
+            fun computeMatching(accountLiked: List<Song>): List<Song> {
+                val validAccountLiked = accountLiked.filterNot { it.videoId in dislikedIds }
+                val allLibrary = (validAccountLiked + likedOrDownloadedFromRaw + downloaded + local)
+                    .distinctBy { it.videoId.ifBlank { it.localUri ?: it.title } }
+                return allLibrary.filter { song ->
+                    isSongByArtist(song, page.browseId, page.title)
+                }
+            }
+
+            val initialCached = YtMusicRepository.cachedLikedMusic().orEmpty()
+            val initialMatching = computeMatching(initialCached)
+            if (initialMatching.isNotEmpty()) {
+                withContext(Dispatchers.Main) {
+                    libraryArtistSongs = initialMatching
+                }
+            }
+
+            val fetchedLiked = runCatching { YtMusicRepository.likedSongsList() }.getOrDefault(initialCached)
+            val fullMatching = computeMatching(fetchedLiked)
             withContext(Dispatchers.Main) {
-                libraryArtistSongs = matching
+                libraryArtistSongs = fullMatching
             }
         }
     }
