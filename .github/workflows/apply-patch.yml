@@ -19,64 +19,33 @@ jobs:
       - name: Remove duplicate back button in SettingsSheet.kt
         run: |
           python3 - << 'PYEOF'
-          import io, re, sys
+          import io, sys
           path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          target = None
-          replacement = """        Row(
-              modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
-              verticalAlignment = Alignment.CenterVertically,
-          ) {
-              Text(
-                  text = selectedCategory!!.title,
-                  style = MaterialTheme.typography.headlineMedium,
-                  color = MaterialTheme.colorScheme.onBackground,
-                  maxLines = 1,
-                  overflow = TextOverflow.Ellipsis,
-              )
-          }"""
+          btn_anchor = "IconButton(onClick = { selectedCategory = null })"
+          btn_idx = code.find(btn_anchor)
+          if btn_idx == -1:
+              print("ERROR: btn_anchor not found in SettingsSheet.kt")
+              sys.exit(1)
 
-          old_block = """        Row(
-              modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(start = 8.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
-              verticalAlignment = Alignment.CenterVertically,
-          ) {
-              IconButton(onClick = { selectedCategory = null }) {
-                  Icon(
-                      imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                      contentDescription = stringResource(R.string.back),
-                      tint = MaterialTheme.colorScheme.onBackground,
-                  )
-              }
-              Spacer(Modifier.width(4.dp))
-              Text(
-                  text = selectedCategory!!.title,
-                  style = MaterialTheme.typography.headlineMedium,
-                  color = MaterialTheme.colorScheme.onBackground,
-                  maxLines = 1,
-                  overflow = TextOverflow.Ellipsis,
-              )
-          }"""
+          row_idx = code.rfind("Row(", 0, btn_idx)
+          if row_idx == -1:
+              print("ERROR: row_idx not found before btn_anchor")
+              sys.exit(1)
 
-          if old_block in code:
-              code = code.replace(old_block, replacement, 1)
-          elif old_block.replace('\n', '\r\n') in code:
-              code = code.replace(old_block.replace('\n', '\r\n'), replacement.replace('\n', '\r\n'), 1)
-          else:
-              pattern = r'Row\(\s*modifier\s*=\s*Modifier\s*\.fillMaxWidth\(\)\s*\.padding\(\s*start\s*=\s*8\.dp,\s*end\s*=\s*20\.dp,\s*top\s*=\s*8\.dp,\s*bottom\s*=\s*12\.dp\s*\),\s*verticalAlignment\s*=\s*Alignment\.CenterVertically,\s*\)\s*\{\s*IconButton\s*\(\s*onClick\s*=\s*\{\s*selectedCategory\s*=\s*null\s*\}\s*\)\s*\{[\s\S]*?\}\s*Spacer\s*\([^)]*\)\s*Text\(\s*text\s*=\s*selectedCategory!!\.title,\s*style\s*=\s*MaterialTheme\.typography\.headlineMedium,\s*color\s*=\s*MaterialTheme\.colorScheme\.onBackground,\s*maxLines\s*=\s*1,\s*overflow\s*=\s*TextOverflow\.Ellipsis,\s*\)\s*\}'
-              code, count = re.subn(pattern, replacement, code, count=1)
-              if count != 1:
-                  print("ERROR: could not find old Row with back button in SettingsSheet.kt")
-                  sys.exit(1)
+          text_idx = code.find("Text(", btn_idx)
+          if text_idx == -1:
+              print("ERROR: text_idx not found after btn_anchor")
+              sys.exit(1)
+
+          row_header = code[row_idx:btn_idx].replace("start = 8.dp", "start = 20.dp")
+          code = code[:row_idx] + row_header + "    " + code[text_idx:]
 
           with io.open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: Back button removed from subpage in SettingsSheet.kt")
+          print("SUCCESS: Back button removed cleanly from SettingsSheet.kt")
           PYEOF
       - name: Commit and push
         run: |
