@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -26,9 +25,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +56,9 @@ fun ArtistLibraryScreen(
     onSongClick: (List<Song>, Int) -> Unit,
     onShuffle: (List<Song>) -> Unit,
 ) {
+    var showAllSongs by rememberSaveable { mutableStateOf(false) }
+    val displayedSongs = if (showAllSongs) songs else songs.take(5)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -105,12 +112,28 @@ fun ArtistLibraryScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                Text(
-                    text = if (songs.size == 1) "1 música" else "${songs.size} músicas",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Músicas",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                    )
+                    if (songs.size > 5) {
+                        TextButton(onClick = { showAllSongs = !showAllSongs }) {
+                            Text(
+                                text = if (showAllSongs) "Mostrar menos" else "Ver tudo",
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                }
             }
             if (songs.isEmpty()) {
                 item {
@@ -121,7 +144,7 @@ fun ArtistLibraryScreen(
                     )
                 }
             } else {
-                itemsIndexed(songs, key = { _, song -> song.videoId }) { index, song ->
+                itemsIndexed(displayedSongs, key = { _, song -> song.videoId }) { index, song ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -160,6 +183,16 @@ fun ArtistLibraryScreen(
                         }
                     }
                 }
+            }
+
+            item {
+                Text(
+                    text = "Álbuns",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 24.dp, bottom = 4.dp),
+                )
             }
         }
     }
