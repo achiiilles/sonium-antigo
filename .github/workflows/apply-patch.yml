@@ -27,42 +27,95 @@ jobs:
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          albums_pat = r'(val\s+libraryArtistAlbums\s*=\s*remember\(page\.sections\)\s*\{[\s\S]*?\}\.flatMap\s*\{\s*it\.items\s*\}\s*\n\s*\})'
-          m = re.search(albums_pat, code)
-          if not m:
-              print("ERROR: libraryArtistAlbums pattern not found")
+          old_card_pat = r'(\s*if\s*\(\s*isArtist\s*&&\s*libraryArtistSongs\.isNotEmpty\(\)\s*\)\s*\{\s*\n\s*item\(key\s*=\s*"artist-library-card"\)\s*\{[\s\S]*?\}\s*\n\s*\})'
+          m1 = re.search(old_card_pat, code)
+          if not m1:
+              print("ERROR: old_card_pat not found")
               sys.exit(1)
 
-          public_sections_code = (
-              "\n\n"
-              "    val publicSections = remember(page.sections) {\n"
-              "        page.sections.filterNot {\n"
-              "            it.title.contains(\"sua biblioteca\", ignoreCase = true) ||\n"
-              "            it.title.contains(\"your library\", ignoreCase = true)\n"
-              "        }\n"
-              "    }"
-          )
+          new_card = """            if (isArtist && (libraryArtistSongs.isNotEmpty() || libraryArtistAlbums.isNotEmpty())) {
+                  item(key = "artist_library_card") {
+                      Surface(
+                          modifier = Modifier
+                              .fillMaxWidth()
+                              .padding(horizontal = PAGE_GUTTER, vertical = 6.dp)
+                              .clickable { showArtistLibrary = true },
+                          shape = CircleShape,
+                          color = palette.elevated,
+                          border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.12f)),
+                      ) {
+                          Row(
+                              modifier = Modifier
+                                  .fillMaxWidth()
+                                  .padding(horizontal = 20.dp, vertical = 14.dp),
+                              verticalAlignment = Alignment.CenterVertically,
+                          ) {
+                              Icon(
+                                  imageVector = Icons.Rounded.LibraryMusic,
+                                  contentDescription = null,
+                                  tint = palette.onBackground,
+                                  modifier = Modifier.size(20.dp),
+                              )
+                              Spacer(Modifier.width(12.dp))
+                              Column(modifier = Modifier.weight(1f)) {
+                                  Text(
+                                      text = "Na sua biblioteca",
+                                      style = MaterialTheme.typography.titleSmall,
+                                      color = palette.onBackground,
+                                  )
+                                  val countText = buildString {
+                                      if (libraryArtistSongs.isNotEmpty()) {
+                                          append("${libraryArtistSongs.size} ${if (libraryArtistSongs.size == 1) "música" else "músicas"}")
+                                      }
+                                      if (libraryArtistAlbums.isNotEmpty()) {
+                                          if (isNotEmpty()) append(" • ")
+                                          append("${libraryArtistAlbums.size} ${if (libraryArtistAlbums.size == 1) "álbum" else "álbuns"}")
+                                      }
+                                  }
+                                  if (countText.isNotEmpty()) {
+                                      Text(
+                                          text = countText,
+                                          style = MaterialTheme.typography.bodySmall,
+                                          color = palette.onBackgroundVariant,
+                                      )
+                                  }
+                              }
+                              Icon(
+                                  imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                  contentDescription = null,
+                                  tint = palette.onBackgroundVariant,
+                                  modifier = Modifier.size(20.dp),
+                              )
+                          }
+                      }
+                  }
+              }"""
 
-          if "val publicSections" not in code[m.start():m.end() + 250]:
-              code = code[:m.end()] + public_sections_code + code[m.end():]
-              print("SUCCESS: Added publicSections after libraryArtistAlbums")
-          else:
-              print("INFO: publicSections already present after libraryArtistAlbums")
+          code = code[:m1.start()] + "\n" + new_card + code[m1.end():]
+          print("SUCCESS: Replaced old card with new library card")
 
-          lazy_pat = r'(// Albums / Singles & EPs carousels \(artist pages\)\.\s*\n)\s*val\s+publicSections\s*=\s*remember\(page\.sections\)\s*\{[\s\S]*?\}\s*\n(\s*items\(publicSections\)\s*\{\s*shelf\s*->)'
-          if re.search(lazy_pat, code):
-              code = re.sub(lazy_pat, r'\1\2', code, count=1)
-              print("SUCCESS: Removed publicSections inside LazyColumn")
+          old_pill_pat = r'\s*if\s*\(\s*isArtist\s*\)\s*\{\s*\n\s*item\(key\s*=\s*"artist_library_pill"\)\s*\{[\s\S]*?\}\s*\n\s*\}\s*\n'
+          m2 = re.search(old_pill_pat, code)
+          if m2:
+              code = code[:m2.start()] + "\n\n" + code[m2.end():]
+              print("SUCCESS: Removed lower duplicate pill")
           else:
-              print("ERROR: lazy_pat pattern not found")
-              sys.exit(1)
+              print("WARNING: lower pill not found")
+
+          func_pat = r'/\*\*\s*\n\s*\* Translucent Apple Music / iOS style card displaying[\s\S]*?private fun ArtistLibraryCard\([\s\S]*?\n\}\n'
+          m3 = re.search(func_pat, code)
+          if m3:
+              code = code[:m3.start()] + "\n" + code[m3.end():]
+              print("SUCCESS: Removed unused ArtistLibraryCard function")
+          else:
+              print("WARNING: ArtistLibraryCard function not found")
 
           with io.open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: DetailScreen.kt patched successfully")
+          print("SUCCESS: DetailScreen.kt updated successfully")
           PYEOF
 
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || (git commit -m "fix: mover publicSections para fora de LazyColumn em DetailScreen.kt" && git push)
+          git diff --staged --quiet || (git commit -m "feat: substituir card antigo pelo card Na sua biblioteca no topo e remover duplicidade em DetailScreen.kt" && git push)
