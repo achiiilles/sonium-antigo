@@ -3,7 +3,7 @@ on:
   push:
     paths:
       - '.github/workflows/apply-patch.yml'
-
+  workflow_dispatch:
 jobs:
   apply:
     runs-on: ubuntu-latest
@@ -11,13 +11,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Update DetailScreen.kt
+      - name: Fix DetailScreen.kt publicSections
         run: |
           python3 - << 'PYEOF'
           import io, re, sys
@@ -26,95 +24,30 @@ jobs:
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          import_target = "import com.music.bitchord.download.Downloads"
-          if import_target in code and "import com.music.bitchord.data.YtMusicRepository" not in code:
-              code = code.replace(import_target, f"{import_target}\nimport com.music.bitchord.data.YtMusicRepository", 1)
-
-          old_str = """    val context = LocalPlatformContext.current
-              var libraryArtistSongs by remember(page.browseId, page.title) {
-                  mutableStateOf<List<Song>>(emptyList())
-              }
-              LaunchedEffect(page.browseId, page.title, isArtist) {
-                  if (!isArtist) return@LaunchedEffect
-                  withContext(Dispatchers.IO) {
-                      val downloaded = runCatching { LocalMediaRepository.getDownloadedSongs(context) }.getOrDefault(emptyList())
-                      val local = if (LocalMediaRepository.hasStoragePermission(context)) {
-                          runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
-                      } else {
-                          emptyList()
-                      }
-                      val likedIds = LikeState.overrides.value.filterValues { it == LikeStatus.LIKE }.keys
-                      val downloadedIds = Downloads.saved.value.keys
-                      val likedOrDownloadedFromRaw = rawSongs.filter { it.videoId in likedIds || it.videoId in downloadedIds }
-
-                      val allLibrary = (downloaded + local + likedOrDownloadedFromRaw)
-                          .distinctBy { it.videoId.ifBlank { it.localUri ?: it.title } }
-
-                      val matching = allLibrary.filter { song ->
-                          isSongByArtist(song, page.browseId, page.title)
-                      }
-                      withContext(Dispatchers.Main) {
-                          libraryArtistSongs = matching
-                      }
-                  }
-              }"""
-
-          new_str = """    val context = LocalPlatformContext.current
-              val likeOverrides by LikeState.overrides.collectAsStateWithLifecycle()
-              var libraryArtistSongs by remember(page.browseId, page.title) {
-                  mutableStateOf<List<Song>>(emptyList())
-              }
-              LaunchedEffect(page.browseId, page.title, isArtist, likeOverrides) {
-                  if (!isArtist) return@LaunchedEffect
-                  withContext(Dispatchers.IO) {
-                      val downloaded = runCatching { LocalMediaRepository.getDownloadedSongs(context) }.getOrDefault(emptyList())
-                      val local = if (LocalMediaRepository.hasStoragePermission(context)) {
-                          runCatching { LocalMediaRepository.getLocalMusic(context) }.getOrDefault(emptyList())
-                      } else {
-                          emptyList()
-                      }
-                      val likedIds = likeOverrides.filterValues { it == LikeStatus.LIKE }.keys
-                      val dislikedIds = likeOverrides.filterValues { it == LikeStatus.DISLIKE }.keys
-                      val downloadedIds = Downloads.saved.value.keys
-                      val likedOrDownloadedFromRaw = rawSongs.filter {
-                          (it.videoId in likedIds || it.videoId in downloadedIds) && it.videoId !in dislikedIds
-                      }
-
-                      fun computeMatching(accountLiked: List<Song>): List<Song> {
-                          val validAccountLiked = accountLiked.filterNot { it.videoId in dislikedIds }
-                          val allLibrary = (validAccountLiked + likedOrDownloadedFromRaw + downloaded + local)
-                              .distinctBy { it.videoId.ifBlank { it.localUri ?: it.title } }
-                          return allLibrary.filter { song ->
-                              isSongByArtist(song, page.browseId, page.title)
-                          }
-                      }
-
-                      val initialCached = YtMusicRepository.cachedLikedMusic().orEmpty()
-                      val initialMatching = computeMatching(initialCached)
-                      if (initialMatching.isNotEmpty()) {
-                          withContext(Dispatchers.Main) {
-                              libraryArtistSongs = initialMatching
-                          }
-                      }
-
-                      val fetchedLiked = runCatching { YtMusicRepository.likedSongsList() }.getOrDefault(initialCached)
-                      val fullMatching = computeMatching(fetchedLiked)
-                      withContext(Dispatchers.Main) {
-                          libraryArtistSongs = fullMatching
-                      }
-                  }
-              }"""
-
-          pat = r"val\s+context\s*=\s*LocalPlatformContext\.current[\s\S]*?withContext\(Dispatchers\.Main\)\s*\{\s*libraryArtistSongs\s*=\s*matching\s*\}\s*\}\s*\}"
-          if re.search(pat, code):
-              code = re.sub(pat, new_str.strip(), code, count=1)
-              with io.open(path, "w", encoding="utf-8") as f:
-                  f.write(code)
-              print("SUCCESS: regex replaced")
+          pattern_lazy = r"[ \t]*val\s+publicSections\s*=\s*remember\(page\.sections\)\s+\{[\s\S]*?it\.title\.contains\("your library"[^\n]*\n[ \t]*\}\s*\n"
+          if re.search(pattern_lazy, code):
+              code = re.sub(pattern_lazy, "", code, count=1)
+              print("Removed publicSections from LazyColumn")
           else:
-              print("ERROR: pattern not found")
-              sys.exit(1)
+              print("Warning: pattern_lazy not found")
+
+          if "val publicSections" not in code:
+              pattern_top = r"(val\s+libraryArtistAlbums\s*=\s*remember\(page\.sections\)\s*\{[\s\S]*?flatMap\s*\{\s*it\.items\s*\}\s*\})"
+              replacement = r"""\1
+
+
+    val publicSections = remember(page.sections) {
+        page.sections.filterNot {
+            it.title.contains("sua biblioteca", ignoreCase = true) ||
+            it.title.contains("your library", ignoreCase = true)
+        }
+    }"""
+              code = re.sub(pattern_top, replacement, code, count=1)
+              print("Added publicSections at top level")
+
+          with io.open(path, "w", encoding="utf-8") as f:
+              f.write(code)
           PYEOF
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || git commit -m "feat: incluir todas as musicas curtidas do artista em DetailScreen.kt"
+          git diff --staged --quiet || git commit -m "fix: mover publicSections para fora de LazyColumn em DetailScreen.kt"
           git push
