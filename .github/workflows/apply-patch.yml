@@ -11,22 +11,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply NowPlayingScreen patch
+      - name: Apply SettingsSheet patch
         run: |
           python3 -c '
           import re
-          path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/NowPlayingScreen.kt"
+          path = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
           with open(path, "r", encoding="utf-8") as f:
               c = f.read()
 
-          pattern = r"(\s+Box\(\s+Modifier\s+\.align\(Alignment\.TopCenter\)[\s\S]*?\.background\(Color\.White\.copy\(alpha = 0\.70f\)\),\s+\))([\s\S]*?if \(!hideSongStatus\) \{)"
-          match = re.search(pattern, c)
-          assert match, "Pattern not found"
-          box_code = match.group(1)
-          if_block = match.group(2)
+          pattern = r"val hideSongStatusTitle = stringResource\(R\.string\.hide_song_status\)[\s\S]*?onClick = \{ AppSettings\.setHideSongStatus\(!hideSongStatus\) \},\s*\)\s*\}"
+          assert re.search(pattern, c), "Pattern not found in SettingsSheet.kt"
 
-          new_block = if_block + "\n" + box_code
-          c = c[:match.start()] + new_block + c[match.end():]
+          replacement = """row("Status da música", "player", "playing from", "indicador") {
+                  SettingsRow(
+                      icon = Icons.Rounded.Tune,
+                      title = "Mostrar status da música",
+                      subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
+                      trailing = {
+                          IosSwitch(
+                              checked = !hideSongStatus,
+                              onCheckedChange = { AppSettings.setHideSongStatus(!it) },
+                              colors = SwitchDefaults.colors(
+                                  checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                  checkedBorderColor = MaterialTheme.colorScheme.primary,
+                              ),
+                          )
+                      },
+                      onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
+                  )
+              }"""
+
+          c = re.sub(pattern, replacement, c, count=1)
           with open(path, "w", encoding="utf-8") as f:
               f.write(c)
           '
@@ -35,6 +50,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/player/NowPlayingScreen.kt
-          git commit -m "feat: ocultar barra de arrastar junto com o status da música no player"
+          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
+          git commit -m "feat: atualizar switch para mostrar status da música nas configurações"
           git push
