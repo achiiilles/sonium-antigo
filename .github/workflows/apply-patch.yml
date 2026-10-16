@@ -11,20 +11,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply AppSettings patch
+      - name: Apply HomeScreen patch
         run: |
           python3 -c '
-          path = "app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt"
+          path = "sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt"
           with open(path, "r", encoding="utf-8") as f:
               c = f.read()
 
-          target1 = "val hideSongStatus = MutableStateFlow(false)"
-          assert target1 in c, "target1 not found"
-          c = c.replace(target1, "val hideSongStatus = MutableStateFlow(true)", 1)
+          c = c.replace("\r\n", "\n")
 
-          target2 = "hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, false)"
-          assert target2 in c, "target2 not found"
-          c = c.replace(target2, "hideSongStatus.value = prefs.getBoolean(KEY_HIDE_SONG_STATUS, true)", 1)
+          target = """            else -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .thumbnailBorder(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                ) {"""
+
+          replacement = """            else -> {
+                val isArtist = (item.browseId?.startsWith("UC") == true) || item.subtitle.contains("inscritos", ignoreCase = true) || item.subtitle.contains("subscribers", ignoreCase = true) || item.subtitle.equals("Artist", ignoreCase = true) || item.subtitle.equals("Artista", ignoreCase = true)
+                val cardShape = if (isArtist) CircleShape else RoundedCornerShape(12.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(cardShape)
+                        .thumbnailBorder(cardShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                ) {"""
+
+          assert target in c, "target not found"
+          c = c.replace(target, replacement, 1)
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(c)
@@ -34,6 +53,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/music/bitchord/data/settings/AppSettings.kt
-          git commit -m "feat: definir status da música como oculto por padrão no AppSettings"
+          git add sharedUi/src/jvmSharedMain/kotlin/com/music/bitchord/ui/screens/HomeScreen.kt
+          git commit -m "feat: definir fotos de artistas como redondas com CircleShape no ShelfCard"
           git push
