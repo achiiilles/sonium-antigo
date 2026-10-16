@@ -22,6 +22,7 @@ import com.music.bitchord.data.lyrics.translationLanguageName
 import com.music.bitchord.data.model.Song
 import com.music.bitchord.data.settings.AppSettings
 import com.music.bitchord.data.settings.LastPlayerScreen
+import com.music.bitchord.playback.AudioOutputDevice
 import com.music.bitchord.playback.AudioOutputStatus
 import com.music.bitchord.playback.AudioRouting
 import com.music.bitchord.playback.cast.CastController
@@ -98,7 +99,7 @@ class AndroidPlayerHost(context: Context) : PlayerHost {
     override val volume: SystemVolume by lazy { CastAwareVolume(MusicStreamVolume(app), scope) }
 
     @Composable
-    override fun rememberAudioOutputs(): List<AudioOutputUi> {
+    override fun rememberAudioOutputs(): List<AudioOutputDevice> {
         val outputs = rememberAndroidAudioOutputs()
         val cast by CastController.state.collectAsStateWithLifecycle()
         // While a receiver is the speaker no output of this phone is the one
