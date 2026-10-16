@@ -1001,12 +1001,14 @@ internal fun ShelfCard(
                 icon = Icons.Rounded.Storage,
             )
             else -> {
+                val isArtist = (item.browseId?.startsWith("UC") == true) || item.subtitle.contains("inscritos", ignoreCase = true) || item.subtitle.contains("subscribers", ignoreCase = true) || item.subtitle.equals("Artist", ignoreCase = true) || item.subtitle.equals("Artista", ignoreCase = true)
+                val cardShape = if (isArtist) CircleShape else RoundedCornerShape(12.dp)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .thumbnailBorder(RoundedCornerShape(12.dp))
+                        .clip(cardShape)
+                        .thumbnailBorder(cardShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     AsyncImage(
