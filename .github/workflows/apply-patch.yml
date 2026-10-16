@@ -12,47 +12,72 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Update DetailScreen.kt
+      - name: Update DetailScreen.kt with animated transition
         run: |
           python3 - << 'PYEOF'
           import io, re, sys
-
           path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
           with io.open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          pat = r'val parts = song\.artist\.split\(ARTIST_SPLIT_REGEX\)\.map\s*\{\s*it\.trim\(\)\s*\}\s*\r?\n\s*return parts\.any\s*\{\s*it\.equals\(cleanArtistName,\s*ignoreCase\s*=\s*true\)\s*\}'
-          m = re.search(pat, code)
+          pat_start = r'if\s*\(\s*showArtistLibrary\s*\)\s*\{\s*ArtistLibraryScreen\([\s\S]*?\)\s*\}\s*else\s*\{'
+          m = re.search(pat_start, code)
           if not m:
-              print("ERROR: target snippet not found in DetailScreen.kt")
+              print("ERROR: showArtistLibrary block not found in DetailScreen.kt")
               sys.exit(1)
 
-          replacement = """val parts = song.artist.split(ARTIST_SPLIT_REGEX).map { it.trim() }
-              if (parts.any { it.equals(cleanArtistName, ignoreCase = true) }) return true
+          replacement_start = """AnimatedContent(
+        targetState = showArtistLibrary,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(180))
+        },
+        label = "artist_library_screen_transition",
+    ) { inLibrary ->
+        if (inLibrary) {
+            ArtistLibraryScreen(
+                artistName = page.title,
+                songs = libraryArtistSongs,
+                albums = libraryArtistAlbums,
+                onBack = { showArtistLibrary = false },
+                onSongClick = onSongClick,
+                onShuffle = onShuffle,
+                onAlbumClick = onSectionItemClick,
+            )
+        } else {"""
 
-              val titleLower = song.title.lowercase()
-              val nameLower = cleanArtistName.lowercase()
-              return titleLower.contains("feat. $nameLower") ||
-                     titleLower.contains("ft. $nameLower") ||
-                     titleLower.contains("with $nameLower") ||
-                     titleLower.contains("featuring $nameLower") ||
-                     titleLower.contains("e $nameLower") ||
-                     titleLower.contains("& $nameLower")"""
+          code = code[:m.start()] + replacement_start + code[m.end():]
 
-          code = code[:m.start()] + replacement + code[m.end():]
+          m_next = re.search(r'\n/\*\*\s*\n\s*\* The artwork, blurred and tinted', code)
+          if not m_next:
+              m_next = re.search(r'\n@Composable\s*\nprivate fun PageBackground', code)
+          if not m_next:
+              m_next = re.search(r'\nprivate fun PageBackground', code)
+
+          if m_next:
+              pos = m_next.start()
+              last_brace_pos = code.rfind('}', 0, pos)
+              if last_brace_pos != -1:
+                  code = code[:last_brace_pos] + "    }\n" + code[last_brace_pos:]
+              else:
+                  print("ERROR: Could not find last brace before PageBackground")
+                  sys.exit(1)
+          else:
+              print("ERROR: PageBackground marker not found")
+              sys.exit(1)
+
+          if code.count('{') != code.count('}'):
+              print(f"ERROR: Unbalanced braces! open={code.count('{')}, close={code.count('}')}")
+              sys.exit(1)
 
           with io.open(path, "w", encoding="utf-8") as f:
               f.write(code)
-          print("SUCCESS: DetailScreen.kt updated successfully with title feat detection")
+          print("SUCCESS: DetailScreen.kt updated successfully with AnimatedContent and balanced braces")
           PYEOF
-
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || (git commit -m "feat: detectar feats e colaboracoes no titulo em DetailScreen.kt" && git push)
+          git diff --staged --quiet || (git commit -m "feat: adicionar transicao animada suave na tela de biblioteca do artista" && git push)
