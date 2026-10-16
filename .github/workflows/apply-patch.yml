@@ -1,6 +1,5 @@
 name: Apply Patch
 on:
-  workflow_dispatch:
   push:
     paths:
       - '.github/workflows/apply-patch.yml'
@@ -12,61 +11,17 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Pass albums to ArtistLibraryScreen in DetailScreen.kt
+
+      - name: Update DetailScreen.kt
         run: |
-          python3 -c '
-          path = "app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt"
-          with open(path, "r", encoding="utf-8") as f:
-              content = f.read()
-
-          target = """    if (showArtistLibrary) {
-        ArtistLibraryScreen(
-            artistName = page.title,
-            songs = libraryArtistSongs,
-            onBack = { showArtistLibrary = false },
-            onSongClick = onSongClick,
-            onShuffle = onShuffle,
-        )"""
-
-          replacement = """    val libraryArtistAlbums = remember(page.sections) {
-        page.sections.filter {
-            it.title.contains("sua biblioteca", ignoreCase = true) ||
-            it.title.contains("your library", ignoreCase = true)
-        }.flatMap { it.items }
-    }
-
-    if (showArtistLibrary) {
-        ArtistLibraryScreen(
-            artistName = page.title,
-            songs = libraryArtistSongs,
-            albums = libraryArtistAlbums,
-            onBack = { showArtistLibrary = false },
-            onSongClick = onSongClick,
-            onShuffle = onShuffle,
-            onAlbumClick = onSectionItemClick,
-        )"""
-
-          if target in content:
-              content = content.replace(target, replacement, 1)
-              with open(path, "w", encoding="utf-8") as f:
-                  f.write(content)
-              print("SUCCESS: DetailScreen updated")
-          else:
-              import re
-              pat = r"if\s*\(\s*showArtistLibrary\s*\)\s*\{\s*ArtistLibraryScreen\s*\(\s*artistName\s*=\s*page\.title\s*,\s*songs\s*=\s*libraryArtistSongs\s*,\s*onBack\s*=\s*\{\s*showArtistLibrary\s*=\s*false\s*\}\s*,\s*onSongClick\s*=\s*onSongClick\s*,\s*onShuffle\s*=\s*onShuffle\s*,\s*\)"
-              if re.search(pat, content):
-                  content = re.sub(pat, replacement, content, count=1)
-                  with open(path, "w", encoding="utf-8") as f:
-                      f.write(content)
-                  print("SUCCESS: DetailScreen updated via regex")
-              else:
-                  print("TARGET NOT FOUND")
-                  exit(1)
-          '
+          echo "aW1wb3J0IHJlLCBzeXMKCnBhdGggPSAiYXBwL3NyYy9tYWluL2phdmEvY29tL211c2ljL2JpdGNob3JkL3VpL3NjcmVlbnMvRGV0YWlsU2NyZWVuLmt0Igp3aXRoIG9wZW4ocGF0aCwgInIiLCBlbmNvZGluZz0idXRmLTgiKSBhcyBmOgogICAgY29kZSA9IGYucmVhZCgpCgpvbGRfdGFyZ2V0ID0gIiIiICAgIGlmIChzaG93QXJ0aXN0TGlicmFyeSkgewogICAgICAgIEFydGlzdExpYnJhcnlTY3JlZW4oCiAgICAgICAgICAgIGFydGlzdE5hbWUgPSBwYWdlLnRpdGxlLAogICAgICAgICAgICBzb25ncyA9IGxpYnJhcnlBcnRpc3RTb25ncywKICAgICAgICAgICAgb25CYWNrID0geyBzaG93QXJ0aXN0TGlicmFyeSA9IGZhbHNlIH0sCiAgICAgICAgICAgIG9uU29uZ0NsaWNrID0gb25Tb25nQ2xpY2ssCiAgICAgICAgICAgIG9uU2h1ZmZsZSA9IG9uU2h1ZmZsZSwKICAgICAgICApIiIiCgpuZXdfdGFyZ2V0ID0gIiIiICAgIHZhbCBsaWJyYXJ5QXJ0aXN0QWxidW1zID0gcmVtZW1iZXIocGFnZS5zZWN0aW9ucykgewogICAgICAgIHBhZ2Uuc2VjdGlvbnMuZmlsdGVyIHsKICAgICAgICAgICAgaXQudGl0bGUuY29udGFpbnMoInN1YSBiaWJsaW90ZWNhIiwgaWdub3JlQ2FzZSA9IHRydWUpIHx8CiAgICAgICAgICAgIGl0LnRpdGxlLmNvbnRhaW5zKCJ5b3VyIGxpYnJhcnkiLCBpZ25vcmVDYXNlID0gdHJ1ZSkKICAgICAgICB9LmZsYXRNYXAgeyBpdC5pdGVtcyB9CiAgICB9CgogICAgaWYgKHNob3dBcnRpc3RMaWJyYXJ5KSB7CiAgICAgICAgQXJ0aXN0TGlicmFyeVNjcmVlbigKICAgICAgICAgICAgYXJ0aXN0TmFtZSA9IHBhZ2UudGl0bGUsCiAgICAgICAgICAgIHNvbmdzID0gbGlicmFyeUFydGlzdFNvbmdzLAogICAgICAgICAgICBhbGJ1bXMgPSBsaWJyYXJ5QXJ0aXN0QWxidW1zLAogICAgICAgICAgICBvbkJhY2sgPSB7IHNob3dBcnRpc3RMaWJyYXJ5ID0gZmFsc2UgfSwKICAgICAgICAgICAgb25Tb25nQ2xpY2sgPSBvblNvbmdDbGljaywKICAgICAgICAgICAgb25TaHVmZmxlID0gb25TaHVmZmxlLAogICAgICAgICAgICBvbkFsYnVtQ2xpY2sgPSBvblNlY3Rpb25JdGVtQ2xpY2ssCiAgICAgICAgKSIiIgoKaWYgb2xkX3RhcmdldCBpbiBjb2RlOgogICAgY29kZSA9IGNvZGUucmVwbGFjZShvbGRfdGFyZ2V0LCBuZXdfdGFyZ2V0LCAxKQogICAgd2l0aCBvcGVuKHBhdGgsICJ3IiwgZW5jb2Rpbmc9InV0Zi04IikgYXMgZjoKICAgICAgICBmLndyaXRlKGNvZGUpCiAgICBwcmludCgiU1VDQ0VTUzogZXhhY3QgbWF0Y2ggcmVwbGFjZWQiKQplbHNlOgogICAgcGF0ID0gciJpZlxzKlxzKnNob3dBcnRpc3RMaWJyYXJ5XHMqXClccypce1xzKkFydGlzdExpYnJhcnlTY3JlZW5ccypcKFxzKmFydGlzdE5hbWVccyo9XHMrcGFnZVwudGl0bGVccyosXHMrc29uZ3Nccyo9XHMrbGlicmFyeUFydGlzdFNvbmdzXHMsKnNvbkJhY2tccyo9XHMrXHh7XHMrc2hvd0FydGlzdExpYnJhcnlccyo9XHMrZmFsc2VccypceFxzKixccypvblNvbmdDbGlja1xzKj1ccytvblNvbmdDbGlja1xzKixccypvblNodWZmbGVccyo9XHMrb25TaHVmZmxlXHMsKlxzKlwpIgogICAgaWYgcmUuc2VhcmNoKHBhdCwgY29kZSk6CiAgICAgICAgY29kZSA9IHJlLnN1YihwYXQsIG5ld190YXJnZXQsIGNvZGUsIGNvdW50PTEpCiAgICAgICAgd2l0aCBvcGVuKHBhdGgsICJ3IiwgZW5jb2Rpbmc9InV0Zi04IikgYXMgZjoKICAgICAgICAgICAgZi53cml0ZShjb2RlKQogICAgICAgIHByaW50KCJTVUNDRVNTOiByZWdleCByZXBsYWNlZCIpCiAgICBlbHNlOgogICAgICAgIHByaW50KCJFUlJPUjogcGF0dGVybiBub3QgZm91bmQiKQogICAgICAgIHN5cy5leGl0KDEpCg==" | base64 -d > patch.py
+          python3 patch.py
+          rm patch.py
           git add app/src/main/java/com/music/bitchord/ui/screens/DetailScreen.kt
-          git diff --staged --quiet || git commit -m "feat: passar álbuns da biblioteca para ArtistLibraryScreen em DetailScreen.kt"
+          git diff --staged --quiet || git commit -m "feat: passar albuns da biblioteca para ArtistLibraryScreen em DetailScreen.kt"
           git push
