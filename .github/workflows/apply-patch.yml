@@ -20,56 +20,25 @@ jobs:
         run: |
           python3 - << 'PYEOF'
           import sys
-          import re
-
           path = "app/src/main/java/com/music/bitchord/MainActivity.kt"
           with open(path, "r", encoding="utf-8") as f:
               code = f.read()
 
-          code = code.replace("\r\n", "\n")
-
           # 1. State: tabHistory & LaunchedEffect
-          target_state = "var selectedTab by rememberSaveable { mutableIntStateOf(0) }"
-          replacement_state = """var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    var tabHistory by rememberSaveable { mutableStateOf(listOf(0)) }
-
-    LaunchedEffect(selectedTab) {
-        if (tabHistory.lastOrNull() != selectedTab) {
-            tabHistory = tabHistory + selectedTab
-        }
-    }"""
-          if target_state not in code:
-              print("ERROR: target_state not found")
+          old_tab = "    var selectedTab by rememberSaveable { mutableIntStateOf(0) }"
+          new_tab = "    var selectedTab by rememberSaveable { mutableIntStateOf(0) }\n    var tabHistory by rememberSaveable { mutableStateOf(listOf(0)) }\n\n    LaunchedEffect(selectedTab) {\n        if (tabHistory.lastOrNull() != selectedTab) {\n            tabHistory = tabHistory + selectedTab\n        }\n    }"
+          if old_tab not in code:
+              print("ERROR: old_tab not found")
               sys.exit(1)
-          code = code.replace(target_state, replacement_state, 1)
+          code = code.replace(old_tab, new_tab, 1)
 
           # 2. BackHandler
-          old_back = """BackHandler(
-            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&
-                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&
-                selectedTab != TAB_HOME,
-        ) {
-            selectedTab = TAB_HOME
-        }"""
-          new_back = """BackHandler(
-            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&
-                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&
-                tabHistory.size > 1,
-        ) {
-            val previous = tabHistory.dropLast(1)
-            tabHistory = previous
-            selectedTab = previous.last()
-        }"""
-          if old_back in code:
-              code = code.replace(old_back, new_back, 1)
-          else:
-              print("Trying regex for BackHandler...")
-              pattern = r"(selectedMoodGenre == null &&\s+)selectedTab != TAB_HOME,(\s*\)\s*\{\s*)selectedTab = TAB_HOME(\s*\})"
-              replacement = r"\1tabHistory.size > 1,\2val previous = tabHistory.dropLast(1)\n            tabHistory = previous\n            selectedTab = previous.last()\3"
-              code, count = re.subn(pattern, replacement, code, count=1)
-              if count == 0:
-                  print("ERROR: BackHandler not found")
-                  sys.exit(1)
+          old_back = "        BackHandler(\n            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&\n                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&\n                selectedTab != TAB_HOME,\n        ) {\n            selectedTab = TAB_HOME\n        }"
+          new_back = "        BackHandler(\n            enabled = detail == null && !showSettings && !showAccountScrobbling && !showSpotify &&\n                !showSources && !showListenTogether && !showEqualizer && !showReplay && selectedMoodGenre == null &&\n                tabHistory.size > 1,\n        ) {\n            val previous = tabHistory.dropLast(1)\n            tabHistory = previous\n            selectedTab = previous.last()\n        }"
+          if old_back not in code:
+              print("ERROR: old_back not found")
+              sys.exit(1)
+          code = code.replace(old_back, new_back, 1)
 
           with open(path, "w", encoding="utf-8") as f:
               f.write(code)
