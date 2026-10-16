@@ -2034,7 +2034,16 @@ private fun isSongByArtist(song: Song, artistBrowseId: String, artistName: Strin
     if (song.artist.equals(cleanArtistName, ignoreCase = true)) return true
 
     val parts = song.artist.split(ARTIST_SPLIT_REGEX).map { it.trim() }
-    return parts.any { it.equals(cleanArtistName, ignoreCase = true) }
+    if (parts.any { it.equals(cleanArtistName, ignoreCase = true) }) return true
+
+    val titleLower = song.title.lowercase()
+    val nameLower = cleanArtistName.lowercase()
+    return titleLower.contains("feat. $nameLower") ||
+           titleLower.contains("ft. $nameLower") ||
+           titleLower.contains("with $nameLower") ||
+           titleLower.contains("featuring $nameLower") ||
+           titleLower.contains("e $nameLower") ||
+           titleLower.contains("& $nameLower")
 }
 
 
