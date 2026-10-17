@@ -21,132 +21,16 @@ jobs:
           python3 -c 'import io
           p = "app/src/main/java/com/music/bitchord/ui/theme/Theme.kt"
           with io.open(p, "r", encoding="utf-8") as f:
-              t = f.read().replace("\r\n", "\n")
+              t = f.read()
 
-          old_block = """@Composable
-fun SettingsPillCard(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isStandalone: Boolean = true,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    val shape = if (isStandalone) CapsuleShape else InsetGroupedShape
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CapsuleShape)
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(1.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (trailing != null) {
-            Spacer(Modifier.width(8.dp))
-            trailing()
-        }
-    }
-}""".replace("\r\n", "\n")
+          assert "subtitle: String," in t, "subtitle: String, not found"
+          t = t.replace("subtitle: String,", "subtitle: String? = null,", 1)
 
-          new_block = """@Composable
-fun SettingsPillCard(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    isStandalone: Boolean = true,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    val shape = if (isStandalone) CapsuleShape else InsetGroupedShape
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CapsuleShape)
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (!subtitle.isNullOrBlank()) {
-                Spacer(Modifier.height(1.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-        if (trailing != null) {
-            Spacer(Modifier.width(8.dp))
-            trailing()
-        }
-    }
-}""".replace("\r\n", "\n")
+          old_sub = "            Spacer(Modifier.height(1.dp))\n            Text(\n                text = subtitle,\n                style = MaterialTheme.typography.bodySmall,\n                color = MaterialTheme.colorScheme.onSurfaceVariant,\n                maxLines = 1,\n                overflow = TextOverflow.Ellipsis,\n            )"
+          new_sub = "            if (!subtitle.isNullOrBlank()) {\n                Spacer(Modifier.height(1.dp))\n                Text(\n                    text = subtitle,\n                    style = MaterialTheme.typography.bodySmall,\n                    color = MaterialTheme.colorScheme.onSurfaceVariant,\n                    maxLines = 1,\n                    overflow = TextOverflow.Ellipsis,\n                )\n            }"
 
-          assert old_block in t, "old_block not found in Theme.kt"
-          t = t.replace(old_block, new_block, 1)
+          assert old_sub in t, "old_sub not found in Theme.kt"
+          t = t.replace(old_sub, new_sub, 1)
 
           with io.open(p, "w", encoding="utf-8") as f:
               f.write(t)
