@@ -18,8 +18,62 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
       - name: Update SettingsSheet.kt
         run: |
-          python3 -c "import base64; exec(base64.b64decode('aW1wb3J0IGlvCnAgPSAiYXBwL3NyYy9tYWluL2phdmEvY29tL211c2ljL2JpdGNob3JkL3VpL3NjcmVlbnMvU2V0dGluZ3NTaGVldC5rdCIKd2l0aCBpby5vcGVuKHAsICJyIiwgZW5jb2Rpbmc9InV0Zi04IikgYXMgZjoKICAgIHQgPSBmLnJlYWQoKQp0YXJnZXRfbWFya2VyID0gImlmIChzZWFyY2hRdWVyeS5pc05vdEJsYW5rKCkgfHwgc2VsZWN0ZWRDYXRlZ29yeSA9PSBTZXR0aW5nc0NhdGVnb3J5LlNZU1RFTSkiCmlkeCA9IHQuZmluZCh0YXJnZXRfbWFya2VyKQphc3NlcnQgaWR4ICE9IC0xLCAiVGFyZ2V0IG1hcmtlciBub3QgZm91bmQgaW4gU2V0dGluZ3NTaGVldC5rdCIKbGluZV9zdGFydCA9IHQucmZpbmQoIlxuIiwgMCwgaWR4KQppbnNlcnRfcG9zID0gbGluZV9zdGFydCArIDEgaWYgbGluZV9zdGFydCAhPSAtMSBlbHNlIGlkeApyZXBsYXlfY29kZSA9ICIiIiAgICAgICAgaWYgKHNlYXJjaFF1ZXJ5LmlzTm90QmxhbmsoKSB8fCBzZWxlY3RlZENhdGVnb3J5ID09IFNldHRpbmdzQ2F0ZWdvcnkuUkVQTEFZKSB7CiAgICAgICAgICAgIFNlYXJjaGFibGVTZXR0aW5nc0dyb3VwKHNlYXJjaCwgaGVhZGVyID0gaWYgKHNlbGVjdGVkQ2F0ZWdvcnkgPT0gU2V0dGluZ3NDYXRlZ29yeS5SRVBMQVkpICJSZXBsYXkiIGVsc2UgbnVsbCkgewogICAgICAgICAgICAgICAgdmFsIHJlcGxheVRpdGxlID0gc3RyaW5nUmVzb3VyY2UoUi5zdHJpbmcucmVwbGF5KQogICAgICAgICAgICAgICAgcm93KHJlcGxheVRpdGxlLCAic3RhdHMiLCAiaGlzdG9yeSIsICJ3cmFwcGVkIikgewogICAgICAgICAgICAgICAgICAgIFNldHRpbmdzUm93KAogICAgICAgICAgICAgICAgICAgICAgICBpY29uID0gSWNvbnMuUm91bmRlZC5CYXJDaGFydCwKICAgICAgICAgICAgICAgICAgICAgICAgdGl0bGUgPSByZXBsYXlUaXRsZSwKICAgICAgICAgICAgICAgICAgICAgICAgc3VidGl0bGUgPSBzdHJpbmdSZXNvdXJjZShSLnN0cmluZy5yZXBsYXlfc3VidGl0bGUpLAogICAgICAgICAgICAgICAgICAgICAgICBvbkNsaWNrID0gb25PcGVuUmVwbGF5LAogICAgICAgICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIHZhbCB3b3JrT3V0R2VucmVzVGl0bGUgPSBzdHJpbmdSZXNvdXJjZShSLnN0cmluZy53b3JrX291dF9nZW5yZXMpCiAgICAgICAgICAgICAgICByb3cod29ya091dEdlbnJlc1RpdGxlLCAiZ2VucmUiLCAicmVwbGF5IikgewogICAgICAgICAgICAgICAgICAgIFNldHRpbmdzUm93KAogICAgICAgICAgICAgICAgICAgICAgICBpY29uID0gSWNvbnMuUm91bmRlZC5Mb2NhbE9mZmVyLAogICAgICAgICAgICAgICAgICAgICAgICB0aXRsZSA9IHdvcmtPdXRHZW5yZXNUaXRsZSwKICAgICAgICAgICAgICAgICAgICAgICAgc3VidGl0bGUgPSBpZiAocmVwbGF5R2VucmVzKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdHJpbmdSZXNvdXJjZShSLnN0cmluZy5yZXBsYXlfZ2VucmVzX2VuYWJsZWRfc3VidGl0bGUpCiAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBzdHJpbmdSZXNvdXJjZShSLnN0cmluZy5yZXBsYXlfZ2VucmVzX2Rpc2FibGVkX3N1YnRpdGxlKQogICAgICAgICAgICAgICAgICAgICAgICB9LAogICAgICAgICAgICAgICAgICAgICAgICB0cmFpbGluZyA9IHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIElvc1N3aXRjaCgKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjaGVja2VkID0gcmVwbGF5R2VucmVzLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIG9uQ2hlY2tlZENoYW5nZSA9IEFwcFNldHRpbmdzOjpzZXRSZXBsYXlHZW5yZXMsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY29sb3JzID0gU3dpdGNoRGVmYXVsdHMuY29sb3JzKAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY2hlY2tlZFRyYWNrQ29sb3IgPSBNYXRlcmlhbFRoZW1lLmNvbG9yU2NoZW1lLnByaW1hcnksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjaGVja2VkQm9yZGVyQ29sb3IgPSBNYXRlcmlhbFRoZW1lLmNvbG9yU2NoZW1lLnByaW1hcnksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICAgICAgfSwKICAgICAgICAgICAgICAgICAgICAgICAgb25DbGljayA9IHsgQXBwU2V0dGluZ3Muc2V0UmVwbGF5R2VucmVzKCFyZXBsYXlHZW5yZXMpIH0sCiAgICAgICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CiAgICAgICAgfVxuXG4iIiIKdCA9IHRbOmluc2VydF9wb3NdICsgcmVwbGF5X2NvZGUgKyB0W2luc2VydF9wb3M6XQp3aXRoIGlvLm9wZW4ocCwgInciLCBlbmNvZGluZz0idXRmLTgiKSBhcyBmOgogICAgZi53cml0ZSh0KQpwcmludCgiU1VDQ0VTUzogQWRkZWQgUmVwbGF5IHN1YnBhZ2UgdG8gU2V0dGluZ3NTaGVldC5rdCIp').decode('utf-8'))"
+          cat << 'EOF' > patch.py
+import io
+p = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
+with io.open(p, "r", encoding="utf-8") as f:
+    t = f.read()
+marker = "val exportDataTitle = stringResource(R.string.export_data)"
+idx_export = t.find(marker)
+assert idx_export != -1, f"Marker '{marker}' not found in {p}"
+group_start = t.rfind("SearchableSettingsGroup", 0, idx_export)
+assert group_start != -1, f"SearchableSettingsGroup before exportDataTitle not found in {p}"
+line_start = t.rfind("\n", 0, group_start) + 1
+indent = t[line_start:group_start]
+brace_start = t.find("{", group_start)
+assert brace_start != -1 and brace_start < idx_export, "Opening brace not found"
+count = 1
+end_pos = -1
+for i in range(brace_start + 1, len(t)):
+    if t[i] == '{':
+        count += 1
+    elif t[i] == '}':
+        count -= 1
+        if count == 0:
+            end_pos = i + 1
+            break
+assert end_pos != -1, "Closing brace not found"
+old_block = t[line_start:end_pos]
+print("OLD BLOCK:\n" + old_block)
+assert "exportDataTitle" in old_block
+new_block = f"""{indent}SearchableSettingsGroup(search, header = "Backup & Restauração") {{
+{indent}    val exportDataTitle = stringResource(R.string.export_data)
+{indent}    row(exportDataTitle, "backup") {{
+{indent}        SettingsRow(
+{indent}            icon = Icons.Rounded.FileUpload,
+{indent}            title = exportDataTitle,
+{indent}            subtitle = exportStatus ?: stringResource(R.string.export_data_subtitle),
+{indent}            onClick = {{ exportPicker.launch(Backup.suggestedName()) }},
+{indent}        )
+{indent}    }}
+{indent}    val importDataTitle = stringResource(R.string.import_data)
+{indent}    row(importDataTitle, "backup", "restore") {{
+{indent}        SettingsRow(
+{indent}            icon = Icons.Rounded.FileDownload,
+{indent}            title = importDataTitle,
+{indent}            subtitle = importStatus ?: stringResource(R.string.import_data_subtitle),
+{indent}            onClick = {{ confirmImport = true }},
+{indent}        )
+{indent}    }}
+{indent}}}"""
+print("NEW BLOCK:\n" + new_block)
+t_new = t[:line_start] + new_block + t[end_pos:]
+with io.open(p, "w", encoding="utf-8") as f:
+    f.write(t_new)
+print("SUCCESS: Updated SettingsSheet.kt with Step 3")
+EOF
+          python3 patch.py
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git diff --staged --quiet || (git commit -m "feat(settings): add Replay subpage to SettingsSheet.kt" && git push)
+          git diff --staged --quiet || (git commit -m "feat(settings): clean up Storage and set Backup & Restauração header in SettingsSheet.kt" && git push)
