@@ -900,222 +900,200 @@ val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
         }
 
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.APPEARANCE) {
-        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.APPEARANCE) "Aparência" else stringResource(R.string.appearance)) {
-            val themeTitle = stringResource(R.string.theme)
-            row(themeTitle, "dark mode", "light mode") {
-                SettingsRow(icon = Icons.Rounded.Brightness4, title = themeTitle)
-                SegmentedControl(
-                    options = ThemeMode.entries.map { it.localizedLabel() },
-                    selectedIndex = ThemeMode.entries.indexOf(theme),
-                    onSelect = { AppSettings.setThemeMode(ThemeMode.entries[it]) },
-                    modifier = Modifier.padding(start = ROW_INSET, end = ROW_INSET, bottom = 14.dp),
-                )
-            }
-            val reduceAnimationTitle = stringResource(R.string.reduce_animation)
-            row(reduceAnimationTitle, "motion") {
-                SettingsRow(
-                    icon = Icons.Rounded.MotionPhotosOff,
-                    title = reduceAnimationTitle,
-                    subtitle = stringResource(R.string.reduce_animation_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = reduceAnimation,
-                            onCheckedChange = AppSettings::setReduceAnimation,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setReduceAnimation(!reduceAnimation) },
-                )
-            }
-            val reduceDynamicBlurTitle = stringResource(R.string.reduce_dynamic_blur)
-            row(reduceDynamicBlurTitle, "blur", "performance") {
-                SettingsRow(
-                    icon = Icons.Rounded.BlurOff,
-                    title = reduceDynamicBlurTitle,
-                    subtitle = stringResource(R.string.reduce_dynamic_blur_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = reduceDynamicBlur,
-                            onCheckedChange = AppSettings::setReduceDynamicBlur,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setReduceDynamicBlur(!reduceDynamicBlur) },
-                )
-            }
-            val liquidGlassTitle = stringResource(R.string.liquid_glass)
-            row(liquidGlassTitle, "glass", "blur") {
-                SettingsRow(
-                    icon = Icons.Rounded.AutoAwesome,
-                    title = liquidGlassTitle,
-                    subtitle = stringResource(
-                        if (liquidGlassSupported) {
-                            R.string.liquid_glass_subtitle
-                        } else {
-                            R.string.liquid_glass_unavailable
-                        },
-                    ),
-                    enabled = liquidGlassSupported,
-                    trailing = {
-                        IosSwitch(
-                            checked = liquidGlass,
-                            onCheckedChange = AppSettings::setLiquidGlass,
-                            enabled = liquidGlassSupported,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setLiquidGlass(!liquidGlass) },
-                )
-            }
-            // Left out where the player won't honour it: a window too wide for
-            // the player to fill and too narrow to stand a page beside it keeps
-            // the sleeve either way. A docked pane is a phone's width, so it does
-            // honour it — see [fullBleedArtworkAvailable].
-            if (fullBleedArtworkAvailable(windowWidth)) {
-                val fullScreenCoverArtTitle = stringResource(R.string.full_screen_cover_art)
-                row(fullScreenCoverArtTitle, "artwork", "player") {
-                    SettingsRow(
-                        icon = Icons.Rounded.Fullscreen,
-                        title = fullScreenCoverArtTitle,
-                        subtitle = stringResource(R.string.full_screen_cover_art_subtitle),
-                        trailing = {
-                            IosSwitch(
-                                checked = fullBleedArtwork,
-                                onCheckedChange = AppSettings::setFullBleedArtwork,
-                                colors = SwitchDefaults.colors(
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                    checkedBorderColor = MaterialTheme.colorScheme.primary,
-                                ),
-                            )
-                        },
-                        onClick = { AppSettings.setFullBleedArtwork(!fullBleedArtwork) },
-                    )
-                }
-            }
-            val legacyMeshGradientTitle = stringResource(R.string.legacy_mesh_gradient)
-            row(legacyMeshGradientTitle, "background", "player") {
-                SettingsRow(
-                    icon = Icons.Rounded.Gradient,
-                    title = legacyMeshGradientTitle,
-                    subtitle = stringResource(R.string.legacy_mesh_gradient_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = legacyMeshGradient,
-                            onCheckedChange = AppSettings::setLegacyMeshGradient,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setLegacyMeshGradient(!legacyMeshGradient) },
-                )
-            }
-            val hideVolumeBarTitle = stringResource(R.string.hide_volume_bar)
-            row(hideVolumeBarTitle, "volume", "player") {
-                SettingsRow(
-                    icon = Icons.Rounded.VolumeOff,
-                    title = hideVolumeBarTitle,
-                    subtitle = stringResource(R.string.hide_volume_bar_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = hideVolumeBar,
-                            onCheckedChange = AppSettings::setHideVolumeBar,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
-                )
-            }
-            row("Status da música", "player", "playing from", "indicador") {
-        SettingsRow(
-            icon = Icons.Rounded.Tune,
-            title = "Mostrar status da música",
-            subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
-            trailing = {
-                IosSwitch(
-                    checked = !hideSongStatus,
-                    onCheckedChange = { AppSettings.setHideSongStatus(!it) },
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        checkedBorderColor = MaterialTheme.colorScheme.primary,
-                    ),
-                )
-            },
-            onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
-        )
+    // 1. Tema (sozinho -> pílula, sem cabeçalho)
+    SearchableSettingsGroup(
+        search,
+        header = null,
+        topSpacing = 8.dp,
+        shape = CapsuleShape,
+    ) {
+        val themeTitle = stringResource(R.string.theme)
+        row(themeTitle, "dark mode", "light mode") {
+            SettingsRow(icon = Icons.Rounded.Brightness4, title = themeTitle)
+            SegmentedControl(
+                options = ThemeMode.entries.map { it.localizedLabel() },
+                selectedIndex = ThemeMode.entries.indexOf(theme),
+                onSelect = { AppSettings.setThemeMode(ThemeMode.entries[it]) },
+                modifier = Modifier.padding(start = ROW_INSET, end = ROW_INSET, bottom = 14.dp),
+            )
+        }
     }
-            val animatedCoverArtTitle = stringResource(R.string.animated_cover_art)
-            // Carries the keywords of the rows that only appear once it is on,
-            // so searching "spotify" with animated covers switched off turns up
-            // the switch that brings the Spotify row back rather than nothing.
-            row(animatedCoverArtTitle, "canvas", "video", "spotify") {
+
+    // 2. Efeitos Visuais (3 itens agrupados)
+    SearchableSettingsGroup(search, header = "Efeitos Visuais") {
+        val reduceAnimationTitle = stringResource(R.string.reduce_animation)
+        row(reduceAnimationTitle, "motion") {
+            SettingsRow(
+                icon = Icons.Rounded.MotionPhotosOff,
+                title = reduceAnimationTitle,
+                subtitle = stringResource(R.string.reduce_animation_subtitle),
+                trailing = {
+                    IosSwitch(
+                        checked = reduceAnimation,
+                        onCheckedChange = AppSettings::setReduceAnimation,
+                    )
+                },
+                onClick = { AppSettings.setReduceAnimation(!reduceAnimation) },
+            )
+        }
+        val reduceDynamicBlurTitle = stringResource(R.string.reduce_dynamic_blur)
+        row(reduceDynamicBlurTitle, "blur", "performance") {
+            SettingsRow(
+                icon = Icons.Rounded.BlurOff,
+                title = reduceDynamicBlurTitle,
+                subtitle = stringResource(R.string.reduce_dynamic_blur_subtitle),
+                trailing = {
+                    IosSwitch(
+                        checked = reduceDynamicBlur,
+                        onCheckedChange = AppSettings::setReduceDynamicBlur,
+                    )
+                },
+                onClick = { AppSettings.setReduceDynamicBlur(!reduceDynamicBlur) },
+            )
+        }
+        val liquidGlassTitle = stringResource(R.string.liquid_glass)
+        row(liquidGlassTitle, "glass", "blur") {
+            SettingsRow(
+                icon = Icons.Rounded.AutoAwesome,
+                title = liquidGlassTitle,
+                subtitle = stringResource(
+                    if (liquidGlassSupported) {
+                        R.string.liquid_glass_subtitle
+                    } else {
+                        R.string.liquid_glass_unavailable
+                    },
+                ),
+                enabled = liquidGlassSupported,
+                trailing = {
+                    IosSwitch(
+                        checked = liquidGlass,
+                        onCheckedChange = AppSettings::setLiquidGlass,
+                        enabled = liquidGlassSupported,
+                    )
+                },
+                onClick = { AppSettings.setLiquidGlass(!liquidGlass) },
+            )
+        }
+    }
+
+    // 3. Player (4 itens agrupados)
+    SearchableSettingsGroup(search, header = "Player") {
+        if (fullBleedArtworkAvailable(windowWidth)) {
+            val fullScreenCoverArtTitle = stringResource(R.string.full_screen_cover_art)
+            row(fullScreenCoverArtTitle, "artwork", "player") {
                 SettingsRow(
-                    icon = Icons.Rounded.Animation,
-                    title = animatedCoverArtTitle,
-                    subtitle = stringResource(R.string.animated_cover_art_subtitle),
+                    icon = Icons.Rounded.Fullscreen,
+                    title = fullScreenCoverArtTitle,
+                    subtitle = stringResource(R.string.full_screen_cover_art_subtitle),
                     trailing = {
                         IosSwitch(
-                            checked = animatedCanvas,
-                            onCheckedChange = AppSettings::setAnimatedCanvas,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
+                            checked = fullBleedArtwork,
+                            onCheckedChange = AppSettings::setFullBleedArtwork,
                         )
                     },
-                    onClick = { AppSettings.setAnimatedCanvas(!animatedCanvas) },
+                    onClick = { AppSettings.setFullBleedArtwork(!fullBleedArtwork) },
                 )
             }
-            // Reads as part of the Animated cover art option above it, not
-            // as a separate setting. Nothing to narrow while the clip itself
-            // is off. Defaults to off: a clip loops for as long as its track
-            // plays, so on cellular this is not a one-time video cost but
-            // that cost repeated on every loop — see AppSettings.canvasOverCellular.
-            if (animatedCanvas) {
-                val coverCellularTitle = stringResource(R.string.animated_cover_cellular)
-                row(coverCellularTitle, "canvas", "cellular", divided = false) {
-                    SettingsSubRow(
-                        title = coverCellularTitle,
-                        checked = canvasOverCellular,
-                        onCheckedChange = AppSettings::setCanvasOverCellular,
+        }
+        val legacyMeshGradientTitle = stringResource(R.string.legacy_mesh_gradient)
+        row(legacyMeshGradientTitle, "background", "player") {
+            SettingsRow(
+                icon = Icons.Rounded.Gradient,
+                title = legacyMeshGradientTitle,
+                subtitle = stringResource(R.string.legacy_mesh_gradient_subtitle),
+                trailing = {
+                    IosSwitch(
+                        checked = legacyMeshGradient,
+                        onCheckedChange = AppSettings::setLegacyMeshGradient,
                     )
-                }
-                val spotifyCanvasTitle = stringResource(R.string.integrate_spotify_canvas)
-                row(spotifyCanvasTitle, "spotify", "canvas", divided = false) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(onClick = onSpotifyCanvasAuth)
-                            .padding(start = ROW_INSET, end = ROW_INSET, top = 4.dp, bottom = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = spotifyCanvasTitle,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Chevron()
-                    }
+                },
+                onClick = { AppSettings.setLegacyMeshGradient(!legacyMeshGradient) },
+            )
+        }
+        val hideVolumeBarTitle = stringResource(R.string.hide_volume_bar)
+        row(hideVolumeBarTitle, "volume", "player") {
+            SettingsRow(
+                icon = Icons.Rounded.VolumeOff,
+                title = hideVolumeBarTitle,
+                subtitle = stringResource(R.string.hide_volume_bar_subtitle),
+                trailing = {
+                    IosSwitch(
+                        checked = hideVolumeBar,
+                        onCheckedChange = AppSettings::setHideVolumeBar,
+                    )
+                },
+                onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
+            )
+        }
+        row("Status da música", "player", "playing from", "indicador") {
+            SettingsRow(
+                icon = Icons.Rounded.Tune,
+                title = "Mostrar status da música",
+                subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
+                trailing = {
+                    IosSwitch(
+                        checked = !hideSongStatus,
+                        onCheckedChange = { AppSettings.setHideSongStatus(!it) },
+                    )
+                },
+                onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
+            )
+        }
+    }
+
+    // 4. Capa Animada (sozinha é pílula; com sub-opções ativas é grupo)
+    SearchableSettingsGroup(
+        search,
+        header = "Capa Animada",
+        shape = if (animatedCanvas) GroupShape else CapsuleShape,
+    ) {
+        val animatedCoverArtTitle = stringResource(R.string.animated_cover_art)
+        row(animatedCoverArtTitle, "canvas", "video", "spotify") {
+            SettingsRow(
+                icon = Icons.Rounded.Animation,
+                title = animatedCoverArtTitle,
+                subtitle = stringResource(R.string.animated_cover_art_subtitle),
+                trailing = {
+                    IosSwitch(
+                        checked = animatedCanvas,
+                        onCheckedChange = AppSettings::setAnimatedCanvas,
+                    )
+                },
+                onClick = { AppSettings.setAnimatedCanvas(!animatedCanvas) },
+            )
+        }
+        if (animatedCanvas) {
+            val coverCellularTitle = stringResource(R.string.animated_cover_cellular)
+            row(coverCellularTitle, "canvas", "cellular", divided = false) {
+                SettingsSubRow(
+                    title = coverCellularTitle,
+                    checked = canvasOverCellular,
+                    onCheckedChange = AppSettings::setCanvasOverCellular,
+                )
+            }
+            val spotifyCanvasTitle = stringResource(R.string.integrate_spotify_canvas)
+            row(spotifyCanvasTitle, "spotify", "canvas", divided = false) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onSpotifyCanvasAuth)
+                        .padding(start = ROW_INSET, end = ROW_INSET, top = 4.dp, bottom = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = spotifyCanvasTitle,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Chevron()
                 }
             }
         }
-        }
+    }
+}
 
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.LYRICS) {
         SearchableSettingsGroup(search, header = "Letras") {
