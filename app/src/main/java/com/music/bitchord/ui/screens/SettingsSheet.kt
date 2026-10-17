@@ -909,7 +909,6 @@ val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
         search,
         header = null,
         topSpacing = 8.dp,
-        shape = CapsuleShape,
     ) {
         val themeTitle = stringResource(R.string.theme)
         row(themeTitle, "dark mode", "light mode") {
@@ -1049,7 +1048,6 @@ val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
     SearchableSettingsGroup(
         search,
         header = "Capa Animada",
-        shape = if (animatedCanvas) GroupShape else CapsuleShape,
     ) {
         val animatedCoverArtTitle = stringResource(R.string.animated_cover_art)
         row(animatedCoverArtTitle, "canvas", "video", "spotify") {
@@ -2327,13 +2325,14 @@ private fun SearchableSettingsGroup(
     header: String? = null,
     footer: String? = null,
     topSpacing: Dp = 26.dp,
-    shape: Shape = GroupShape,
+    shape: Shape? = null,
     content: @Composable SettingsGroupScope.() -> Unit,
 ) {
     val scope = SettingsGroupScope(search, header)
     scope.content()
     if (scope.entries.isEmpty()) return
-    SettingsGroup(header = header, footer = footer, topSpacing = topSpacing, shape = shape) {
+    val resolvedShape = shape ?: if (scope.entries.size == 1) CapsuleShape else GroupShape
+    SettingsGroup(header = header, footer = footer, topSpacing = topSpacing, shape = resolvedShape) {
         scope.entries.forEachIndexed { index, entry ->
             when {
                 index > 0 && entry.divided -> RowDivider()
@@ -2358,9 +2357,14 @@ internal fun SettingsGroup(
     /** Room above the card, where there is no [header] to provide it. */
     topSpacing: Dp = 26.dp,
     shape: Shape = GroupShape,
+    itemCount: Int? = null,
     content: @Composable () -> Unit,
 ) {
-    val isCapsule = shape == CapsuleShape
+    val effectiveShape = when {
+        itemCount != null -> if (itemCount == 1) CapsuleShape else GroupShape
+        else -> shape
+    }
+    val isCapsule = effectiveShape == CapsuleShape
     val animatedCornerRadius by animateDpAsState(
         targetValue = if (isCapsule) 28.dp else 14.dp,
         animationSpec = spring(
@@ -2369,10 +2373,10 @@ internal fun SettingsGroup(
         ),
         label = "cardShapeAnimation",
     )
-    val currentShape = if (shape == CapsuleShape || shape == GroupShape) {
+    val currentShape = if (effectiveShape == CapsuleShape || effectiveShape == GroupShape) {
         RoundedCornerShape(animatedCornerRadius)
     } else {
-        shape
+        effectiveShape
     }
 
     if (header != null) {
