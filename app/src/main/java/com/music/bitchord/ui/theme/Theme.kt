@@ -234,7 +234,7 @@ fun IosSwitch(
 fun SettingsPillCard(
     icon: ImageVector,
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isStandalone: Boolean = true,
@@ -274,14 +274,16 @@ fun SettingsPillCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(1.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         if (trailing != null) {
             Spacer(Modifier.width(8.dp))
