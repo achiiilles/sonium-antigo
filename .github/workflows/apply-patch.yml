@@ -12,17 +12,23 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
       - name: Setup git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
       - name: Update SettingsSheet.kt
         run: |
+          git checkout dc1684a7a8d3bd5a213bff6372249d3b71011d83 -- app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
           python3 - << 'EOF'
-          import io, re
+          import io
+
           p = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
           with io.open(p, "r", encoding="utf-8") as f:
               t = f.read()
+
+          t = t.replace("\r\n", "\n")
 
           if "import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos" not in t:
               t = t.replace(
@@ -30,49 +36,59 @@ jobs:
                   "import androidx.compose.material.icons.automirrored.rounded.ArrowBack\nimport androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos"
               )
 
-          enum_pattern = re.compile(r"enum class SettingsCategory\([\s\S]*?SYSTEM\([^\)]*\),?\s*\}", re.MULTILINE)
+          enum_start = t.find("enum class SettingsCategory(")
+          assert enum_start != -1, "enum class SettingsCategory( not found"
+          enum_end = t.find('SYSTEM("Geral"', enum_start)
+          assert enum_end != -1, 'SYSTEM("Geral" not found'
+          enum_close = t.find("}", enum_end)
+          assert enum_close != -1, "enum closing brace not found"
+
           new_enum = """enum class SettingsCategory(
-              val title: String,
-              val icon: ImageVector,
-          ) {
-              ACCOUNT("Conta", Icons.Rounded.Person),
-              APPEARANCE("Aparência", Icons.Rounded.Brightness4),
-              PLAYBACK("Reprodução", Icons.Rounded.GraphicEq),
-              LYRICS("Letras", Icons.AutoMirrored.Rounded.Notes),
-              REPLAY("Replay", Icons.Rounded.BarChart),
-              STORAGE("Armazenamento", Icons.Rounded.Storage),
-              SYSTEM("Geral", Icons.Rounded.Tune),
-          }"""
+    val title: String,
+    val icon: ImageVector,
+) {
+    ACCOUNT("Conta", Icons.Rounded.Person),
+    APPEARANCE("Aparência", Icons.Rounded.Brightness4),
+    PLAYBACK("Reprodução", Icons.Rounded.GraphicEq),
+    LYRICS("Letras", Icons.AutoMirrored.Rounded.Notes),
+    REPLAY("Replay", Icons.Rounded.BarChart),
+    STORAGE("Armazenamento", Icons.Rounded.Storage),
+    SYSTEM("Geral", Icons.Rounded.Tune),
+}"""
+          t = t[:enum_start] + new_enum + t[enum_close + 1:]
 
-          assert enum_pattern.search(t) is not None, "SettingsCategory enum not found"
-          t = enum_pattern.sub(new_enum, t, count=1)
+          start_marker = "SettingsCategory.entries.forEach { category ->"
+          idx_start = t.find(start_marker)
+          assert idx_start != -1, "forEach start marker not found"
+          pill_start = t.find("SettingsPillCard(", idx_start)
+          assert pill_start != -1, "SettingsPillCard not found after forEach"
+          pill_end = t.find("            }", pill_start)
+          assert pill_end != -1, "forEach end brace not found"
 
-          pill_pattern = re.compile(r"SettingsPillCard\(\s*icon = category\.icon,\s*title = category\.title,\s*subtitle = category\.subtitle,[\s\S]*?\n                    \)", re.MULTILINE)
-          new_pill = """SettingsPillCard(
-                                  icon = category.icon,
-                                  title = category.title,
-                                  onClick = {
-                                      internalCategory = category
-                                      onSelectCategory(category)
-                                  },
-                                  modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                                  isStandalone = true,
-                                  trailing = {
-                                      Icon(
-                                          imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                                          contentDescription = null,
-                                          tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                          modifier = Modifier.size(14.dp),
-                                      )
-                                  },
-                              )"""
-
-          assert pill_pattern.search(t) is not None, "SettingsPillCard call not found"
-          t = pill_pattern.sub(new_pill, t, count=1)
+          new_pill_block = """SettingsCategory.entries.forEach { category ->
+                SettingsPillCard(
+                    icon = category.icon,
+                    title = category.title,
+                    onClick = {
+                        internalCategory = category
+                        onSelectCategory(category)
+                    },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                    isStandalone = true,
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(14.dp),
+                        )
+                    },
+                )\n"""
+          t = t[:idx_start] + new_pill_block + t[pill_end:]
 
           with io.open(p, "w", encoding="utf-8") as f:
               f.write(t)
-          print("SUCCESS: SettingsSheet.kt updated cleanly")
+          print("SUCCESS: SettingsSheet.kt updated cleanly without truncation")
           EOF
       - name: Commit and push
         run: |
