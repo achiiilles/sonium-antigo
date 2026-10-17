@@ -825,6 +825,67 @@ fun SettingsScreen(
                     onClick = onEqualizer,
                 )
             }
+val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
+            row(playNextOnSwipeTitle, "swipe", "queue") {
+                SettingsRow(
+                    icon = Icons.Rounded.PlaylistPlay,
+                    title = playNextOnSwipeTitle,
+                    subtitle = if (swipeToPlayNext) {
+                        stringResource(R.string.swipe_plays_next)
+                    } else {
+                        stringResource(R.string.swipe_adds_to_queue)
+                    },
+                    trailing = {
+                        IosSwitch(
+                            checked = swipeToPlayNext,
+                            onCheckedChange = AppSettings::setSwipeToPlayNext,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setSwipeToPlayNext(!swipeToPlayNext) },
+                )
+            }
+            val dontRepeatSongsTitle = stringResource(R.string.dont_repeat_songs)
+            row(dontRepeatSongsTitle, "radio", "suggestions") {
+                SettingsRow(
+                    icon = Icons.Rounded.History,
+                    title = dontRepeatSongsTitle,
+                    subtitle = stringResource(R.string.dont_repeat_songs_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = dontRepeatSuggestions,
+                            onCheckedChange = AppSettings::setDontRepeatSuggestions,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setDontRepeatSuggestions(!dontRepeatSuggestions) },
+                )
+            }
+            val stopMusicOnCloseTitle = stringResource(R.string.stop_music_on_close)
+            row(stopMusicOnCloseTitle, "notification", "background") {
+                SettingsRow(
+                    icon = Icons.Rounded.MusicOff,
+                    title = stopMusicOnCloseTitle,
+                    subtitle = stringResource(R.string.stop_music_on_close_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = stopOnTaskRemoved,
+                            onCheckedChange = AppSettings::setStopOnTaskRemoved,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setStopOnTaskRemoved(!stopOnTaskRemoved) },
+                )
+            }
         }
         }
 
@@ -1389,71 +1450,6 @@ fun SettingsScreen(
         }
 
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.SYSTEM) {
-        // No footer: it only restated the stop-on-close row's own subtitle,
-        // which sits four rows above it and says the same thing in fewer words.
-        SearchableSettingsGroup(search, header = stringResource(R.string.miscellaneous)) {
-            val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
-            row(playNextOnSwipeTitle, "swipe", "queue") {
-                SettingsRow(
-                    icon = Icons.Rounded.PlaylistPlay,
-                    title = playNextOnSwipeTitle,
-                    subtitle = if (swipeToPlayNext) {
-                        stringResource(R.string.swipe_plays_next)
-                    } else {
-                        stringResource(R.string.swipe_adds_to_queue)
-                    },
-                    trailing = {
-                        IosSwitch(
-                            checked = swipeToPlayNext,
-                            onCheckedChange = AppSettings::setSwipeToPlayNext,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setSwipeToPlayNext(!swipeToPlayNext) },
-                )
-            }
-            val dontRepeatSongsTitle = stringResource(R.string.dont_repeat_songs)
-            row(dontRepeatSongsTitle, "radio", "suggestions") {
-                SettingsRow(
-                    icon = Icons.Rounded.History,
-                    title = dontRepeatSongsTitle,
-                    subtitle = stringResource(R.string.dont_repeat_songs_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = dontRepeatSuggestions,
-                            onCheckedChange = AppSettings::setDontRepeatSuggestions,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setDontRepeatSuggestions(!dontRepeatSuggestions) },
-                )
-            }
-            val stopMusicOnCloseTitle = stringResource(R.string.stop_music_on_close)
-            row(stopMusicOnCloseTitle, "notification", "background") {
-                SettingsRow(
-                    icon = Icons.Rounded.MusicOff,
-                    title = stopMusicOnCloseTitle,
-                    subtitle = stringResource(R.string.stop_music_on_close_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = stopOnTaskRemoved,
-                            onCheckedChange = AppSettings::setStopOnTaskRemoved,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setStopOnTaskRemoved(!stopOnTaskRemoved) },
-                )
-            }
-        }
 
         SearchableSettingsGroup(search, header = stringResource(R.string.language)) {
             val appLanguageTitle = stringResource(R.string.app_language)
