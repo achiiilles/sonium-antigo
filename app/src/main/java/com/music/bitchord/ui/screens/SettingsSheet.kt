@@ -1,4 +1,8 @@
 package com.music.bitchord.ui.screens
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateContentSize
 
 import androidx.compose.foundation.border
 import com.music.bitchord.ui.theme.IosSwitch
@@ -2356,6 +2360,21 @@ internal fun SettingsGroup(
     shape: Shape = GroupShape,
     content: @Composable () -> Unit,
 ) {
+    val isCapsule = shape == CapsuleShape
+    val animatedCornerRadius by animateDpAsState(
+        targetValue = if (isCapsule) 28.dp else 14.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "cardShapeAnimation",
+    )
+    val currentShape = if (shape == CapsuleShape || shape == GroupShape) {
+        RoundedCornerShape(animatedCornerRadius)
+    } else {
+        shape
+    }
+
     if (header != null) {
         Text(
             text = header.uppercase(Locale.ROOT),
@@ -2375,9 +2394,15 @@ internal fun SettingsGroup(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = GROUP_INSET)
-            .clip(shape)
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
+            )
+            .clip(currentShape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), currentShape),
     ) {
         content()
     }
