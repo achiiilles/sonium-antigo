@@ -16,127 +16,58 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Update SettingsSheet.kt
+      - name: Update AccountAndScrobblingScreen.kt
         run: |
           python3 - << 'EOF'
           import io
 
-          p = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
+          p = "app/src/main/java/com/music/bitchord/ui/screens/AccountAndScrobblingScreen.kt"
           with io.open(p, "r", encoding="utf-8") as f:
               t = f.read()
 
           t = t.replace("\r\n", "\n")
 
-          if "import androidx.compose.ui.graphics.Shape" not in t:
-              if "import androidx.compose.ui.graphics.Color" in t:
-                  t = t.replace("import androidx.compose.ui.graphics.Color", "import androidx.compose.ui.graphics.Color\nimport androidx.compose.ui.graphics.Shape")
-              else:
-                  t = t.replace("package com.music.bitchord.ui.screens\n", "package com.music.bitchord.ui.screens\n\nimport androidx.compose.ui.graphics.Shape\nimport androidx.compose.ui.graphics.Color\n")
+          # 1. Import CapsuleShape
+          if "import com.music.bitchord.ui.theme.CapsuleShape" not in t:
+              assert "package com.music.bitchord.ui.screens\n" in t, "package declaration not found"
+              t = t.replace(
+                  "package com.music.bitchord.ui.screens\n",
+                  "package com.music.bitchord.ui.screens\n\nimport com.music.bitchord.ui.theme.CapsuleShape\n"
+              )
 
-          old_s = (
-              "@Composable\n"
-              "private fun SearchableSettingsGroup(\n"
-              "    search: SettingsSearch,\n"
-              "    header: String? = null,\n"
-              "    footer: String? = null,\n"
-              "    topSpacing: Dp = 26.dp,\n"
-              "    content: @Composable SettingsGroupScope.() -> Unit,\n"
-              ") {\n"
-              "    val scope = SettingsGroupScope(search, header)\n"
-              "    scope.content()\n"
-              "    if (scope.entries.isEmpty()) return\n"
-              "    SettingsGroup(header = header, footer = footer, topSpacing = topSpacing) {"
+          # 2. Spotify card
+          old_spotify = (
+              "        SettingsGroup(\n"
+              "            header = stringResource(R.string.spotify),\n"
+              "            footer = stringResource(R.string.spotify_connect_subtitle),\n"
+              "        ) {"
           )
-
-          new_s = (
-              "@Composable\n"
-              "private fun SearchableSettingsGroup(\n"
-              "    search: SettingsSearch,\n"
-              "    header: String? = null,\n"
-              "    footer: String? = null,\n"
-              "    topSpacing: Dp = 26.dp,\n"
-              "    shape: Shape = GroupShape,\n"
-              "    content: @Composable SettingsGroupScope.() -> Unit,\n"
-              ") {\n"
-              "    val scope = SettingsGroupScope(search, header)\n"
-              "    scope.content()\n"
-              "    if (scope.entries.isEmpty()) return\n"
-              "    SettingsGroup(header = header, footer = footer, topSpacing = topSpacing, shape = shape) {"
+          new_spotify = (
+              "        SettingsGroup(\n"
+              "            header = stringResource(R.string.spotify),\n"
+              "            footer = stringResource(R.string.spotify_connect_subtitle),\n"
+              "            shape = if (spotifyConnected.isNotBlank()) GroupShape else CapsuleShape,\n"
+              "        ) {"
           )
+          assert old_spotify in t, "old_spotify not found"
+          t = t.replace(old_spotify, new_spotify)
 
-          assert old_s in t, "old_s not found"
-          t = t.replace(old_s, new_s)
-
-          old_g = (
-              "@Composable\n"
-              "internal fun SettingsGroup(\n"
-              "    header: String? = null,\n"
-              "    footer: String? = null,\n"
-              "    /** Room above the card, where there is no [header] to provide it. */\n"
-              "    topSpacing: Dp = 26.dp,\n"
-              "    content: @Composable () -> Unit,\n"
-              ") {\n"
-              "    if (header != null) {\n"
-              "        Text(\n"
-              "            text = header.uppercase(Locale.ROOT),\n"
-              "            style = MaterialTheme.typography.labelSmall,\n"
-              "            color = MaterialTheme.colorScheme.onSurfaceVariant,\n"
-              "            modifier = Modifier.padding(\n"
-              "                start = GROUP_INSET + 4.dp,\n"
-              "                end = GROUP_INSET,\n"
-              "                top = 26.dp,\n"
-              "                bottom = 8.dp,\n"
-              "            ),\n"
-              "        )\n"
-              "    } else {\n"
-              "        Spacer(Modifier.height(topSpacing))\n"
-              "    }\n"
-              "    Column(\n"
-              "        modifier = Modifier\n"
-              "            .fillMaxWidth()\n"
-              "            .padding(horizontal = GROUP_INSET)\n"
-              "            .clip(GroupShape)\n"
-              "            .background(MaterialTheme.colorScheme.surfaceVariant),\n"
-              "    ) {"
+          # 3. Discord card
+          old_discord = (
+              "        SettingsGroup(\n"
+              "            header = stringResource(R.string.rich_presence),\n"
+              "            footer = stringResource(R.string.rich_presence_footer),\n"
+              "        ) {"
           )
-
-          new_g = (
-              "@Composable\n"
-              "internal fun SettingsGroup(\n"
-              "    header: String? = null,\n"
-              "    footer: String? = null,\n"
-              "    /** Room above the card, where there is no [header] to provide it. */\n"
-              "    topSpacing: Dp = 26.dp,\n"
-              "    shape: Shape = GroupShape,\n"
-              "    content: @Composable () -> Unit,\n"
-              ") {\n"
-              "    if (header != null) {\n"
-              "        Text(\n"
-              "            text = header.uppercase(Locale.ROOT),\n"
-              "            style = MaterialTheme.typography.labelSmall,\n"
-              "            color = MaterialTheme.colorScheme.onSurfaceVariant,\n"
-              "            modifier = Modifier.padding(\n"
-              "                start = GROUP_INSET + 4.dp,\n"
-              "                end = GROUP_INSET,\n"
-              "                top = 26.dp,\n"
-              "                bottom = 8.dp,\n"
-              "            ),\n"
-              "        )\n"
-              "    } else {\n"
-              "        Spacer(Modifier.height(topSpacing))\n"
-              "    }\n"
-              "    Column(\n"
-              "        modifier = Modifier\n"
-              "            .fillMaxWidth()\n"
-              "            .padding(horizontal = GROUP_INSET)\n"
-              "            .clip(shape)\n"
-              "            .background(MaterialTheme.colorScheme.surfaceVariant)\n"
-              "            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),\n"
-              "    ) {"
+          new_discord = (
+              "        SettingsGroup(\n"
+              "            header = stringResource(R.string.rich_presence),\n"
+              "            footer = stringResource(R.string.rich_presence_footer),\n"
+              "            shape = CapsuleShape,\n"
+              "        ) {"
           )
-
-          assert old_g in t, "old_g not found"
-          t = t.replace(old_g, new_g)
+          assert old_discord in t, "old_discord not found"
+          t = t.replace(old_discord, new_discord)
 
           open_b = t.count('{')
           close_b = t.count('}')
@@ -144,9 +75,9 @@ jobs:
 
           with io.open(p, "w", encoding="utf-8") as f:
               f.write(t)
-          print("SUCCESS: SettingsSheet.kt patched cleanly")
+          print("SUCCESS: AccountAndScrobblingScreen.kt patched cleanly")
           EOF
       - name: Commit and push
         run: |
-          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git diff --staged --quiet || (git commit -m "Adicionar shape customizado e borda translúcida em SettingsGroup" && git push)
+          git add app/src/main/java/com/music/bitchord/ui/screens/AccountAndScrobblingScreen.kt
+          git diff --staged --quiet || (git commit -m "Deixar cards isolados de Spotify e Discord em formato CapsuleShape" && git push)
