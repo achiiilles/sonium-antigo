@@ -22,37 +22,31 @@ jobs:
           p = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
           with io.open(p, "r", encoding="utf-8") as f:
               t = f.read()
-          marker = "val exportDataTitle = stringResource(R.string.export_data)"
-          idx = t.find(marker)
-          assert idx != -1, "Marker not found"
-          gs = t.rfind("SearchableSettingsGroup", 0, idx)
-          assert gs != -1, "SearchableSettingsGroup not found"
-          ls = t.rfind("\n", 0, gs) + 1
-          indent = t[ls:gs]
-          bs = t.find("{", gs)
-          assert bs != -1 and bs < idx, "Opening brace not found"
-          count = 1
-          ep = -1
-          for i in range(bs + 1, len(t)):
-              if t[i] == "{":
-                  count += 1
-              elif t[i] == "}":
-                  count -= 1
-                  if count == 0:
-                      ep = i + 1
-                      break
-          assert ep != -1, "Closing brace not found"
-          old = t[ls:ep]
-          print("OLD:\n" + old)
-          nl = "\n"
-          nb = indent + "SearchableSettingsGroup(search, header = \"Backup & Restauração\") {" + nl + indent + "    val exportDataTitle = stringResource(R.string.export_data)" + nl + indent + "    row(exportDataTitle, \"backup\") {" + nl + indent + "        SettingsRow(" + nl + indent + "            icon = Icons.Rounded.FileUpload," + nl + indent + "            title = exportDataTitle," + nl + indent + "            subtitle = exportStatus ?: stringResource(R.string.export_data_subtitle)," + nl + indent + "            onClick = { exportPicker.launch(Backup.suggestedName()) }," + nl + indent + "        )" + nl + indent + "    }" + nl + indent + "    val importDataTitle = stringResource(R.string.import_data)" + nl + indent + "    row(importDataTitle, \"backup\", \"restore\") {" + nl + indent + "        SettingsRow(" + nl + indent + "            icon = Icons.Rounded.FileDownload," + nl + indent + "            title = importDataTitle," + nl + indent + "            subtitle = importStatus ?: stringResource(R.string.import_data_subtitle)," + nl + indent + "            onClick = { confirmImport = true }," + nl + indent + "        )" + nl + indent + "    }" + nl + indent + "}"
-          print("NEW:\n" + nb)
-          t2 = t[:ls] + nb + t[ep:]
+
+          replacements = [
+              ("Conta & Conexões", "Conta"),
+              ("Aparência & Interface", "Aparência"),
+              ("Reprodução & Áudio", "Reprodução"),
+              ("Biblioteca & Armazenamento", "Armazenamento"),
+              ("Geral & Sistema", "Geral")
+          ]
+
+          for old, new in replacements:
+              cnt = t.count(old)
+              assert cnt >= 2, f"Expected at least 2 occurrences of {old}, found {cnt}"
+              t = t.replace(old, new)
+
+          assert "ACCOUNT(\"Conta\"," in t
+          assert "APPEARANCE(\"Aparência\"," in t
+          assert "PLAYBACK(\"Reprodução\"," in t
+          assert "STORAGE(\"Armazenamento\"," in t
+          assert "SYSTEM(\"Geral\"," in t
+
           with io.open(p, "w", encoding="utf-8") as f:
-              f.write(t2)
-          print("SUCCESS")
+              f.write(t)
+          print("SUCCESS: SettingsSheet.kt updated cleanly")
           '
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git diff --staged --quiet || (git commit -m "feat(settings): clean up Storage and set Backup & Restauração header in SettingsSheet.kt" && git push)
+          git diff --staged --quiet || (git commit -m "Refatorar títulos das categorias de configurações para padrão iOS limpo" && git push)
