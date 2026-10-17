@@ -172,6 +172,7 @@ enum class SettingsCategory(
     APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
     PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
     LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),
+    REPLAY("Replay", "Retrospectiva e histórico de audição", Icons.Rounded.BarChart),
     STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
     SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
 }
