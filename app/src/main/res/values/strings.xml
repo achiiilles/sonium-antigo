@@ -1141,4 +1141,6 @@
     <string name="ai_lyrics_api_key">Google AI Studio API key (Gemini)</string>
     <string name="ai_lyrics_api_key_hint">Paste your Google AI Studio API key</string>
     <string name="lyrics_offset_description">Positive values display lyrics later</string>
+    <string name="lyrics_original_title">Search lyrics with original title</string>
+    <string name="lyrics_original_title_desc">Restore original YouTube title before searching lyrics</string>
 </resources>
