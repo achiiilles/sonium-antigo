@@ -27,7 +27,6 @@ jobs:
 
           t = t.replace("\r\n", "\n")
 
-          # 1. Imports
           imports = [
               "import androidx.compose.animation.animateContentSize",
               "import androidx.compose.animation.core.Spring",
@@ -37,123 +36,126 @@ jobs:
           ]
           for imp in imports:
               if imp not in t:
-                  t = t.replace("package com.music.bitchord.ui.screens\n", f"package com.music.bitchord.ui.screens\n{imp}\n")
+                  t = t.replace("package com.music.bitchord.ui.screens\n", "package com.music.bitchord.ui.screens\n" + imp + "\n")
 
-          # 2. SettingsGroup with fluid animations
-          old_target = """internal fun SettingsGroup(
-    header: String? = null,
-    footer: String? = null,
-    /** Room above the card, where there is no [header] to provide it. */
-    topSpacing: Dp = 26.dp,
-    shape: Shape = GroupShape,
-    content: @Composable () -> Unit,
-) {
-    if (header != null) {
-        Text(
-            text = header.uppercase(Locale.ROOT),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(
-                start = GROUP_INSET + 4.dp,
-                end = GROUP_INSET,
-                top = 26.dp,
-                bottom = 8.dp,
-            ),
-        )
-    } else {
-        Spacer(Modifier.height(topSpacing))
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = GROUP_INSET)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),
-    ) {
-        content()
-    }
-    if (footer != null) {
-        Text(
-            text = footer,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(
-                start = GROUP_INSET + 4.dp,
-                end = GROUP_INSET + 4.dp,
-                top = 8.dp,
-            ),
-        )
-    }
-}"""
+          old_target = "\n".join([
+              "internal fun SettingsGroup(",
+              "    header: String? = null,",
+              "    footer: String? = null,",
+              "    /** Room above the card, where there is no [header] to provide it. */",
+              "    topSpacing: Dp = 26.dp,",
+              "    shape: Shape = GroupShape,",
+              "    content: @Composable () -> Unit,",
+              ") {",
+              "    if (header != null) {",
+              "        Text(",
+              "            text = header.uppercase(Locale.ROOT),",
+              "            style = MaterialTheme.typography.labelSmall,",
+              "            color = MaterialTheme.colorScheme.onSurfaceVariant,",
+              "            modifier = Modifier.padding(",
+              "                start = GROUP_INSET + 4.dp,",
+              "                end = GROUP_INSET,",
+              "                top = 26.dp,",
+              "                bottom = 8.dp,",
+              "            ),",
+              "        )",
+              "    } else {",
+              "        Spacer(Modifier.height(topSpacing))",
+              "    }",
+              "    Column(",
+              "        modifier = Modifier",
+              "            .fillMaxWidth()",
+              "            .padding(horizontal = GROUP_INSET)",
+              "            .clip(shape)",
+              "            .background(MaterialTheme.colorScheme.surfaceVariant)",
+              "            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),",
+              "    ) {",
+              "        content()",
+              "    }",
+              "    if (footer != null) {",
+              "        Text(",
+              "            text = footer,",
+              "            style = MaterialTheme.typography.bodyMedium,",
+              "            color = MaterialTheme.colorScheme.onSurfaceVariant,",
+              "            modifier = Modifier.padding(",
+              "                start = GROUP_INSET + 4.dp,",
+              "                end = GROUP_INSET + 4.dp,",
+              "                top = 8.dp,",
+              "            ),",
+              "        )",
+              "    }",
+              "}",
+          ])
 
-          new_target = """internal fun SettingsGroup(
-    header: String? = null,
-    footer: String? = null,
-    /** Room above the card, where there is no [header] to provide it. */
-    topSpacing: Dp = 26.dp,
-    shape: Shape = GroupShape,
-    content: @Composable () -> Unit,
-) {
-    val isCapsule = shape == CapsuleShape
-    val animatedCornerRadius by animateDpAsState(
-        targetValue = if (isCapsule) 28.dp else 14.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium,
-        ),
-        label = "cardShapeAnimation",
-    )
-    val currentShape = if (shape == CapsuleShape || shape == GroupShape) {
-        RoundedCornerShape(animatedCornerRadius)
-    } else {
-        shape
-    }
-
-    if (header != null) {
-        Text(
-            text = header.uppercase(Locale.ROOT),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(
-                start = GROUP_INSET + 4.dp,
-                end = GROUP_INSET,
-                top = 26.dp,
-                bottom = 8.dp,
-            ),
-        )
-    } else {
-        Spacer(Modifier.height(topSpacing))
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = GROUP_INSET)
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMedium,
-                ),
-            )
-            .clip(currentShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(0.5.dp, Color.White.copy(alpha = 0.10f), currentShape),
-    ) {
-        content()
-    }
-    if (footer != null) {
-        Text(
-            text = footer,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(
-                start = GROUP_INSET + 4.dp,
-                end = GROUP_INSET + 4.dp,
-                top = 8.dp,
-            ),
-        )
-    }
-}"""
+          new_target = "\n".join([
+              "internal fun SettingsGroup(",
+              "    header: String? = null,",
+              "    footer: String? = null,",
+              "    /** Room above the card, where there is no [header] to provide it. */",
+              "    topSpacing: Dp = 26.dp,",
+              "    shape: Shape = GroupShape,",
+              "    content: @Composable () -> Unit,",
+              ") {",
+              "    val isCapsule = shape == CapsuleShape",
+              "    val animatedCornerRadius by animateDpAsState(",
+              "        targetValue = if (isCapsule) 28.dp else 14.dp,",
+              "        animationSpec = spring(",
+              "            dampingRatio = Spring.DampingRatioLowBouncy,",
+              "            stiffness = Spring.StiffnessMedium,",
+              "        ),",
+              "        label = \"cardShapeAnimation\",",
+              "    )",
+              "    val currentShape = if (shape == CapsuleShape || shape == GroupShape) {",
+              "        RoundedCornerShape(animatedCornerRadius)",
+              "    } else {",
+              "        shape",
+              "    }",
+              "",
+              "    if (header != null) {",
+              "        Text(",
+              "            text = header.uppercase(Locale.ROOT),",
+              "            style = MaterialTheme.typography.labelSmall,",
+              "            color = MaterialTheme.colorScheme.onSurfaceVariant,",
+              "            modifier = Modifier.padding(",
+              "                start = GROUP_INSET + 4.dp,",
+              "                end = GROUP_INSET,",
+              "                top = 26.dp,",
+              "                bottom = 8.dp,",
+              "            ),",
+              "        )",
+              "    } else {",
+              "        Spacer(Modifier.height(topSpacing))",
+              "    }",
+              "    Column(",
+              "        modifier = Modifier",
+              "            .fillMaxWidth()",
+              "            .padding(horizontal = GROUP_INSET)",
+              "            .animateContentSize(",
+              "                animationSpec = spring(",
+              "                    dampingRatio = Spring.DampingRatioNoBouncy,",
+              "                    stiffness = Spring.StiffnessMedium,",
+              "                ),",
+              "            )",
+              "            .clip(currentShape)",
+              "            .background(MaterialTheme.colorScheme.surfaceVariant)",
+              "            .border(0.5.dp, Color.White.copy(alpha = 0.10f), currentShape),",
+              "    ) {",
+              "        content()",
+              "    }",
+              "    if (footer != null) {",
+              "        Text(",
+              "            text = footer,",
+              "            style = MaterialTheme.typography.bodyMedium,",
+              "            color = MaterialTheme.colorScheme.onSurfaceVariant,",
+              "            modifier = Modifier.padding(",
+              "                start = GROUP_INSET + 4.dp,",
+              "                end = GROUP_INSET + 4.dp,",
+              "                top = 8.dp,",
+              "            ),",
+              "        )",
+              "    }",
+              "}",
+          ])
 
           if old_target not in t:
               old_target_alt = old_target.replace("/** Room", "/* Room")
