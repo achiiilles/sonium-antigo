@@ -458,9 +458,6 @@ fun SettingsScreen(
                         )
                     },
                 )
-            },
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                )
             }
         }
 
