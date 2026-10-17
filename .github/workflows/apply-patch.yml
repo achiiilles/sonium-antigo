@@ -18,61 +18,40 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
       - name: Update SettingsSheet.kt
         run: |
-          cat << 'EOF' > patch.py
-import io
-p = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
-with io.open(p, "r", encoding="utf-8") as f:
-    t = f.read()
-marker = "val exportDataTitle = stringResource(R.string.export_data)"
-idx_export = t.find(marker)
-assert idx_export != -1, f"Marker '{marker}' not found in {p}"
-group_start = t.rfind("SearchableSettingsGroup", 0, idx_export)
-assert group_start != -1, f"SearchableSettingsGroup before exportDataTitle not found in {p}"
-line_start = t.rfind("\n", 0, group_start) + 1
-indent = t[line_start:group_start]
-brace_start = t.find("{", group_start)
-assert brace_start != -1 and brace_start < idx_export, "Opening brace not found"
-count = 1
-end_pos = -1
-for i in range(brace_start + 1, len(t)):
-    if t[i] == '{':
-        count += 1
-    elif t[i] == '}':
-        count -= 1
-        if count == 0:
-            end_pos = i + 1
-            break
-assert end_pos != -1, "Closing brace not found"
-old_block = t[line_start:end_pos]
-print("OLD BLOCK:\n" + old_block)
-assert "exportDataTitle" in old_block
-new_block = f"""{indent}SearchableSettingsGroup(search, header = "Backup & Restauração") {{
-{indent}    val exportDataTitle = stringResource(R.string.export_data)
-{indent}    row(exportDataTitle, "backup") {{
-{indent}        SettingsRow(
-{indent}            icon = Icons.Rounded.FileUpload,
-{indent}            title = exportDataTitle,
-{indent}            subtitle = exportStatus ?: stringResource(R.string.export_data_subtitle),
-{indent}            onClick = {{ exportPicker.launch(Backup.suggestedName()) }},
-{indent}        )
-{indent}    }}
-{indent}    val importDataTitle = stringResource(R.string.import_data)
-{indent}    row(importDataTitle, "backup", "restore") {{
-{indent}        SettingsRow(
-{indent}            icon = Icons.Rounded.FileDownload,
-{indent}            title = importDataTitle,
-{indent}            subtitle = importStatus ?: stringResource(R.string.import_data_subtitle),
-{indent}            onClick = {{ confirmImport = true }},
-{indent}        )
-{indent}    }}
-{indent}}}"""
-print("NEW BLOCK:\n" + new_block)
-t_new = t[:line_start] + new_block + t[end_pos:]
-with io.open(p, "w", encoding="utf-8") as f:
-    f.write(t_new)
-print("SUCCESS: Updated SettingsSheet.kt with Step 3")
-EOF
-          python3 patch.py
+          python3 -c 'import io
+          p = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
+          with io.open(p, "r", encoding="utf-8") as f:
+              t = f.read()
+          marker = "val exportDataTitle = stringResource(R.string.export_data)"
+          idx = t.find(marker)
+          assert idx != -1, "Marker not found"
+          gs = t.rfind("SearchableSettingsGroup", 0, idx)
+          assert gs != -1, "SearchableSettingsGroup not found"
+          ls = t.rfind("\n", 0, gs) + 1
+          indent = t[ls:gs]
+          bs = t.find("{", gs)
+          assert bs != -1 and bs < idx, "Opening brace not found"
+          count = 1
+          ep = -1
+          for i in range(bs + 1, len(t)):
+              if t[i] == "{":
+                  count += 1
+              elif t[i] == "}":
+                  count -= 1
+                  if count == 0:
+                      ep = i + 1
+                      break
+          assert ep != -1, "Closing brace not found"
+          old = t[ls:ep]
+          print("OLD:\n" + old)
+          nl = "\n"
+          nb = indent + "SearchableSettingsGroup(search, header = \"Backup & Restauração\") {" + nl + indent + "    val exportDataTitle = stringResource(R.string.export_data)" + nl + indent + "    row(exportDataTitle, \"backup\") {" + nl + indent + "        SettingsRow(" + nl + indent + "            icon = Icons.Rounded.FileUpload," + nl + indent + "            title = exportDataTitle," + nl + indent + "            subtitle = exportStatus ?: stringResource(R.string.export_data_subtitle)," + nl + indent + "            onClick = { exportPicker.launch(Backup.suggestedName()) }," + nl + indent + "        )" + nl + indent + "    }" + nl + indent + "    val importDataTitle = stringResource(R.string.import_data)" + nl + indent + "    row(importDataTitle, \"backup\", \"restore\") {" + nl + indent + "        SettingsRow(" + nl + indent + "            icon = Icons.Rounded.FileDownload," + nl + indent + "            title = importDataTitle," + nl + indent + "            subtitle = importStatus ?: stringResource(R.string.import_data_subtitle)," + nl + indent + "            onClick = { confirmImport = true }," + nl + indent + "        )" + nl + indent + "    }" + nl + indent + "}"
+          print("NEW:\n" + nb)
+          t2 = t[:ls] + nb + t[ep:]
+          with io.open(p, "w", encoding="utf-8") as f:
+              f.write(t2)
+          print("SUCCESS")
+          '
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
