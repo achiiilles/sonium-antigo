@@ -949,6 +949,43 @@ fun SettingsScreen(
                     onClick = { AppSettings.setLegacyMeshGradient(!legacyMeshGradient) },
                 )
             }
+            val hideVolumeBarTitle = stringResource(R.string.hide_volume_bar)
+            row(hideVolumeBarTitle, "volume", "player") {
+                SettingsRow(
+                    icon = Icons.Rounded.VolumeOff,
+                    title = hideVolumeBarTitle,
+                    subtitle = stringResource(R.string.hide_volume_bar_subtitle),
+                    trailing = {
+                        IosSwitch(
+                            checked = hideVolumeBar,
+                            onCheckedChange = AppSettings::setHideVolumeBar,
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                checkedBorderColor = MaterialTheme.colorScheme.primary,
+                            ),
+                        )
+                    },
+                    onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
+                )
+            }
+            row("Status da música", "player", "playing from", "indicador") {
+        SettingsRow(
+            icon = Icons.Rounded.Tune,
+            title = "Mostrar status da música",
+            subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
+            trailing = {
+                IosSwitch(
+                    checked = !hideSongStatus,
+                    onCheckedChange = { AppSettings.setHideSongStatus(!it) },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        checkedBorderColor = MaterialTheme.colorScheme.primary,
+                    ),
+                )
+            },
+            onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
+        )
+    }
             val animatedCoverArtTitle = stringResource(R.string.animated_cover_art)
             // Carries the keywords of the rows that only appear once it is on,
             // so searching "spotify" with animated covers switched off turns up
@@ -1416,43 +1453,6 @@ fun SettingsScreen(
                     onClick = { AppSettings.setStopOnTaskRemoved(!stopOnTaskRemoved) },
                 )
             }
-            val hideVolumeBarTitle = stringResource(R.string.hide_volume_bar)
-            row(hideVolumeBarTitle, "volume", "player") {
-                SettingsRow(
-                    icon = Icons.Rounded.VolumeOff,
-                    title = hideVolumeBarTitle,
-                    subtitle = stringResource(R.string.hide_volume_bar_subtitle),
-                    trailing = {
-                        IosSwitch(
-                            checked = hideVolumeBar,
-                            onCheckedChange = AppSettings::setHideVolumeBar,
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                                checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        )
-                    },
-                    onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
-                )
-            }
-            row("Status da música", "player", "playing from", "indicador") {
-        SettingsRow(
-            icon = Icons.Rounded.Tune,
-            title = "Mostrar status da música",
-            subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
-            trailing = {
-                IosSwitch(
-                    checked = !hideSongStatus,
-                    onCheckedChange = { AppSettings.setHideSongStatus(!it) },
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        checkedBorderColor = MaterialTheme.colorScheme.primary,
-                    ),
-                )
-            },
-            onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
-        )
-    }
         }
 
         SearchableSettingsGroup(search, header = stringResource(R.string.language)) {
