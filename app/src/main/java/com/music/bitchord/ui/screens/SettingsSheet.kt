@@ -168,13 +168,13 @@ enum class SettingsCategory(
     val subtitle: String,
     val icon: ImageVector,
 ) {
-    ACCOUNT("Conta & Conexões", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),
-    APPEARANCE("Aparência & Interface", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
-    PLAYBACK("Reprodução & Áudio", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
+    ACCOUNT("Conta", "YouTube Music, Scrobbling e Sessão Conjunta", Icons.Rounded.Person),
+    APPEARANCE("Aparência", "Tema, capas animadas, vidro líquido e animações", Icons.Rounded.Brightness4),
+    PLAYBACK("Reprodução", "Qualidade sonora, equalizador, áudio espacial e volume", Icons.Rounded.GraphicEq),
     LYRICS("Letras", "Sincronização, fontes, desfoque e tradução por IA", Icons.AutoMirrored.Rounded.Notes),
     REPLAY("Replay", "Retrospectiva e histórico de audição", Icons.Rounded.BarChart),
-    STORAGE("Biblioteca & Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
-    SYSTEM("Geral & Sistema", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
+    STORAGE("Armazenamento", "Downloads, cache de faixas, música local e backup", Icons.Rounded.Storage),
+    SYSTEM("Geral", "Taxa de atualização, idioma do app e estatísticas", Icons.Rounded.Tune),
 }
 
 
@@ -454,7 +454,7 @@ fun SettingsScreen(
         }
 
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.ACCOUNT) {
-            SearchableSettingsGroup(search, header = if (searchQuery.isNotBlank()) "Conta & Conexões" else null) {
+            SearchableSettingsGroup(search, header = if (searchQuery.isNotBlank()) "Conta" else null) {
             val accountTitle = stringResource(R.string.account_integrations)
             // What the row opens is the scrobbling screen, so the services it
             // signs into are worth typing at this field even though none of
@@ -493,7 +493,7 @@ fun SettingsScreen(
         // longer a setting at all — see
         // [SourceResolver.requestForNow][com.music.bitchord.data.sources.SourceResolver.requestForNow].
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.PLAYBACK) {
-        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.PLAYBACK) "Reprodução & Áudio" else stringResource(R.string.audio_quality)) {
+        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.PLAYBACK) "Reprodução" else stringResource(R.string.audio_quality)) {
             val sourceTitle = stringResource(R.string.source)
             val sourceSubtitle = stringResource(R.string.sources_subtitle)
             row(sourceTitle, sourceSubtitle, "addon", "lossless") {
@@ -569,7 +569,7 @@ fun SettingsScreen(
         // it be fetched" — and those two questions only make sense read
         // together, which is what puts them side by side here.
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.STORAGE) {
-        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.STORAGE) "Biblioteca & Armazenamento" else stringResource(R.string.downloads)) {
+        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.STORAGE) "Armazenamento" else stringResource(R.string.downloads)) {
             val downloadQualityTitle = stringResource(R.string.download_quality)
             row(downloadQualityTitle, "offline", "lossless") {
                 SettingsRow(
@@ -891,7 +891,7 @@ val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
         }
 
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.APPEARANCE) {
-        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.APPEARANCE) "Aparência & Interface" else stringResource(R.string.appearance)) {
+        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.APPEARANCE) "Aparência" else stringResource(R.string.appearance)) {
             val themeTitle = stringResource(R.string.theme)
             row(themeTitle, "dark mode", "light mode") {
                 SettingsRow(icon = Icons.Rounded.Brightness4, title = themeTitle)
@@ -1257,7 +1257,7 @@ val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
         }
 
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.SYSTEM) {
-        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.SYSTEM) "Geral & Sistema" else stringResource(R.string.performance)) {
+        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.SYSTEM) "Geral" else stringResource(R.string.performance)) {
             val highPerformanceModeTitle = stringResource(R.string.high_performance_mode)
             row(highPerformanceModeTitle, "frame rate", "refresh rate", "hz", "battery", "smooth") {
                 SettingsRow(
