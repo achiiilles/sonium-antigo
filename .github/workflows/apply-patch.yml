@@ -16,37 +16,143 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Update SettingsSheet.kt
+      - name: Update Theme.kt
         run: |
           python3 -c 'import io
-          p = "app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt"
+          p = "app/src/main/java/com/music/bitchord/ui/theme/Theme.kt"
           with io.open(p, "r", encoding="utf-8") as f:
-              t = f.read()
+              t = f.read().replace("\r\n", "\n")
 
-          replacements = [
-              ("Conta & Conexões", "Conta"),
-              ("Aparência & Interface", "Aparência"),
-              ("Reprodução & Áudio", "Reprodução"),
-              ("Biblioteca & Armazenamento", "Armazenamento"),
-              ("Geral & Sistema", "Geral")
-          ]
+          old_block = """@Composable
+fun SettingsPillCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isStandalone: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val shape = if (isStandalone) CapsuleShape else InsetGroupedShape
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CapsuleShape)
+                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(1.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(8.dp))
+            trailing()
+        }
+    }
+}""".replace("\r\n", "\n")
 
-          for old, new in replacements:
-              cnt = t.count(old)
-              assert cnt >= 2, f"Expected at least 2 occurrences of {old}, found {cnt}"
-              t = t.replace(old, new)
+          new_block = """@Composable
+fun SettingsPillCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isStandalone: Boolean = true,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val shape = if (isStandalone) CapsuleShape else InsetGroupedShape
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CapsuleShape)
+                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(8.dp))
+            trailing()
+        }
+    }
+}""".replace("\r\n", "\n")
 
-          assert "ACCOUNT(\"Conta\"," in t
-          assert "APPEARANCE(\"Aparência\"," in t
-          assert "PLAYBACK(\"Reprodução\"," in t
-          assert "STORAGE(\"Armazenamento\"," in t
-          assert "SYSTEM(\"Geral\"," in t
+          assert old_block in t, "old_block not found in Theme.kt"
+          t = t.replace(old_block, new_block, 1)
 
           with io.open(p, "w", encoding="utf-8") as f:
               f.write(t)
-          print("SUCCESS: SettingsSheet.kt updated cleanly")
+          print("SUCCESS: Theme.kt updated cleanly")
           '
       - name: Commit and push
         run: |
-          git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git diff --staged --quiet || (git commit -m "Refatorar títulos das categorias de configurações para padrão iOS limpo" && git push)
+          git add app/src/main/java/com/music/bitchord/ui/theme/Theme.kt
+          git diff --staged --quiet || (git commit -m "Tornar subtitle opcional em SettingsPillCard" && git push)
