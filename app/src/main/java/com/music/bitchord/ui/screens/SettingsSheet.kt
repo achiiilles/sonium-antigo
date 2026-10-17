@@ -113,6 +113,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -2344,12 +2345,13 @@ private fun SearchableSettingsGroup(
     header: String? = null,
     footer: String? = null,
     topSpacing: Dp = 26.dp,
+    shape: Shape = GroupShape,
     content: @Composable SettingsGroupScope.() -> Unit,
 ) {
     val scope = SettingsGroupScope(search, header)
     scope.content()
     if (scope.entries.isEmpty()) return
-    SettingsGroup(header = header, footer = footer, topSpacing = topSpacing) {
+    SettingsGroup(header = header, footer = footer, topSpacing = topSpacing, shape = shape) {
         scope.entries.forEachIndexed { index, entry ->
             when {
                 index > 0 && entry.divided -> RowDivider()
@@ -2373,6 +2375,7 @@ internal fun SettingsGroup(
     footer: String? = null,
     /** Room above the card, where there is no [header] to provide it. */
     topSpacing: Dp = 26.dp,
+    shape: Shape = GroupShape,
     content: @Composable () -> Unit,
 ) {
     if (header != null) {
@@ -2394,8 +2397,9 @@ internal fun SettingsGroup(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = GROUP_INSET)
-            .clip(GroupShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),
     ) {
         content()
     }
