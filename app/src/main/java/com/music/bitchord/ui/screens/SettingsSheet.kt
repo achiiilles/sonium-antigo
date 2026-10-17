@@ -1219,6 +1219,43 @@ val playNextOnSwipeTitle = stringResource(R.string.play_next_on_swipe)
         }
         }
 
+        if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.REPLAY) {
+            SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.REPLAY) "Replay" else null) {
+                val replayTitle = stringResource(R.string.replay)
+                row(replayTitle, "stats", "history", "wrapped") {
+                    SettingsRow(
+                        icon = Icons.Rounded.BarChart,
+                        title = replayTitle,
+                        subtitle = stringResource(R.string.replay_subtitle),
+                        onClick = onOpenReplay,
+                    )
+                }
+                val workOutGenresTitle = stringResource(R.string.work_out_genres)
+                row(workOutGenresTitle, "genre", "replay") {
+                    SettingsRow(
+                        icon = Icons.Rounded.LocalOffer,
+                        title = workOutGenresTitle,
+                        subtitle = if (replayGenres) {
+                            stringResource(R.string.replay_genres_enabled_subtitle)
+                        } else {
+                            stringResource(R.string.replay_genres_disabled_subtitle)
+                        },
+                        trailing = {
+                            IosSwitch(
+                                checked = replayGenres,
+                                onCheckedChange = AppSettings::setReplayGenres,
+                                colors = SwitchDefaults.colors(
+                                     checkedTrackColor = MaterialTheme.colorScheme.primary,
+                                     checkedBorderColor = MaterialTheme.colorScheme.primary,
+                                ),
+                            )
+                        },
+                        onClick = { AppSettings.setReplayGenres(!replayGenres) },
+                    )
+                }
+            }
+        }
+
         if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.SYSTEM) {
         SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.SYSTEM) "Geral & Sistema" else stringResource(R.string.performance)) {
             val highPerformanceModeTitle = stringResource(R.string.high_performance_mode)
