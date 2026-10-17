@@ -441,21 +441,120 @@ fun SettingsScreen(
         if (searchQuery.isBlank() && selectedCategory == null) {
             SettingsCategory.entries.forEach { category ->
                 SettingsPillCard(
-                        icon = category.icon,
-                        title = category.title,
-                        onClick = {
-                            internalCategory = category
-                            onSelectCategory(category)
-                        },
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                        isStandalone = true,
-                        trailing = {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.size(14.dp),
-                            )
+                    icon = category.icon,
+                    title = category.title,
+                    onClick = {
+                        internalCategory = category
+                        onSelectCategory(category)
+                    },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                    isStandalone = true,
+                    trailing = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(14.dp),
+                        )
+                    },
+                )
+            },
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                )
+            }
+        }
+
+        if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.ACCOUNT) {
+            SearchableSettingsGroup(search, header = if (searchQuery.isNotBlank()) "Conta" else null) {
+            val accountTitle = stringResource(R.string.account_integrations)
+            // What the row opens is the scrobbling screen, so the services it
+            // signs into are worth typing at this field even though none of
+            // them is named on the row itself.
+            row(accountTitle, "scrobbling", "last.fm", "listenbrainz") {
+                SettingsRow(
+                    icon = Icons.Rounded.Person,
+                    title = accountTitle,
+                    subtitle = account?.email?.takeIf { it.isNotBlank() }
+                        ?: stringResource(if (signedIn) R.string.signed_in else R.string.not_signed_in),
+                    onClick = onAccountScrobbling,
+                )
+            }
+            // Sits with the account rather than with Playback: a party is up to
+            // five signed-in people, and being signed in is the whole of what
+            // the row needs before it will do anything.
+            val listenTogetherTitle = stringResource(R.string.listen_together)
+            row(listenTogetherTitle, "jam", "party", "sync", "friends") {
+                SettingsRow(
+                    icon = Icons.Rounded.Groups,
+                    title = listenTogetherTitle,
+                    subtitle = party.code?.let {
+                        stringResource(R.string.listen_together_in_party, it)
+                    } ?: stringResource(R.string.listen_together_subtitle),
+                    badge = party.members.size.takeIf { party.inParty && it > 1 }?.toString(),
+                    onClick = onListenTogether,
+                )
+            }
+        }
+        }
+
+        // The row that used to sit at the top of this group was called
+        // "Lossless / HQ Audio" and toggled `SourceRegistry.setModuleEnabled` —
+        // it switched the *module source* on and off, not lossless. Sources
+        // above lists that as the module's own row now. Lossless itself is no
+        // longer a setting at all — see
+        // [SourceResolver.requestForNow][com.music.bitchord.data.sources.SourceResolver.requestForNow].
+        if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.PLAYBACK) {
+        SearchableSettingsGroup(search, header = if (selectedCategory == SettingsCategory.PLAYBACK) "Reprodução" else stringResource(R.string.audio_quality)) {
+            val sourceTitle = stringResource(R.string.source)
+            val sourceSubtitle = stringResource(R.string.sources_subtitle)
+            row(sourceTitle, sourceSubtitle, "addon", "lossless") {
+                SettingsRow(
+                    icon = Icons.Rounded.Extension,
+                    title = sourceTitle,
+                    subtitle = sourceSubtitle,
+                    onClick = onSources,
+                )
+            }
+            val onWifiTitle = stringResource(R.string.on_wifi)
+            row(onWifiTitle, "wi-fi", "streaming quality") {
+                SettingsRow(
+                    icon = Icons.Rounded.Wifi,
+                    title = onWifiTitle,
+                    badge = stringResource(R.string.in_use).takeIf { metered == false },
+                    value = wifiQuality.localizedLabel(),
+                    onClick = { picking = QualityTarget.WIFI },
+                )
+            }
+            val onMobileDataTitle = stringResource(R.string.on_mobile_data)
+            row(onMobileDataTitle, "cellular", "streaming quality") {
+                SettingsRow(
+                    icon = Icons.Rounded.SignalCellularAlt,
+                    title = onMobileDataTitle,
+                    badge = stringResource(R.string.in_use).takeIf { metered == true },
+                    value = cellularQuality.localizedLabel(),
+                    onClick = { picking = QualityTarget.CELLULAR },
+                )
+            }
+            // Sits with the quality ceilings rather than with Playback: it
+            // decides which version of a track gets fetched, the same question
+            // the two rows above answer, and not how one is played back.
+            //
+            // Greyed rather than hidden where the device can't decode E-AC-3.
+            // A missing row reads as a feature the app doesn't have; a disabled
+            // one with a reason under it is the difference between "BitChord
+            // has no Atmos" and "this phone has no Dolby decoder", and only the
+            // second is true. The stored preference is left untouched either
+            // way — see [AppSettings.dolbyAtmos].
+            val dolbyAtmosTitle = stringResource(R.string.dolby_atmos)
+            row(dolbyAtmosTitle, "surround", "e-ac-3") {
+                SettingsRow(
+                    iconPainter = painterResource(R.drawable.ic_dolby_atmos),
+                    title = dolbyAtmosTitle,
+                    subtitle = stringResource(
+                        if (dolbyAtmosSupported) {
+                            R.string.dolby_atmos_subtitle
+                        } else {
+                            R.string.dolby_atmos_unavailable
                         },
                     ),
                     enabled = dolbyAtmosSupported,
