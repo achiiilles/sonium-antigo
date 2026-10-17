@@ -43,18 +43,20 @@ jobs:
           enum_close = t.find("}", enum_end)
           assert enum_close != -1, "enum closing brace not found"
 
-          new_enum = """enum class SettingsCategory(
-    val title: String,
-    val icon: ImageVector,
-) {
-    ACCOUNT("Conta", Icons.Rounded.Person),
-    APPEARANCE("Aparência", Icons.Rounded.Brightness4),
-    PLAYBACK("Reprodução", Icons.Rounded.GraphicEq),
-    LYRICS("Letras", Icons.AutoMirrored.Rounded.Notes),
-    REPLAY("Replay", Icons.Rounded.BarChart),
-    STORAGE("Armazenamento", Icons.Rounded.Storage),
-    SYSTEM("Geral", Icons.Rounded.Tune),
-}"""
+          new_enum = (
+              "enum class SettingsCategory(\n"
+              "    val title: String,\n"
+              "    val icon: ImageVector,\n"
+              ") {\n"
+              '    ACCOUNT("Conta", Icons.Rounded.Person),\n'
+              '    APPEARANCE("Aparência", Icons.Rounded.Brightness4),\n'
+              '    PLAYBACK("Reprodução", Icons.Rounded.GraphicEq),\n'
+              '    LYRICS("Letras", Icons.AutoMirrored.Rounded.Notes),\n'
+              '    REPLAY("Replay", Icons.Rounded.BarChart),\n'
+              '    STORAGE("Armazenamento", Icons.Rounded.Storage),\n'
+              '    SYSTEM("Geral", Icons.Rounded.Tune),\n'
+              "}"
+          )
           t = t[:enum_start] + new_enum + t[enum_close + 1:]
 
           start_marker = "SettingsCategory.entries.forEach { category ->"
@@ -65,25 +67,27 @@ jobs:
           pill_end = t.find("            }", pill_start)
           assert pill_end != -1, "forEach end brace not found"
 
-          new_pill_block = """SettingsCategory.entries.forEach { category ->
-                SettingsPillCard(
-                    icon = category.icon,
-                    title = category.title,
-                    onClick = {
-                        internalCategory = category
-                        onSelectCategory(category)
-                    },
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                    isStandalone = true,
-                    trailing = {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(14.dp),
-                        )
-                    },
-                )\n"""
+          new_pill_block = (
+              "SettingsCategory.entries.forEach { category ->\n"
+              "                SettingsPillCard(\n"
+              "                    icon = category.icon,\n"
+              "                    title = category.title,\n"
+              "                    onClick = {\n"
+              "                        internalCategory = category\n"
+              "                        onSelectCategory(category)\n"
+              "                    },\n"
+              "                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),\n"
+              "                    isStandalone = true,\n"
+              "                    trailing = {\n"
+              "                        Icon(\n"
+              "                            imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,\n"
+              "                            contentDescription = null,\n"
+              "                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),\n"
+              "                            modifier = Modifier.size(14.dp),\n"
+              "                        )\n"
+              "                    },\n"
+              "                )\n"
+          )
           t = t[:idx_start] + new_pill_block + t[pill_end:]
 
           with io.open(p, "w", encoding="utf-8") as f:
