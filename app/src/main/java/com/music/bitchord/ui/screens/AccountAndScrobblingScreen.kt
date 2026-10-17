@@ -1,5 +1,7 @@
 package com.music.bitchord.ui.screens
 
+import com.music.bitchord.ui.theme.CapsuleShape
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.HorizontalDivider
 import com.music.bitchord.sharedui.resources.Res
@@ -110,6 +112,7 @@ fun AccountAndScrobblingScreen(
         SettingsGroup(
             header = stringResource(R.string.spotify),
             footer = stringResource(R.string.spotify_connect_subtitle),
+            shape = if (spotifyConnected.isNotBlank()) GroupShape else CapsuleShape,
         ) {
             SettingsRow(
                 iconPainter = painterResource(Res.drawable.spotify_logo),
@@ -134,6 +137,7 @@ fun AccountAndScrobblingScreen(
         SettingsGroup(
             header = stringResource(R.string.rich_presence),
             footer = stringResource(R.string.rich_presence_footer),
+            shape = CapsuleShape,
         ) {
             SettingsRow(
                 icon = ImageVector.vectorResource(R.drawable.ic_discord),
