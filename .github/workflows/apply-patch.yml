@@ -27,213 +27,141 @@ jobs:
 
           t = t.replace("\r\n", "\n")
 
-          start_marker = "        if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.APPEARANCE) {"
-          end_marker = "        if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.LYRICS) {"
+          # 1. Imports
+          imports = [
+              "import androidx.compose.animation.animateContentSize",
+              "import androidx.compose.animation.core.Spring",
+              "import androidx.compose.animation.core.animateDpAsState",
+              "import androidx.compose.animation.core.spring",
+              "import androidx.compose.foundation.shape.RoundedCornerShape",
+          ]
+          for imp in imports:
+              if imp not in t:
+                  t = t.replace("package com.music.bitchord.ui.screens\n", f"package com.music.bitchord.ui.screens\n{imp}\n")
 
-          assert start_marker in t, "start_marker not found"
-          assert end_marker in t, "end_marker not found"
+          # 2. SettingsGroup with fluid animations
+          old_target = """internal fun SettingsGroup(
+    header: String? = null,
+    footer: String? = null,
+    /** Room above the card, where there is no [header] to provide it. */
+    topSpacing: Dp = 26.dp,
+    shape: Shape = GroupShape,
+    content: @Composable () -> Unit,
+) {
+    if (header != null) {
+        Text(
+            text = header.uppercase(Locale.ROOT),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(
+                start = GROUP_INSET + 4.dp,
+                end = GROUP_INSET,
+                top = 26.dp,
+                bottom = 8.dp,
+            ),
+        )
+    } else {
+        Spacer(Modifier.height(topSpacing))
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = GROUP_INSET)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), shape),
+    ) {
+        content()
+    }
+    if (footer != null) {
+        Text(
+            text = footer,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(
+                start = GROUP_INSET + 4.dp,
+                end = GROUP_INSET + 4.dp,
+                top = 8.dp,
+            ),
+        )
+    }
+}"""
 
-          start_idx = t.index(start_marker)
-          end_idx = t.index(end_marker)
-          assert start_idx < end_idx, "invalid indices"
+          new_target = """internal fun SettingsGroup(
+    header: String? = null,
+    footer: String? = null,
+    /** Room above the card, where there is no [header] to provide it. */
+    topSpacing: Dp = 26.dp,
+    shape: Shape = GroupShape,
+    content: @Composable () -> Unit,
+) {
+    val isCapsule = shape == CapsuleShape
+    val animatedCornerRadius by animateDpAsState(
+        targetValue = if (isCapsule) 28.dp else 14.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "cardShapeAnimation",
+    )
+    val currentShape = if (shape == CapsuleShape || shape == GroupShape) {
+        RoundedCornerShape(animatedCornerRadius)
+    } else {
+        shape
+    }
 
-          new_appearance = '''        if (searchQuery.isNotBlank() || selectedCategory == SettingsCategory.APPEARANCE) {
-              // 1. Tema (sozinho -> pílula, sem cabeçalho)
-              SearchableSettingsGroup(
-                  search,
-                  header = null,
-                  topSpacing = 8.dp,
-                  shape = CapsuleShape,
-              ) {
-                  val themeTitle = stringResource(R.string.theme)
-                  row(themeTitle, "dark mode", "light mode") {
-                      SettingsRow(icon = Icons.Rounded.Brightness4, title = themeTitle)
-                      SegmentedControl(
-                          options = ThemeMode.entries.map { it.localizedLabel() },
-                          selectedIndex = ThemeMode.entries.indexOf(theme),
-                          onSelect = { AppSettings.setThemeMode(ThemeMode.entries[it]) },
-                          modifier = Modifier.padding(start = ROW_INSET, end = ROW_INSET, bottom = 14.dp),
-                      )
-                  }
-              }
+    if (header != null) {
+        Text(
+            text = header.uppercase(Locale.ROOT),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(
+                start = GROUP_INSET + 4.dp,
+                end = GROUP_INSET,
+                top = 26.dp,
+                bottom = 8.dp,
+            ),
+        )
+    } else {
+        Spacer(Modifier.height(topSpacing))
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = GROUP_INSET)
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
+            )
+            .clip(currentShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, Color.White.copy(alpha = 0.10f), currentShape),
+    ) {
+        content()
+    }
+    if (footer != null) {
+        Text(
+            text = footer,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(
+                start = GROUP_INSET + 4.dp,
+                end = GROUP_INSET + 4.dp,
+                top = 8.dp,
+            ),
+        )
+    }
+}"""
 
-              // 2. Efeitos Visuais (3 itens agrupados)
-              SearchableSettingsGroup(search, header = "Efeitos Visuais") {
-                  val reduceAnimationTitle = stringResource(R.string.reduce_animation)
-                  row(reduceAnimationTitle, "motion") {
-                      SettingsRow(
-                          icon = Icons.Rounded.MotionPhotosOff,
-                          title = reduceAnimationTitle,
-                          subtitle = stringResource(R.string.reduce_animation_subtitle),
-                          trailing = {
-                              IosSwitch(
-                                  checked = reduceAnimation,
-                                  onCheckedChange = AppSettings::setReduceAnimation,
-                              )
-                          },
-                          onClick = { AppSettings.setReduceAnimation(!reduceAnimation) },
-                      )
-                  }
-                  val reduceDynamicBlurTitle = stringResource(R.string.reduce_dynamic_blur)
-                  row(reduceDynamicBlurTitle, "blur", "performance") {
-                      SettingsRow(
-                          icon = Icons.Rounded.BlurOff,
-                          title = reduceDynamicBlurTitle,
-                          subtitle = stringResource(R.string.reduce_dynamic_blur_subtitle),
-                          trailing = {
-                              IosSwitch(
-                                  checked = reduceDynamicBlur,
-                                  onCheckedChange = AppSettings::setReduceDynamicBlur,
-                              )
-                          },
-                          onClick = { AppSettings.setReduceDynamicBlur(!reduceDynamicBlur) },
-                      )
-                  }
-                  val liquidGlassTitle = stringResource(R.string.liquid_glass)
-                  row(liquidGlassTitle, "glass", "blur") {
-                      SettingsRow(
-                          icon = Icons.Rounded.AutoAwesome,
-                          title = liquidGlassTitle,
-                          subtitle = stringResource(
-                              if (liquidGlassSupported) {
-                                  R.string.liquid_glass_subtitle
-                              } else {
-                                  R.string.liquid_glass_unavailable
-                              },
-                          ),
-                          enabled = liquidGlassSupported,
-                          trailing = {
-                              IosSwitch(
-                                  checked = liquidGlass,
-                                  onCheckedChange = AppSettings::setLiquidGlass,
-                                  enabled = liquidGlassSupported,
-                              )
-                          },
-                          onClick = { AppSettings.setLiquidGlass(!liquidGlass) },
-                      )
-                  }
-              }
+          if old_target not in t:
+              old_target_alt = old_target.replace("/** Room", "/* Room")
+              if old_target_alt in t:
+                  old_target = old_target_alt
 
-              // 3. Player (4 itens agrupados)
-              SearchableSettingsGroup(search, header = "Player") {
-                  if (fullBleedArtworkAvailable(windowWidth)) {
-                      val fullScreenCoverArtTitle = stringResource(R.string.full_screen_cover_art)
-                      row(fullScreenCoverArtTitle, "artwork", "player") {
-                          SettingsRow(
-                              icon = Icons.Rounded.Fullscreen,
-                              title = fullScreenCoverArtTitle,
-                              subtitle = stringResource(R.string.full_screen_cover_art_subtitle),
-                              trailing = {
-                                  IosSwitch(
-                                      checked = fullBleedArtwork,
-                                      onCheckedChange = AppSettings::setFullBleedArtwork,
-                                  )
-                              },
-                              onClick = { AppSettings.setFullBleedArtwork(!fullBleedArtwork) },
-                          )
-                      }
-                  }
-                  val legacyMeshGradientTitle = stringResource(R.string.legacy_mesh_gradient)
-                  row(legacyMeshGradientTitle, "background", "player") {
-                      SettingsRow(
-                          icon = Icons.Rounded.Gradient,
-                          title = legacyMeshGradientTitle,
-                          subtitle = stringResource(R.string.legacy_mesh_gradient_subtitle),
-                          trailing = {
-                              IosSwitch(
-                                  checked = legacyMeshGradient,
-                                  onCheckedChange = AppSettings::setLegacyMeshGradient,
-                              )
-                          },
-                          onClick = { AppSettings.setLegacyMeshGradient(!legacyMeshGradient) },
-                      )
-                  }
-                  val hideVolumeBarTitle = stringResource(R.string.hide_volume_bar)
-                  row(hideVolumeBarTitle, "volume", "player") {
-                      SettingsRow(
-                          icon = Icons.Rounded.VolumeOff,
-                          title = hideVolumeBarTitle,
-                          subtitle = stringResource(R.string.hide_volume_bar_subtitle),
-                          trailing = {
-                              IosSwitch(
-                                  checked = hideVolumeBar,
-                                  onCheckedChange = AppSettings::setHideVolumeBar,
-                              )
-                          },
-                          onClick = { AppSettings.setHideVolumeBar(!hideVolumeBar) },
-                      )
-                  }
-                  row("Status da música", "player", "playing from", "indicador") {
-                      SettingsRow(
-                          icon = Icons.Rounded.Tune,
-                          title = "Mostrar status da música",
-                          subtitle = "Exibe o indicador e de onde a faixa está tocando no topo do player",
-                          trailing = {
-                              IosSwitch(
-                                  checked = !hideSongStatus,
-                                  onCheckedChange = { AppSettings.setHideSongStatus(!it) },
-                              )
-                          },
-                          onClick = { AppSettings.setHideSongStatus(hideSongStatus) },
-                      )
-                  }
-              }
-
-              // 4. Capa Animada (sozinha é pílula; com sub-opções ativas é grupo)
-              SearchableSettingsGroup(
-                  search,
-                  header = "Capa Animada",
-                  shape = if (animatedCanvas) GroupShape else CapsuleShape,
-              ) {
-                  val animatedCoverArtTitle = stringResource(R.string.animated_cover_art)
-                  row(animatedCoverArtTitle, "canvas", "video", "spotify") {
-                      SettingsRow(
-                          icon = Icons.Rounded.Animation,
-                          title = animatedCoverArtTitle,
-                          subtitle = stringResource(R.string.animated_cover_art_subtitle),
-                          trailing = {
-                              IosSwitch(
-                                  checked = animatedCanvas,
-                                  onCheckedChange = AppSettings::setAnimatedCanvas,
-                              )
-                          },
-                          onClick = { AppSettings.setAnimatedCanvas(!animatedCanvas) },
-                      )
-                  }
-                  if (animatedCanvas) {
-                      val coverCellularTitle = stringResource(R.string.animated_cover_cellular)
-                      row(coverCellularTitle, "canvas", "cellular", divided = false) {
-                          SettingsSubRow(
-                              title = coverCellularTitle,
-                              checked = canvasOverCellular,
-                              onCheckedChange = AppSettings::setCanvasOverCellular,
-                          )
-                      }
-                      val spotifyCanvasTitle = stringResource(R.string.integrate_spotify_canvas)
-                      row(spotifyCanvasTitle, "spotify", "canvas", divided = false) {
-                          Row(
-                              modifier = Modifier
-                                  .fillMaxWidth()
-                                  .clickable(onClick = onSpotifyCanvasAuth)
-                                  .padding(start = ROW_INSET, end = ROW_INSET, top = 4.dp, bottom = 10.dp),
-                              verticalAlignment = Alignment.CenterVertically,
-                          ) {
-                              Text(
-                                  text = spotifyCanvasTitle,
-                                  style = MaterialTheme.typography.bodyLarge,
-                                  color = MaterialTheme.colorScheme.onBackground,
-                                  modifier = Modifier.weight(1f),
-                                  maxLines = 1,
-                                  overflow = TextOverflow.Ellipsis,
-                              )
-                              Chevron()
-                          }
-                      }
-                  }
-              }
-          }'''
-
-          t = t[:start_idx] + new_appearance + "\n\n" + t[end_idx:]
+          assert old_target in t, "old_target SettingsGroup not found"
+          t = t.replace(old_target, new_target, 1)
 
           open_b = t.count('{')
           close_b = t.count('}')
@@ -241,9 +169,9 @@ jobs:
 
           with io.open(p, "w", encoding="utf-8") as f:
               f.write(t)
-          print("SUCCESS: SettingsSheet.kt patched cleanly")
+          print("SUCCESS: SettingsSheet.kt patched cleanly with fluid animations")
           EOF
       - name: Commit and push
         run: |
           git add app/src/main/java/com/music/bitchord/ui/screens/SettingsSheet.kt
-          git diff --staged --quiet || (git commit -m "Reorganizar configurações de Aparência em 4 grupos e pílula no Tema" && git push)
+          git diff --staged --quiet || (git commit -m "Adicionar animação fluida de formato e tamanho no SettingsGroup" && git push)
